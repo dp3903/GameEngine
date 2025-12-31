@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|x64">
@@ -9,126 +9,15 @@
       <Configuration>Release</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="src\Engine.h" />
-    <ClInclude Include="src\Engine\Application.h" />
-    <ClInclude Include="src\Engine\Core.h" />
-    <ClInclude Include="src\Engine\Entrypoint.h" />
-    <ClInclude Include="src\Engine\Logger.h" />
-    <ClInclude Include="vendors\spdlog\async.h" />
-    <ClInclude Include="vendors\spdlog\async_logger-inl.h" />
-    <ClInclude Include="vendors\spdlog\async_logger.h" />
-    <ClInclude Include="vendors\spdlog\cfg\argv.h" />
-    <ClInclude Include="vendors\spdlog\cfg\env.h" />
-    <ClInclude Include="vendors\spdlog\cfg\helpers-inl.h" />
-    <ClInclude Include="vendors\spdlog\cfg\helpers.h" />
-    <ClInclude Include="vendors\spdlog\common-inl.h" />
-    <ClInclude Include="vendors\spdlog\common.h" />
-    <ClInclude Include="vendors\spdlog\details\backtracer-inl.h" />
-    <ClInclude Include="vendors\spdlog\details\backtracer.h" />
-    <ClInclude Include="vendors\spdlog\details\circular_q.h" />
-    <ClInclude Include="vendors\spdlog\details\console_globals.h" />
-    <ClInclude Include="vendors\spdlog\details\file_helper-inl.h" />
-    <ClInclude Include="vendors\spdlog\details\file_helper.h" />
-    <ClInclude Include="vendors\spdlog\details\fmt_helper.h" />
-    <ClInclude Include="vendors\spdlog\details\log_msg-inl.h" />
-    <ClInclude Include="vendors\spdlog\details\log_msg.h" />
-    <ClInclude Include="vendors\spdlog\details\log_msg_buffer-inl.h" />
-    <ClInclude Include="vendors\spdlog\details\log_msg_buffer.h" />
-    <ClInclude Include="vendors\spdlog\details\mpmc_blocking_q.h" />
-    <ClInclude Include="vendors\spdlog\details\null_mutex.h" />
-    <ClInclude Include="vendors\spdlog\details\os-inl.h" />
-    <ClInclude Include="vendors\spdlog\details\os.h" />
-    <ClInclude Include="vendors\spdlog\details\periodic_worker-inl.h" />
-    <ClInclude Include="vendors\spdlog\details\periodic_worker.h" />
-    <ClInclude Include="vendors\spdlog\details\registry-inl.h" />
-    <ClInclude Include="vendors\spdlog\details\registry.h" />
-    <ClInclude Include="vendors\spdlog\details\synchronous_factory.h" />
-    <ClInclude Include="vendors\spdlog\details\tcp_client-windows.h" />
-    <ClInclude Include="vendors\spdlog\details\tcp_client.h" />
-    <ClInclude Include="vendors\spdlog\details\thread_pool-inl.h" />
-    <ClInclude Include="vendors\spdlog\details\thread_pool.h" />
-    <ClInclude Include="vendors\spdlog\details\udp_client-windows.h" />
-    <ClInclude Include="vendors\spdlog\details\udp_client.h" />
-    <ClInclude Include="vendors\spdlog\details\windows_include.h" />
-    <ClInclude Include="vendors\spdlog\fmt\bin_to_hex.h" />
-    <ClInclude Include="vendors\spdlog\fmt\bundled\args.h" />
-    <ClInclude Include="vendors\spdlog\fmt\bundled\base.h" />
-    <ClInclude Include="vendors\spdlog\fmt\bundled\chrono.h" />
-    <ClInclude Include="vendors\spdlog\fmt\bundled\color.h" />
-    <ClInclude Include="vendors\spdlog\fmt\bundled\compile.h" />
-    <ClInclude Include="vendors\spdlog\fmt\bundled\core.h" />
-    <ClInclude Include="vendors\spdlog\fmt\bundled\format-inl.h" />
-    <ClInclude Include="vendors\spdlog\fmt\bundled\format.h" />
-    <ClInclude Include="vendors\spdlog\fmt\bundled\os.h" />
-    <ClInclude Include="vendors\spdlog\fmt\bundled\ostream.h" />
-    <ClInclude Include="vendors\spdlog\fmt\bundled\printf.h" />
-    <ClInclude Include="vendors\spdlog\fmt\bundled\ranges.h" />
-    <ClInclude Include="vendors\spdlog\fmt\bundled\std.h" />
-    <ClInclude Include="vendors\spdlog\fmt\bundled\xchar.h" />
-    <ClInclude Include="vendors\spdlog\fmt\chrono.h" />
-    <ClInclude Include="vendors\spdlog\fmt\compile.h" />
-    <ClInclude Include="vendors\spdlog\fmt\fmt.h" />
-    <ClInclude Include="vendors\spdlog\fmt\ostr.h" />
-    <ClInclude Include="vendors\spdlog\fmt\ranges.h" />
-    <ClInclude Include="vendors\spdlog\fmt\std.h" />
-    <ClInclude Include="vendors\spdlog\fmt\xchar.h" />
-    <ClInclude Include="vendors\spdlog\formatter.h" />
-    <ClInclude Include="vendors\spdlog\fwd.h" />
-    <ClInclude Include="vendors\spdlog\logger-inl.h" />
-    <ClInclude Include="vendors\spdlog\logger.h" />
-    <ClInclude Include="vendors\spdlog\mdc.h" />
-    <ClInclude Include="vendors\spdlog\pattern_formatter-inl.h" />
-    <ClInclude Include="vendors\spdlog\pattern_formatter.h" />
-    <ClInclude Include="vendors\spdlog\sinks\android_sink.h" />
-    <ClInclude Include="vendors\spdlog\sinks\ansicolor_sink-inl.h" />
-    <ClInclude Include="vendors\spdlog\sinks\ansicolor_sink.h" />
-    <ClInclude Include="vendors\spdlog\sinks\base_sink-inl.h" />
-    <ClInclude Include="vendors\spdlog\sinks\base_sink.h" />
-    <ClInclude Include="vendors\spdlog\sinks\basic_file_sink-inl.h" />
-    <ClInclude Include="vendors\spdlog\sinks\basic_file_sink.h" />
-    <ClInclude Include="vendors\spdlog\sinks\callback_sink.h" />
-    <ClInclude Include="vendors\spdlog\sinks\daily_file_sink.h" />
-    <ClInclude Include="vendors\spdlog\sinks\dist_sink.h" />
-    <ClInclude Include="vendors\spdlog\sinks\dup_filter_sink.h" />
-    <ClInclude Include="vendors\spdlog\sinks\hourly_file_sink.h" />
-    <ClInclude Include="vendors\spdlog\sinks\kafka_sink.h" />
-    <ClInclude Include="vendors\spdlog\sinks\mongo_sink.h" />
-    <ClInclude Include="vendors\spdlog\sinks\msvc_sink.h" />
-    <ClInclude Include="vendors\spdlog\sinks\null_sink.h" />
-    <ClInclude Include="vendors\spdlog\sinks\ostream_sink.h" />
-    <ClInclude Include="vendors\spdlog\sinks\qt_sinks.h" />
-    <ClInclude Include="vendors\spdlog\sinks\ringbuffer_sink.h" />
-    <ClInclude Include="vendors\spdlog\sinks\rotating_file_sink-inl.h" />
-    <ClInclude Include="vendors\spdlog\sinks\rotating_file_sink.h" />
-    <ClInclude Include="vendors\spdlog\sinks\sink-inl.h" />
-    <ClInclude Include="vendors\spdlog\sinks\sink.h" />
-    <ClInclude Include="vendors\spdlog\sinks\stdout_color_sinks-inl.h" />
-    <ClInclude Include="vendors\spdlog\sinks\stdout_color_sinks.h" />
-    <ClInclude Include="vendors\spdlog\sinks\stdout_sinks-inl.h" />
-    <ClInclude Include="vendors\spdlog\sinks\stdout_sinks.h" />
-    <ClInclude Include="vendors\spdlog\sinks\syslog_sink.h" />
-    <ClInclude Include="vendors\spdlog\sinks\systemd_sink.h" />
-    <ClInclude Include="vendors\spdlog\sinks\tcp_sink.h" />
-    <ClInclude Include="vendors\spdlog\sinks\udp_sink.h" />
-    <ClInclude Include="vendors\spdlog\sinks\wincolor_sink-inl.h" />
-    <ClInclude Include="vendors\spdlog\sinks\wincolor_sink.h" />
-    <ClInclude Include="vendors\spdlog\sinks\win_eventlog_sink.h" />
-    <ClInclude Include="vendors\spdlog\spdlog-inl.h" />
-    <ClInclude Include="vendors\spdlog\spdlog.h" />
-    <ClInclude Include="vendors\spdlog\stopwatch.h" />
-    <ClInclude Include="vendors\spdlog\tweakme.h" />
-    <ClInclude Include="vendors\spdlog\version.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="src\Engine\Application.cpp" />
-    <ClCompile Include="src\Engine\Logger.cpp" />
+    <ProjectConfiguration Include="Dist|x64">
+      <Configuration>Dist</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <VCProjectVersion>17.0</VCProjectVersion>
+    <ProjectGuid>{DBC7D3B0-C769-FE86-B024-12DB9C6585D7}</ProjectGuid>
+    <IgnoreWarnCompileDuplicatedFilename>true</IgnoreWarnCompileDuplicatedFilename>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{35778767-20e8-4284-ab6d-1a56438dc668}</ProjectGuid>
     <RootNamespace>Engine</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
@@ -136,20 +25,23 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dist|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <CharacterSet>Unicode</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
-  </ImportGroup>
-  <ImportGroup Label="Shared">
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -157,45 +49,137 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Dist|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(SolutionDir)\bin\$(Platform)-$(Configuration)\$(ProjectName)\</OutDir>
-    <IntDir>$(SolutionDir)\bin-int\$(Platform)-$(Configuration)\$(ProjectName)\</IntDir>
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(ProjectDir)..\bin\Debug-windows-x86_64\Engine\</OutDir>
+    <IntDir>$(ProjectDir)..\bin-int\Debug-windows-x86_64\Engine\</IntDir>
+    <TargetName>Engine</TargetName>
+    <TargetExt>.dll</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)\bin\$(Platform)-$(Configuration)\$(ProjectName)\</OutDir>
-    <IntDir>$(SolutionDir)\bin-int\$(Platform)-$(Configuration)\$(ProjectName)\</IntDir>
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(ProjectDir)..\bin\Release-windows-x86_64\Engine\</OutDir>
+    <IntDir>$(ProjectDir)..\bin-int\Release-windows-x86_64\Engine\</IntDir>
+    <TargetName>Engine</TargetName>
+    <TargetExt>.dll</TargetExt>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Dist|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(ProjectDir)..\bin\Dist-windows-x86_64\Engine\</OutDir>
+    <IntDir>$(ProjectDir)..\bin-int\Dist-windows-x86_64\Engine\</IntDir>
+    <TargetName>Engine</TargetName>
+    <TargetExt>.dll</TargetExt>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>egpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>ENGINE_PLATFORM_WINDOWS;ENGINE_BUILD_DLL;_DEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_PLATFORM_WINDOWS;ENGINE_PLATFORM_WINDOWS</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)\Engine\vendors;</AdditionalIncludeDirectories>
-      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <PreprocessorDefinitions>ENGINE_PLATFORM_WINDOWS;ENGINE_BUILD_DLL;ENGINE_DEBUG;ENGINE_ENABLE_ASSERTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>vendors;src;vendors\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <Optimization>Disabled</Optimization>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalOptions>/utf-8 /MD %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <ExternalWarningLevel>Level3</ExternalWarningLevel>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ImportLibrary>..\bin\Debug-windows-x86_64\Engine\Engine.lib</ImportLibrary>
     </Link>
+    <PostBuildEvent>
+      <Command>IF EXIST ..\bin\Debug-windows-x86_64\Engine\Engine.dll\ (xcopy /Q /E /Y /I ..\bin\Debug-windows-x86_64\Engine\Engine.dll ..\bin\Debug-windows-x86_64\Game &gt; nul) ELSE (xcopy /Q /Y /I ..\bin\Debug-windows-x86_64\Engine\Engine.dll ..\bin\Debug-windows-x86_64\Game &gt; nul)</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>egpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>ENGINE_PLATFORM_WINDOWS;ENGINE_BUILD_DLL;ENGINE_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>vendors;src;vendors\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>ENGINE_PLATFORM_WINDOWS;ENGINE_BUILD_DLL;NDEBUG;_CONSOLE;%(PreprocessorDefinitions);ENGINE_PLATFORM_WINDOWS;ENGINE_PLATFORM_WINDOWS</PreprocessorDefinitions>
-      <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)\Engine\vendors;</AdditionalIncludeDirectories>
-      <AdditionalOptions>/utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <MinimalRebuild>false</MinimalRebuild>
+      <StringPooling>true</StringPooling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalOptions>/utf-8 /MD %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <ExternalWarningLevel>Level3</ExternalWarningLevel>
     </ClCompile>
     <Link>
-      <SubSystem>Console</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ImportLibrary>..\bin\Release-windows-x86_64\Engine\Engine.lib</ImportLibrary>
     </Link>
+    <PostBuildEvent>
+      <Command>IF EXIST ..\bin\Release-windows-x86_64\Engine\Engine.dll\ (xcopy /Q /E /Y /I ..\bin\Release-windows-x86_64\Engine\Engine.dll ..\bin\Release-windows-x86_64\Game &gt; nul) ELSE (xcopy /Q /Y /I ..\bin\Release-windows-x86_64\Engine\Engine.dll ..\bin\Release-windows-x86_64\Game &gt; nul)</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Dist|x64'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>egpch.h</PrecompiledHeaderFile>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>ENGINE_PLATFORM_WINDOWS;ENGINE_BUILD_DLL;ENGINE_DIST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>vendors;src;vendors\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <Optimization>Full</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <MinimalRebuild>false</MinimalRebuild>
+      <StringPooling>true</StringPooling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <AdditionalOptions>/utf-8 /MD %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <ExternalWarningLevel>Level3</ExternalWarningLevel>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ImportLibrary>..\bin\Dist-windows-x86_64\Engine\Engine.lib</ImportLibrary>
+    </Link>
+    <PostBuildEvent>
+      <Command>IF EXIST ..\bin\Dist-windows-x86_64\Engine\Engine.dll\ (xcopy /Q /E /Y /I ..\bin\Dist-windows-x86_64\Engine\Engine.dll ..\bin\Dist-windows-x86_64\Game &gt; nul) ELSE (xcopy /Q /Y /I ..\bin\Dist-windows-x86_64\Engine\Engine.dll ..\bin\Dist-windows-x86_64\Game &gt; nul)</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="src\Engine.h" />
+    <ClInclude Include="src\Engine\Application.h" />
+    <ClInclude Include="src\Engine\Core.h" />
+    <ClInclude Include="src\Engine\Entrypoint.h" />
+    <ClInclude Include="src\Engine\Events\ApplicationEvent.h" />
+    <ClInclude Include="src\Engine\Events\Event.h" />
+    <ClInclude Include="src\Engine\Events\KeyEvent.h" />
+    <ClInclude Include="src\Engine\Events\MouseEvent.h" />
+    <ClInclude Include="src\Engine\Logger.h" />
+    <ClInclude Include="src\Engine\Window\Window.h" />
+    <ClInclude Include="src\egpch.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\Engine\Application.cpp" />
+    <ClCompile Include="src\Engine\Logger.cpp" />
+    <ClCompile Include="src\Engine\Window\Window.cpp" />
+    <ClCompile Include="src\egpch.cpp">
+      <PrecompiledHeader>Create</PrecompiledHeader>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="vendors\glfw\GLFW.vcxproj">
+      <Project>{154B857C-0182-860D-AA6E-6C109684020F}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

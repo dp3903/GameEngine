@@ -1,6 +1,7 @@
 #pragma once
-#include <memory>
+#include "egpch.h"
 #include <spdlog/spdlog.h>
+#include "spdlog/fmt/ostr.h"
 #include "Core.h"
 
 namespace Engine {
