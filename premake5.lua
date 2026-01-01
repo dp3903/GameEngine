@@ -12,8 +12,10 @@ output_dir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 -- Include directories relative to root folder (solution directory)
 IncludeDir = {}
 IncludeDir["GLFW"] = "Engine/vendors/glfw/include"
+IncludeDir["ImGui"] = "Engine/vendors/imgui"
 
 include "Engine/vendors/glfw"
+include "Engine/vendors/imgui"
 
 project "Engine"
 	location "Engine"
@@ -33,12 +35,14 @@ project "Engine"
 	{
 		"%{prj.name}/vendors",
 		"%{prj.name}/src",
-        "%{IncludeDir.GLFW}"
+        "%{IncludeDir.GLFW}",
+		"%{IncludeDir.ImGui}"
 	}
 
 	links 
 	{ 
 		"GLFW",
+		"ImGui",
 		"opengl32.lib"
 	}
 
