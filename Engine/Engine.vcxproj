@@ -155,6 +155,9 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="src\Engine\Layers\ImGuiLayer.h" />
+    <ClInclude Include="src\Engine\Layers\LayerStack.h" />
+    <ClInclude Include="src\Engine\Layers\Layer.h" />
     <ClInclude Include="src\Engine.h" />
     <ClInclude Include="src\Engine\Application.h" />
     <ClInclude Include="src\Engine\Core.h" />
@@ -168,6 +171,9 @@
     <ClInclude Include="src\egpch.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Engine\Layers\ImGuiLayer.cpp" />
+    <ClCompile Include="src\Engine\Layers\LayerStack.cpp" />
+    <ClCompile Include="src\Engine\Layers\Layer.cpp" />
     <ClCompile Include="src\Engine\Application.cpp" />
     <ClCompile Include="src\Engine\Logger.cpp" />
     <ClCompile Include="src\Engine\Window\Window.cpp" />
