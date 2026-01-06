@@ -7,6 +7,9 @@
     <Filter Include="Engine\Events">
       <UniqueIdentifier>{5FAFB439-CB6F-3070-94AA-79ED002A754C}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Layers">
+      <UniqueIdentifier>{3A9A9748-A65A-137F-6F95-5CFCDB14585B}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Engine\Window">
       <UniqueIdentifier>{6210CB62-CED0-4699-970B-9016038B8B75}</UniqueIdentifier>
     </Filter>
@@ -34,30 +37,48 @@
     <ClInclude Include="src\Engine\Events\MouseEvent.h">
       <Filter>Engine\Events</Filter>
     </ClInclude>
+    <ClInclude Include="src\Engine\Layers\ImGuiLayer.h">
+      <Filter>Engine\Layers</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\Layers\Layer.h">
+      <Filter>Engine\Layers</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\Layers\LayerStack.h">
+      <Filter>Engine\Layers</Filter>
+    </ClInclude>
     <ClInclude Include="src\Engine\Logger.h">
       <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\Window\Input.h">
+      <Filter>Engine\Window</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine\Window\Window.h">
       <Filter>Engine\Window</Filter>
     </ClInclude>
     <ClInclude Include="src\egpch.h" />
-    <ClInclude Include="src\Engine\Layers\Layer.h" />
-    <ClInclude Include="src\Engine\Layers\LayerStack.h" />
-    <ClInclude Include="src\Engine\Layers\ImGuiLayer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine\Application.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
+    <ClCompile Include="src\Engine\Layers\ImGuiLayer.cpp">
+      <Filter>Engine\Layers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Engine\Layers\Layer.cpp">
+      <Filter>Engine\Layers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Engine\Layers\LayerStack.cpp">
+      <Filter>Engine\Layers</Filter>
+    </ClCompile>
     <ClCompile Include="src\Engine\Logger.cpp">
       <Filter>Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Engine\Window\Input.cpp">
+      <Filter>Engine\Window</Filter>
     </ClCompile>
     <ClCompile Include="src\Engine\Window\Window.cpp">
       <Filter>Engine\Window</Filter>
     </ClCompile>
     <ClCompile Include="src\egpch.cpp" />
-    <ClCompile Include="src\Engine\Layers\Layer.cpp" />
-    <ClCompile Include="src\Engine\Layers\LayerStack.cpp" />
-    <ClCompile Include="src\Engine\Layers\ImGuiLayer.cpp" />
   </ItemGroup>
 </Project>

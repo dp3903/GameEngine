@@ -4,22 +4,26 @@ workspace "GameEngine"
 	configurations
 	{
 		"Debug",
-		"Release",
-		"Dist"
+		"Release"
 	}
 
 output_dir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 -- Include directories relative to root folder (solution directory)
 IncludeDir = {}
 IncludeDir["GLFW"] = "Engine/vendors/glfw/include"
+IncludeDir["GLAD"] = "Engine/vendors/glad/include"
+IncludeDir["GLM"] = "Engine/vendors/glm"
 IncludeDir["ImGui"] = "Engine/vendors/imgui"
 
 include "Engine/vendors/glfw"
+include "Engine/vendors/glad"
 include "Engine/vendors/imgui"
 
 project "Engine"
 	location "Engine"
-	kind "SharedLib"
+	kind "StaticLib"
+	cppdialect "C++17"
+	staticruntime "on"
 	language "C++"
 
 	targetdir ("bin/" .. output_dir .. "/%{prj.name}")
@@ -28,7 +32,10 @@ project "Engine"
 	files
 	{
 		"%{prj.name}/src/**.h",
-		"%{prj.name}/src/**.cpp"
+		"%{prj.name}/src/**.cpp",
+
+		"%{prj.name}/vendor/glm/glm/**.hpp",
+		"%{prj.name}/vendor/glm/glm/**.inl",
 	}
 
 	includedirs
@@ -36,12 +43,15 @@ project "Engine"
 		"%{prj.name}/vendors",
 		"%{prj.name}/src",
         "%{IncludeDir.GLFW}",
+		"%{IncludeDir.GLAD}",
+		"%{IncludeDir.GLM}",
 		"%{IncludeDir.ImGui}"
 	}
 
 	links 
 	{ 
 		"GLFW",
+		"Glad",
 		"ImGui",
 		"opengl32.lib"
 	}
@@ -50,38 +60,32 @@ project "Engine"
     pchsource "Engine/src/egpch.cpp"
 
 	filter "system:windows"
-		cppdialect "C++17"
-		staticruntime "On"
 		systemversion "latest"
-		buildoptions { "/utf-8", "/MD" }
+		buildoptions { "/utf-8" }
 
 		defines
 		{
 			"ENGINE_PLATFORM_WINDOWS",
-			"ENGINE_BUILD_DLL"
+			"ENGINE_BUILD_DLL",
+			"GLFW_INCLUDE_NONE"
 		}
 
-		postbuildcommands
-		{
-			("{COPY} %{cfg.buildtarget.relpath} ../bin/" .. output_dir .. "/Game")
-		}
 
 	filter "configurations:Debug"
 		defines {"ENGINE_DEBUG", "ENGINE_ENABLE_ASSERTS"}
-		symbols "On"
+		symbols "on"
 		
 	filter "configurations:Release"
 		defines "ENGINE_RELEASE"
-		optimize "On"
+		optimize "on"
 		
-	filter "configurations:Dist"
-		defines "ENGINE_DIST"
-		optimize "On"
 
 
 project "Game"
 	location "Game"
 	kind "ConsoleApp"
+	cppdialect "C++17"
+	staticruntime "on"
 	language "C++"
 
 	targetdir ("bin/" .. output_dir .. "/%{prj.name}")
@@ -97,7 +101,8 @@ project "Game"
 	{
 		"Engine/vendors",
 		"Engine/src",
-        "%{IncludeDir.GLFW}"
+		"%{IncludeDir.GLFW}",
+		"%{IncludeDir.GLM}",
 	}
 
 	links
@@ -106,8 +111,6 @@ project "Game"
 	}
 
 	filter "system:windows"
-		cppdialect "C++17"
-		staticruntime "On"
 		systemversion "latest"
 		buildoptions { "/utf-8" }
 
@@ -118,12 +121,8 @@ project "Game"
 
 	filter "configurations:Debug"
 		defines "ENGINE_DEBUG"
-		symbols "On"
+		symbols "on"
 		
 	filter "configurations:Release"
 		defines "ENGINE_RELEASE"
-		optimize "On"
-		
-	filter "configurations:Dist"
-		defines "ENGINE_DIST"
-		optimize "On"
+		optimize "on"

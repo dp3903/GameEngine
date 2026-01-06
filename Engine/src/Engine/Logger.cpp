@@ -16,4 +16,22 @@ namespace Engine
 		ClientLogger = spdlog::stdout_color_mt("APP");
 		ClientLogger->set_level(spdlog::level::level_enum::trace);
 	}
+
+	std::shared_ptr<spdlog::logger>& Logger::GetEngineLogger()
+	{
+		// Safety check: If accessing before init, initialize immediately.
+		if (!CoreLogger) {
+			init();
+		}
+		return CoreLogger;
+	}
+
+	std::shared_ptr<spdlog::logger>& Logger::GetAppLogger()
+	{
+		// Safety check
+		if (!ClientLogger) {
+			init();
+		}
+		return ClientLogger;
+	}
 }

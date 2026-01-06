@@ -9,9 +9,19 @@ public:
 	{
 	}
 
+	void OnAttach() override
+	{
+		APP_LOG_INFO("ExampleLayer::Attach");
+	}
+
+	void OnDetach() override
+	{
+		APP_LOG_INFO("ExampleLayer::Detach");
+	}
+
 	void OnUpdate() override
 	{
-		APP_LOG_INFO("ExampleLayer::Update");
+		//APP_LOG_INFO("ExampleLayer::Update");
 	}
 
 	void OnEvent(Engine::Event& event) override
@@ -27,7 +37,6 @@ public:
 	Game()
 	{
 		PushLayer(new ExampleLayer());
-		PushOverlay(new Engine::ImGuiLayer());
 	}
 	~Game()
 	{

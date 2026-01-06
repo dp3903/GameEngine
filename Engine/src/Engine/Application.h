@@ -3,6 +3,7 @@
 #include "Engine/Events/Event.h"
 #include "Engine/Events/ApplicationEvent.h"
 #include "Engine/Layers/LayerStack.h"
+#include "Engine/Layers/ImGuiLayer.h"
 #include "Window/Window.h"
 
 namespace Engine
@@ -24,6 +25,7 @@ namespace Engine
 		bool OnWindowClose(WindowCloseEvent& e);
 
 		std::unique_ptr<Window> m_Window;
+		ImGuiLayer* m_ImGuiLayer;
 		bool m_Running = true;
 		LayerStack m_LayerStack;
 		static Application* s_Instance;

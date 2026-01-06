@@ -1,7 +1,7 @@
 #include "egpch.h"
 #include "Application.h"
 #include "Engine/Logger.h"
-#include "GLFW/glfw3.h"
+#include "glad/glad.h"
 
 namespace Engine
 {
@@ -14,6 +14,9 @@ namespace Engine
 
 		m_Window = std::unique_ptr<Window>(Window::Create());
 		m_Window->SetEventCallback(std::bind(&Application::OnEvent, this, std::placeholders::_1));
+
+		m_ImGuiLayer = new ImGuiLayer();
+		PushOverlay(m_ImGuiLayer);
 	}
 
 	Application::~Application()
