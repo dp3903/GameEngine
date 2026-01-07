@@ -101,6 +101,8 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="src\Engine\Renderer\OrthographicCamera.h" />
+    <ClInclude Include="src\Engine\Renderer\Renderer.h" />
     <ClInclude Include="src\Engine.h" />
     <ClInclude Include="src\Engine\Application.h" />
     <ClInclude Include="src\Engine\Core.h" />
@@ -113,16 +115,26 @@
     <ClInclude Include="src\Engine\Layers\Layer.h" />
     <ClInclude Include="src\Engine\Layers\LayerStack.h" />
     <ClInclude Include="src\Engine\Logger.h" />
+    <ClInclude Include="src\Engine\Renderer\Buffer.h" />
+    <ClInclude Include="src\Engine\Renderer\Shader.h" />
+    <ClInclude Include="src\Engine\Renderer\VertexArray.h" />
     <ClInclude Include="src\Engine\Window\Input.h" />
+    <ClInclude Include="src\Engine\Window\KeyCodes.h" />
+    <ClInclude Include="src\Engine\Window\MouseButtonCodes.h" />
     <ClInclude Include="src\Engine\Window\Window.h" />
     <ClInclude Include="src\egpch.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Engine\Renderer\OrthographicCamera.cpp" />
+    <ClCompile Include="src\Engine\Renderer\Renderer.cpp" />
     <ClCompile Include="src\Engine\Application.cpp" />
     <ClCompile Include="src\Engine\Layers\ImGuiLayer.cpp" />
     <ClCompile Include="src\Engine\Layers\Layer.cpp" />
     <ClCompile Include="src\Engine\Layers\LayerStack.cpp" />
     <ClCompile Include="src\Engine\Logger.cpp" />
+    <ClCompile Include="src\Engine\Renderer\Buffer.cpp" />
+    <ClCompile Include="src\Engine\Renderer\Shader.cpp" />
+    <ClCompile Include="src\Engine\Renderer\VertexArray.cpp" />
     <ClCompile Include="src\Engine\Window\Input.cpp" />
     <ClCompile Include="src\Engine\Window\Window.cpp" />
     <ClCompile Include="src\egpch.cpp">

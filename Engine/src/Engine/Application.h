@@ -5,6 +5,10 @@
 #include "Engine/Layers/LayerStack.h"
 #include "Engine/Layers/ImGuiLayer.h"
 #include "Window/Window.h"
+#include "Renderer/Shader.h"
+#include "Renderer/Buffer.h"
+#include "Renderer/VertexArray.h"
+#include "Renderer/OrthographicCamera.h"
 
 namespace Engine
 {
@@ -29,6 +33,7 @@ namespace Engine
 		bool m_Running = true;
 		LayerStack m_LayerStack;
 		static Application* s_Instance;
+		float m_LastFrameTime;
 	};
 
 	// To be defined in client app

@@ -1,7 +1,8 @@
 #include "egpch.h"
 #include "Application.h"
 #include "Engine/Logger.h"
-#include "glad/glad.h"
+#include "Engine/Renderer/Renderer.h"
+#include "glfw/glfw3.h"
 
 namespace Engine
 {
@@ -17,6 +18,8 @@ namespace Engine
 
 		m_ImGuiLayer = new ImGuiLayer();
 		PushOverlay(m_ImGuiLayer);
+
+		m_LastFrameTime = 0.0f;
 	}
 
 	Application::~Application()
@@ -55,11 +58,12 @@ namespace Engine
 
 		while (m_Running)
 		{
-			glClearColor(1, 0, 1, 1);
-			glClear(GL_COLOR_BUFFER_BIT);
+			float time = (float)glfwGetTime();
+			float timestep = time - m_LastFrameTime;
+			m_LastFrameTime = time;
 
 			for (Layer* layer : m_LayerStack)
-				layer->OnUpdate();
+				layer->OnUpdate(timestep);
 
 			m_Window->OnUpdate();
 		}

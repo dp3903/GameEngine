@@ -10,6 +10,9 @@
     <Filter Include="Engine\Layers">
       <UniqueIdentifier>{3A9A9748-A65A-137F-6F95-5CFCDB14585B}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Engine\Renderer">
+      <UniqueIdentifier>{E1119970-4D9D-0635-56AE-8929C2B86235}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Engine\Window">
       <UniqueIdentifier>{6210CB62-CED0-4699-970B-9016038B8B75}</UniqueIdentifier>
     </Filter>
@@ -49,6 +52,12 @@
     <ClInclude Include="src\Engine\Logger.h">
       <Filter>Engine</Filter>
     </ClInclude>
+    <ClInclude Include="src\Engine\Renderer\Buffer.h">
+      <Filter>Engine\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\Renderer\Shader.h">
+      <Filter>Engine\Renderer</Filter>
+    </ClInclude>
     <ClInclude Include="src\Engine\Window\Input.h">
       <Filter>Engine\Window</Filter>
     </ClInclude>
@@ -56,6 +65,11 @@
       <Filter>Engine\Window</Filter>
     </ClInclude>
     <ClInclude Include="src\egpch.h" />
+    <ClInclude Include="src\Engine\Renderer\VertexArray.h" />
+    <ClInclude Include="src\Engine\Renderer\Renderer.h" />
+    <ClInclude Include="src\Engine\Renderer\OrthographicCamera.h" />
+    <ClInclude Include="src\Engine\Window\KeyCodes.h" />
+    <ClInclude Include="src\Engine\Window\MouseButtonCodes.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine\Application.cpp">
@@ -73,6 +87,12 @@
     <ClCompile Include="src\Engine\Logger.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
+    <ClCompile Include="src\Engine\Renderer\Buffer.cpp">
+      <Filter>Engine\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Engine\Renderer\Shader.cpp">
+      <Filter>Engine\Renderer</Filter>
+    </ClCompile>
     <ClCompile Include="src\Engine\Window\Input.cpp">
       <Filter>Engine\Window</Filter>
     </ClCompile>
@@ -80,5 +100,8 @@
       <Filter>Engine\Window</Filter>
     </ClCompile>
     <ClCompile Include="src\egpch.cpp" />
+    <ClCompile Include="src\Engine\Renderer\VertexArray.cpp" />
+    <ClCompile Include="src\Engine\Renderer\Renderer.cpp" />
+    <ClCompile Include="src\Engine\Renderer\OrthographicCamera.cpp" />
   </ItemGroup>
 </Project>

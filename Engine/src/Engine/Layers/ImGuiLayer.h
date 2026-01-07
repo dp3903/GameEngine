@@ -11,7 +11,7 @@ namespace Engine {
 
 		void OnAttach();
 		void OnDetach();
-		void OnUpdate();
+		void OnUpdate(float timestep);
 		void OnEvent(Event& event);
 	private:
 		float m_Time = 0.0f;

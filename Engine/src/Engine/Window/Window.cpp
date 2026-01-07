@@ -58,6 +58,11 @@ namespace Engine {
 		glfwSetWindowUserPointer(m_Window, &m_Data);
 		SetVSync(true);
 
+		ENGINE_LOG_INFO("OpenGL Info:");
+		ENGINE_LOG_INFO("  Vendor: {0}", (const char*)glGetString(GL_VENDOR));
+		ENGINE_LOG_INFO("  Renderer: {0}", (const char*)glGetString(GL_RENDERER));
+		ENGINE_LOG_INFO("  Version: {0}", (const char*)glGetString(GL_VERSION));
+
 
 		// Set GLFW callbacks
 		glfwSetWindowSizeCallback(m_Window, [](GLFWwindow* window, int width, int height)

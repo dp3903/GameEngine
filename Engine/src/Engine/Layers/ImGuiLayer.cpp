@@ -51,7 +51,7 @@ namespace Engine {
 		ENGINE_LOG_INFO("ImGui Layer Detached");
 	}
 
-	void ImGuiLayer::OnUpdate()
+	void ImGuiLayer::OnUpdate(float timestep)
 	{
 		ImGuiIO& io = ImGui::GetIO();
 		Application& app = Application::Get();

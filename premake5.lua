@@ -102,6 +102,7 @@ project "Game"
 		"Engine/vendors",
 		"Engine/src",
 		"%{IncludeDir.GLFW}",
+		"%{IncludeDir.GLAD}",
 		"%{IncludeDir.GLM}",
 	}
 
@@ -116,7 +117,8 @@ project "Game"
 
 		defines
 		{
-			"ENGINE_PLATFORM_WINDOWS"
+			"ENGINE_PLATFORM_WINDOWS",
+			"GLFW_INCLUDE_NONE"
 		}
 
 	filter "configurations:Debug"
