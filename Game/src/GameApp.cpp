@@ -8,7 +8,7 @@ class ExampleLayer : public Engine::Layer
 {
 public:
 	ExampleLayer()
-		: Layer("Example"), m_Camera(-1.6, 1.6, -0.9, 0.9), m_CameraPosition(0.0f, 0.0f, 0.0f)
+		: Layer("Example"), m_CameraController(1280.0f / 720.0f, true)
 	{
 		m_VertexArray = Engine::VertexArray::Create();
 		m_TextureVA = Engine::VertexArray::Create();
@@ -96,30 +96,14 @@ public:
 
 	void OnUpdate(float ts) override
 	{
-		//APP_LOG_INFO("ExampleLayer::Update");
+		// Update
+		m_CameraController.OnUpdate(ts);
 
-		if (Engine::Input::IsKeyPressed(KEY_LEFT))
-			m_CameraPosition.x -= m_CameraMoveSpeed * ts;
-		else if (Engine::Input::IsKeyPressed(KEY_RIGHT))
-			m_CameraPosition.x += m_CameraMoveSpeed * ts;
-
-		if (Engine::Input::IsKeyPressed(KEY_UP))
-			m_CameraPosition.y += m_CameraMoveSpeed * ts;
-		else if (Engine::Input::IsKeyPressed(KEY_DOWN))
-			m_CameraPosition.y -= m_CameraMoveSpeed * ts;
-
-		if (Engine::Input::IsKeyPressed(KEY_A))
-			m_CameraRotation += m_CameraRotationSpeed * ts;
-		if (Engine::Input::IsKeyPressed(KEY_D))
-			m_CameraRotation -= m_CameraRotationSpeed * ts;
-
+		// Render
 		Engine::RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1 });
 		Engine::RenderCommand::Clear();
 
-		m_Camera.SetPosition(m_CameraPosition);
-		m_Camera.SetRotation(m_CameraRotation);
-
-		Engine::Renderer::BeginScene(m_Camera);
+		Engine::Renderer::BeginScene(m_CameraController.GetCamera());
 		{
 			glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));
 			m_Shader->Bind();
@@ -147,7 +131,9 @@ public:
 
 	void OnEvent(Engine::Event& event) override
 	{
-		APP_LOG_TRACE("{0}", event);
+		//APP_LOG_TRACE("{0}", event);
+
+		m_CameraController.OnEvent(event);
 	}
 
 	virtual void OnImGuiRender() override
@@ -166,13 +152,7 @@ private:
 	std::shared_ptr<Engine::Texture2D> m_Texture;
 	std::shared_ptr<Engine::Texture2D> m_GroundTexture;
 
-	Engine::OrthographicCamera m_Camera;
-
-	glm::vec3 m_CameraPosition;
-	float m_CameraMoveSpeed = 5.0f;
-
-	float m_CameraRotation = 0.0f;
-	float m_CameraRotationSpeed = 180.0f;
+	Engine::OrthographicCameraController m_CameraController;
 
 	glm::vec3 m_SquareColor = { 0.2f, 0.3f, 0.8f };
 };

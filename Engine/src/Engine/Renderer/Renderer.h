@@ -1,6 +1,5 @@
 #pragma once
 #include "VertexArray.h"
-#include "glad/glad.h"
 #include "glm/glm.hpp"
 #include "Engine/Renderer/Shader.h"
 #include "Engine/Renderer/OrthographicCamera.h"
@@ -10,33 +9,22 @@ namespace Engine
 	class RenderCommand
 	{
 	public:
-		inline static void Init()
-		{
-			glEnable(GL_BLEND);
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		}
+		static void Init();
 
-		inline static void SetClearColor(const glm::vec4& color)
-		{
+		static void SetClearColor(const glm::vec4& color);
+		static void SetViewport(uint32_t x, uint32_t y, uint32_t width, uint32_t height);
 
-			glClearColor(color.r, color.g, color.b, color.a);
-		}
+		static void Clear();
 
-		inline static void Clear()
-		{
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		}
-
-		inline static void DrawIndexed(const std::shared_ptr<VertexArray>& vertexArray)
-		{
-			glDrawElements(GL_TRIANGLES, vertexArray->GetIndexBuffer()->GetCount(), GL_UNSIGNED_INT, nullptr);
-		}
+		static void DrawIndexed(const std::shared_ptr<VertexArray>& vertexArray);
 	};
 
 	class Renderer
 	{
 	public:
 		static void Init();
+		static void OnWindowResize(uint32_t width, uint32_t height);
+
 		static void BeginScene(OrthographicCamera& camera);
 		static void EndScene();
 
