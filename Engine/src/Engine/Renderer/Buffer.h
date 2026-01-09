@@ -83,7 +83,7 @@ namespace Engine {
 	class VertexBuffer
 	{
 	public:
-		VertexBuffer(float* vertices, uint32_t size);
+		static std::shared_ptr<VertexBuffer> Create(float* vertices, uint32_t size);
 		~VertexBuffer();
 
 		void Bind() const;
@@ -93,6 +93,8 @@ namespace Engine {
 		void SetLayout(const BufferLayout& layout) { m_Layout = layout; }
 
 	private:
+		VertexBuffer(float* vertices, uint32_t size);
+
 		uint32_t m_RendererID;
 		BufferLayout m_Layout;
 	};
@@ -100,7 +102,7 @@ namespace Engine {
 	class IndexBuffer
 	{
 	public:
-		IndexBuffer(uint32_t* indices, uint32_t count);
+		static std::shared_ptr<IndexBuffer> Create(uint32_t* indices, uint32_t count);
 		~IndexBuffer();
 
 		void Bind() const;
@@ -109,6 +111,8 @@ namespace Engine {
 		inline uint32_t GetCount() const { return m_Count; }
 
 	private:
+		IndexBuffer(uint32_t* indices, uint32_t count);
+
 		uint32_t m_RendererID;
 		uint32_t m_Count;
 	};

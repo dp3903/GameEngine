@@ -14,6 +14,7 @@ IncludeDir["GLFW"] = "Engine/vendors/glfw/include"
 IncludeDir["GLAD"] = "Engine/vendors/glad/include"
 IncludeDir["GLM"] = "Engine/vendors/glm"
 IncludeDir["ImGui"] = "Engine/vendors/imgui"
+IncludeDir["stb_image"] = "Hazel/vendor/stb_image"
 
 include "Engine/vendors/glfw"
 include "Engine/vendors/glad"
@@ -33,7 +34,8 @@ project "Engine"
 	{
 		"%{prj.name}/src/**.h",
 		"%{prj.name}/src/**.cpp",
-
+		"%{prj.name}/vendor/stb_image/**.h",
+		"%{prj.name}/vendor/stb_image/**.cpp",
 		"%{prj.name}/vendor/glm/glm/**.hpp",
 		"%{prj.name}/vendor/glm/glm/**.inl",
 	}
@@ -45,7 +47,8 @@ project "Engine"
         "%{IncludeDir.GLFW}",
 		"%{IncludeDir.GLAD}",
 		"%{IncludeDir.GLM}",
-		"%{IncludeDir.ImGui}"
+		"%{IncludeDir.ImGui}",
+		"%{IncludeDir.stb_image}"
 	}
 
 	links 

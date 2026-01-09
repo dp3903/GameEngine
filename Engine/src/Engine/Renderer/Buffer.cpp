@@ -8,6 +8,11 @@ namespace Engine {
 	// VertexBuffer /////////////////////////////////////////////////////////////
 	/////////////////////////////////////////////////////////////////////////////
 
+	std::shared_ptr<VertexBuffer> VertexBuffer::Create(float* vertices, uint32_t size)
+	{
+		return std::shared_ptr<VertexBuffer>(new VertexBuffer(vertices, size));
+	}
+
 	VertexBuffer::VertexBuffer(float* vertices, uint32_t size)
 		: m_Layout({ { ShaderDataType::Float3, "a_Position" } })
 	{
@@ -34,6 +39,11 @@ namespace Engine {
 	/////////////////////////////////////////////////////////////////////////////
 	// IndexBuffer //////////////////////////////////////////////////////////////
 	/////////////////////////////////////////////////////////////////////////////
+
+	std::shared_ptr<IndexBuffer> IndexBuffer::Create(uint32_t* indices, uint32_t count)
+	{
+		return std::shared_ptr<IndexBuffer>(new IndexBuffer(indices, count));
+	}
 
 	IndexBuffer::IndexBuffer(uint32_t* indices, uint32_t count)
 		: m_Count(count)

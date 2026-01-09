@@ -10,6 +10,12 @@ namespace Engine
 	class RenderCommand
 	{
 	public:
+		inline static void Init()
+		{
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		}
+
 		inline static void SetClearColor(const glm::vec4& color)
 		{
 
@@ -30,6 +36,7 @@ namespace Engine
 	class Renderer
 	{
 	public:
+		static void Init();
 		static void BeginScene(OrthographicCamera& camera);
 		static void EndScene();
 

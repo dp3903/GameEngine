@@ -5,6 +5,12 @@
 
 namespace Engine {
 
+
+	std::shared_ptr<VertexArray> VertexArray::Create()
+	{
+		return std::shared_ptr<VertexArray>(new VertexArray());
+	}
+
 	VertexArray::VertexArray()
 	{
 		glCreateVertexArrays(1, &m_RendererID);
