@@ -8,9 +8,22 @@ namespace Engine {
 	// VertexBuffer /////////////////////////////////////////////////////////////
 	/////////////////////////////////////////////////////////////////////////////
 
+	std::shared_ptr<VertexBuffer> VertexBuffer::Create(uint32_t size)
+	{
+		return std::shared_ptr<VertexBuffer>(new VertexBuffer(size));
+	}
+
 	std::shared_ptr<VertexBuffer> VertexBuffer::Create(float* vertices, uint32_t size)
 	{
 		return std::shared_ptr<VertexBuffer>(new VertexBuffer(vertices, size));
+	}
+
+	VertexBuffer::VertexBuffer(uint32_t size)
+		: m_Layout({ { ShaderDataType::Float3, "a_Position" } })
+	{
+		glCreateBuffers(1, &m_RendererID);
+		glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
+		glBufferData(GL_ARRAY_BUFFER, size, nullptr, GL_DYNAMIC_DRAW);
 	}
 
 	VertexBuffer::VertexBuffer(float* vertices, uint32_t size)
@@ -34,6 +47,12 @@ namespace Engine {
 	void VertexBuffer::Unbind() const
 	{
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
+	}
+
+	void VertexBuffer::SetData(const void* data, uint32_t size)
+	{
+		glBindBuffer(GL_ARRAY_BUFFER, m_RendererID);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, size, data);
 	}
 
 	/////////////////////////////////////////////////////////////////////////////

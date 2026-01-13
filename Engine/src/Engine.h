@@ -22,6 +22,6 @@
 
 // -----------------------------------
 
-// -------Entry point--------
-#include "Engine/Entrypoint.h"
+// -------Entry point(add this include only in the file that is the entrypoint to the game.)--------
+//#include "Engine/Entrypoint.h"
 // --------------------------

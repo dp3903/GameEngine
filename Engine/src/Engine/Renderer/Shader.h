@@ -18,13 +18,14 @@ namespace Engine {
 		void Bind() const;
 		void Unbind() const;
 
-		void UploadUniformInt(const std::string& name, int value);
-		void UploadUniformFloat(const std::string& name, float value);
-		void UploadUniformFloat2(const std::string& name, const glm::vec2& value);
-		void UploadUniformFloat3(const std::string& name, const glm::vec3& value);
-		void UploadUniformFloat4(const std::string& name, const glm::vec4& value);
-		void UploadUniformMat3(const std::string& name, const glm::mat3& matrix);
-		void UploadUniformMat4(const std::string& name, const glm::mat4& matrix);
+		void SetInt(const std::string& name, int value);
+		void SetIntArray(const std::string& name, int* values, uint32_t count);
+		void SetFloat(const std::string& name, float value);
+		void SetFloat2(const std::string& name, const glm::vec2& value);
+		void SetFloat3(const std::string& name, const glm::vec3& value);
+		void SetFloat4(const std::string& name, const glm::vec4& value);
+		void SetMat3(const std::string& name, const glm::mat3& matrix);
+		void SetMat4(const std::string& name, const glm::mat4& matrix);
 
 		inline const std::string& GetName() const { return m_Name; }
 
