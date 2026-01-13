@@ -1,4 +1,7 @@
 #pragma once
+
+#define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_TRACE
+
 #include "egpch.h"
 #include <spdlog/spdlog.h>
 #include "spdlog/fmt/ostr.h"
@@ -22,14 +25,16 @@ namespace Engine {
 
 }
 
-#define ENGINE_LOG_FATAL(...) ::Engine::Logger::GetEngineLogger()->critical(__VA_ARGS__)
-#define ENGINE_LOG_ERROR(...) ::Engine::Logger::GetEngineLogger()->error(__VA_ARGS__)
-#define ENGINE_LOG_WARN(...) ::Engine::Logger::GetEngineLogger()->warn(__VA_ARGS__)
-#define ENGINE_LOG_INFO(...) ::Engine::Logger::GetEngineLogger()->info(__VA_ARGS__)
-#define ENGINE_LOG_TRACE(...) ::Engine::Logger::GetEngineLogger()->trace(__VA_ARGS__)
+// Engine Logging
+#define ENGINE_LOG_FATAL(...) SPDLOG_LOGGER_CRITICAL(::Engine::Logger::GetEngineLogger(), __VA_ARGS__)
+#define ENGINE_LOG_ERROR(...) SPDLOG_LOGGER_ERROR(::Engine::Logger::GetEngineLogger(), __VA_ARGS__)
+#define ENGINE_LOG_WARN(...)  SPDLOG_LOGGER_WARN(::Engine::Logger::GetEngineLogger(), __VA_ARGS__)
+#define ENGINE_LOG_INFO(...)  SPDLOG_LOGGER_INFO(::Engine::Logger::GetEngineLogger(), __VA_ARGS__)
+#define ENGINE_LOG_TRACE(...) SPDLOG_LOGGER_TRACE(::Engine::Logger::GetEngineLogger(), __VA_ARGS__)
 
-#define APP_LOG_FATAL(...) ::Engine::Logger::GetAppLogger()->critical(__VA_ARGS__)
-#define APP_LOG_ERROR(...) ::Engine::Logger::GetAppLogger()->error(__VA_ARGS__)
-#define APP_LOG_WARN(...) ::Engine::Logger::GetAppLogger()->warn(__VA_ARGS__)
-#define APP_LOG_INFO(...) ::Engine::Logger::GetAppLogger()->info(__VA_ARGS__)
-#define APP_LOG_TRACE(...) ::Engine::Logger::GetAppLogger()->trace(__VA_ARGS__)
+// App Logging
+#define APP_LOG_FATAL(...)    SPDLOG_LOGGER_CRITICAL(::Engine::Logger::GetAppLogger(), __VA_ARGS__)
+#define APP_LOG_ERROR(...)    SPDLOG_LOGGER_ERROR(::Engine::Logger::GetAppLogger(), __VA_ARGS__)
+#define APP_LOG_WARN(...)     SPDLOG_LOGGER_WARN(::Engine::Logger::GetAppLogger(), __VA_ARGS__)
+#define APP_LOG_INFO(...)     SPDLOG_LOGGER_INFO(::Engine::Logger::GetAppLogger(), __VA_ARGS__)
+#define APP_LOG_TRACE(...)    SPDLOG_LOGGER_TRACE(::Engine::Logger::GetAppLogger(), __VA_ARGS__)

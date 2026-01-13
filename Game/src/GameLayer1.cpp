@@ -29,7 +29,7 @@ void GameLayer1::OnUpdate(float ts)
 
 	// Update
 	m_CameraController.OnUpdate(ts);
-	
+
 	// Render
 	Engine::Renderer2D::ResetStats();
 
@@ -50,13 +50,13 @@ void GameLayer1::OnUpdate(float ts)
 		}
 	}
 	Engine::Renderer2D::EndScene();
+
 }
 
 void GameLayer1::OnImGuiRender()
 {
+	
 	ImGui::Begin("Settings");
-	ImGui::ColorEdit4("Square Color", glm::value_ptr(m_SquareColor));
-
 	auto stats = Engine::Renderer2D::GetStats();
 	ImGui::Text("Renderer2D Stats:");
 	ImGui::Text("Draw Calls: %d", stats.DrawCalls);
@@ -64,7 +64,12 @@ void GameLayer1::OnImGuiRender()
 	ImGui::Text("Vertices: %d", stats.GetTotalVertexCount());
 	ImGui::Text("Indices: %d", stats.GetTotalIndexCount());
 
+	ImGui::ColorEdit4("Square Color", glm::value_ptr(m_SquareColor));
+	uint32_t textureID = m_CheckerboardTexture->GetRendererID();
+	ImGui::Image((void*)textureID, ImVec2{ 256, 256 });
 	ImGui::End();
+
+	
 }
 
 void GameLayer1::OnEvent(Engine::Event& e)

@@ -12,7 +12,7 @@
 
 namespace Engine {
 
-	static bool s_GLFWInitialized = false;
+	static uint8_t s_GLFWWindowCount = 0;
 
 	static void GLFWErrorCallback(int error, const char* description)
 	{
@@ -42,16 +42,17 @@ namespace Engine {
 
 		ENGINE_LOG_INFO("Creating window {0} ({1}, {2})", props.Title, props.Width, props.Height);
 
-		if (!s_GLFWInitialized)
+		if (s_GLFWWindowCount == 0)
 		{
 			// TODO: glfwTerminate on system shutdown
 			int success = glfwInit();
 			ASSERT(success, "Could not intialize GLFW!");
 			glfwSetErrorCallback(GLFWErrorCallback);
-			s_GLFWInitialized = true;
 		}
 
 		m_Window = glfwCreateWindow((int)props.Width, (int)props.Height, m_Data.Title.c_str(), nullptr, nullptr);
+		s_GLFWWindowCount++;
+
 		glfwMakeContextCurrent(m_Window);
 		int status = gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
 		ASSERT(status, "Failed to initialize Glad!");
@@ -84,113 +85,75 @@ namespace Engine {
 
 		glfwSetKeyCallback(m_Window, [](GLFWwindow* window, int key, int scancode, int action, int mods)
 		{
-			// Pass to ImGui
-			//ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
+			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 
-			// Pass to Engine
-			ImGuiIO& io = ImGui::GetIO();
-			if (!io.WantCaptureKeyboard)
+			switch (action)
 			{
-				WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-
-				switch (action)
+				case GLFW_PRESS:
 				{
-					case GLFW_PRESS:
-					{
-						KeyPressedEvent event(key, 0);
-						data.EventCallback(event);
-						break;
-					}
-					case GLFW_RELEASE:
-					{
-						KeyReleasedEvent event(key);
-						data.EventCallback(event);
-						break;
-					}
-					case GLFW_REPEAT:
-					{
-						KeyPressedEvent event(key, 1);
-						data.EventCallback(event);
-						break;
-					}
+					KeyPressedEvent event(static_cast<KeyCode>(key), 0);
+					data.EventCallback(event);
+					break;
+				}
+				case GLFW_RELEASE:
+				{
+					KeyReleasedEvent event(static_cast<KeyCode>(key));
+					data.EventCallback(event);
+					break;
+				}
+				case GLFW_REPEAT:
+				{
+					KeyPressedEvent event(static_cast<KeyCode>(key), 1);
+					data.EventCallback(event);
+					break;
 				}
 			}
-
 		});
 
 		glfwSetMouseButtonCallback(m_Window, [](GLFWwindow* window, int button, int action, int mods)
 		{
-			// Pass to ImGui
-			//ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
+			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 
-			// Pass to Engine
-			ImGuiIO& io = ImGui::GetIO();
-			if (!io.WantCaptureMouse)
+			switch (action)
 			{
-				WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-
-				switch (action)
+				case GLFW_PRESS:
 				{
-					case GLFW_PRESS:
-					{
-						MouseButtonPressedEvent event(button);
-						data.EventCallback(event);
-						break;
-					}
-					case GLFW_RELEASE:
-					{
-						MouseButtonReleasedEvent event(button);
-						data.EventCallback(event);
-						break;
-					}
+					MouseButtonPressedEvent event(static_cast<MouseCode>(button));
+					data.EventCallback(event);
+					break;
+				}
+				case GLFW_RELEASE:
+				{
+					MouseButtonReleasedEvent event(static_cast<MouseCode>(button));
+					data.EventCallback(event);
+					break;
 				}
 			}
 		});
 
 		glfwSetScrollCallback(m_Window, [](GLFWwindow* window, double xOffset, double yOffset)
 		{
-			// Pass to ImGui
-			//ImGui_ImplGlfw_ScrollCallback(window, xOffset, yOffset);
-				
-			// Pass to Engine
-			ImGuiIO& io = ImGui::GetIO();
-			if (!io.WantCaptureMouse)
-			{
-				WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
+			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 
-				MouseScrolledEvent event((float)xOffset, (float)yOffset);
-				data.EventCallback(event);
-			}
+			MouseScrolledEvent event((float)xOffset, (float)yOffset);
+			data.EventCallback(event);
 		});
 
 		glfwSetCursorPosCallback(m_Window, [](GLFWwindow* window, double xPos, double yPos)
 		{
-			// Pass to ImGui
-			//ImGui_ImplGlfw_CursorPosCallback(window, xPos, yPos);
+			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 
-			// Pass to Engine
-			ImGuiIO& io = ImGui::GetIO();
-			if (!io.WantCaptureMouse)
-			{
-				WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
-
-				MouseMovedEvent event((float)xPos, (float)yPos);
-				data.EventCallback(event);
-			}
+			MouseMovedEvent event((float)xPos, (float)yPos);
+			data.EventCallback(event);
 		});
 
 		// Char Callback (Crucial for typing text into ImGui input fields)
-		glfwSetCharCallback(m_Window, [](GLFWwindow* window, unsigned int keycode)
+		glfwSetCharCallback(m_Window, [](GLFWwindow* window, unsigned int key)
 		{
-			// Pass to ImGui
-			//ImGui_ImplGlfw_CharCallback(window, keycode);
+			WindowData& data = *(WindowData*)glfwGetWindowUserPointer(window);
 
-			// Pass to Engine (if you have a KeyTypedEvent)
-			//ImGuiIO& io = ImGui::GetIO();
-			//if (!io.WantCaptureKeyboard)
-			//{
-
-			//}
+			KeyTypedEvent event(static_cast<KeyCode>(key));
+			data.EventCallback(event);
 		});
 
 		glfwSetWindowFocusCallback(m_Window, [](GLFWwindow* window, int focused)

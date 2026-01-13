@@ -1,131 +1,156 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Engine">
-      <UniqueIdentifier>{DBC7D3B0-C769-FE86-B024-12DB9C6585D7}</UniqueIdentifier>
+    <Filter Include="src">
+      <UniqueIdentifier>{2DAB880B-99B4-887C-2230-9F7C8E38947C}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Engine\Events">
-      <UniqueIdentifier>{5FAFB439-CB6F-3070-94AA-79ED002A754C}</UniqueIdentifier>
+    <Filter Include="src\Engine">
+      <UniqueIdentifier>{12A1320E-FE58-745B-6760-4DB753370F4C}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Engine\Layers">
-      <UniqueIdentifier>{3A9A9748-A65A-137F-6F95-5CFCDB14585B}</UniqueIdentifier>
+    <Filter Include="src\Engine\Events">
+      <UniqueIdentifier>{B624EAB0-223B-E846-6BB2-7368D707B9CE}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Engine\Renderer">
-      <UniqueIdentifier>{E1119970-4D9D-0635-56AE-8929C2B86235}</UniqueIdentifier>
+    <Filter Include="src\Engine\Layers">
+      <UniqueIdentifier>{910FCDBF-FD25-CB55-469D-5677B2F29BDD}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Engine\Window">
-      <UniqueIdentifier>{6210CB62-CED0-4699-970B-9016038B8B75}</UniqueIdentifier>
+    <Filter Include="src\Engine\Renderer">
+      <UniqueIdentifier>{F838018B-649A-DE98-ED07-254B59681558}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Engine\Window">
+      <UniqueIdentifier>{B98500DA-259C-FE6F-6E13-8A91DA68CFF7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="vendors">
+      <UniqueIdentifier>{86EAAF72-F2C9-2E0E-FBE1-B9E46740956F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="vendors\stb_image">
+      <UniqueIdentifier>{A0FA5DE2-0C11-5C78-5588-E799C1DD2C00}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\Engine.h" />
+    <ClInclude Include="src\Engine.h">
+      <Filter>src</Filter>
+    </ClInclude>
     <ClInclude Include="src\Engine\Application.h">
-      <Filter>Engine</Filter>
+      <Filter>src\Engine</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine\Core.h">
-      <Filter>Engine</Filter>
+      <Filter>src\Engine</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine\Entrypoint.h">
-      <Filter>Engine</Filter>
+      <Filter>src\Engine</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine\Events\ApplicationEvent.h">
-      <Filter>Engine\Events</Filter>
+      <Filter>src\Engine\Events</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine\Events\Event.h">
-      <Filter>Engine\Events</Filter>
+      <Filter>src\Engine\Events</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine\Events\KeyEvent.h">
-      <Filter>Engine\Events</Filter>
+      <Filter>src\Engine\Events</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine\Events\MouseEvent.h">
-      <Filter>Engine\Events</Filter>
+      <Filter>src\Engine\Events</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine\Layers\ImGuiLayer.h">
-      <Filter>Engine\Layers</Filter>
+      <Filter>src\Engine\Layers</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine\Layers\Layer.h">
-      <Filter>Engine\Layers</Filter>
+      <Filter>src\Engine\Layers</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine\Layers\LayerStack.h">
-      <Filter>Engine\Layers</Filter>
+      <Filter>src\Engine\Layers</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine\Logger.h">
-      <Filter>Engine</Filter>
+      <Filter>src\Engine</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine\Renderer\Buffer.h">
-      <Filter>Engine\Renderer</Filter>
+      <Filter>src\Engine\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\Renderer\FrameBuffer.h">
+      <Filter>src\Engine\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine\Renderer\OrthographicCamera.h">
-      <Filter>Engine\Renderer</Filter>
+      <Filter>src\Engine\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine\Renderer\Renderer.h">
-      <Filter>Engine\Renderer</Filter>
+      <Filter>src\Engine\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine\Renderer\Shader.h">
-      <Filter>Engine\Renderer</Filter>
+      <Filter>src\Engine\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine\Renderer\Texture.h">
-      <Filter>Engine\Renderer</Filter>
+      <Filter>src\Engine\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine\Renderer\VertexArray.h">
-      <Filter>Engine\Renderer</Filter>
+      <Filter>src\Engine\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine\Window\Input.h">
-      <Filter>Engine\Window</Filter>
+      <Filter>src\Engine\Window</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine\Window\KeyCodes.h">
-      <Filter>Engine\Window</Filter>
+      <Filter>src\Engine\Window</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine\Window\MouseButtonCodes.h">
-      <Filter>Engine\Window</Filter>
+      <Filter>src\Engine\Window</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine\Window\Window.h">
-      <Filter>Engine\Window</Filter>
+      <Filter>src\Engine\Window</Filter>
     </ClInclude>
-    <ClInclude Include="src\egpch.h" />
-    <ClInclude Include="vendors\stb_image\stb_image.h" />
+    <ClInclude Include="src\egpch.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="vendors\stb_image\stb_image.h">
+      <Filter>vendors\stb_image</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine\Application.cpp">
-      <Filter>Engine</Filter>
+      <Filter>src\Engine</Filter>
     </ClCompile>
     <ClCompile Include="src\Engine\Layers\ImGuiLayer.cpp">
-      <Filter>Engine\Layers</Filter>
+      <Filter>src\Engine\Layers</Filter>
     </ClCompile>
     <ClCompile Include="src\Engine\Layers\Layer.cpp">
-      <Filter>Engine\Layers</Filter>
+      <Filter>src\Engine\Layers</Filter>
     </ClCompile>
     <ClCompile Include="src\Engine\Layers\LayerStack.cpp">
-      <Filter>Engine\Layers</Filter>
+      <Filter>src\Engine\Layers</Filter>
     </ClCompile>
     <ClCompile Include="src\Engine\Logger.cpp">
-      <Filter>Engine</Filter>
+      <Filter>src\Engine</Filter>
     </ClCompile>
     <ClCompile Include="src\Engine\Renderer\Buffer.cpp">
-      <Filter>Engine\Renderer</Filter>
+      <Filter>src\Engine\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Engine\Renderer\FrameBuffer.cpp">
+      <Filter>src\Engine\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="src\Engine\Renderer\OrthographicCamera.cpp">
-      <Filter>Engine\Renderer</Filter>
+      <Filter>src\Engine\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="src\Engine\Renderer\Renderer.cpp">
-      <Filter>Engine\Renderer</Filter>
+      <Filter>src\Engine\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="src\Engine\Renderer\Shader.cpp">
-      <Filter>Engine\Renderer</Filter>
+      <Filter>src\Engine\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="src\Engine\Renderer\Texture.cpp">
-      <Filter>Engine\Renderer</Filter>
+      <Filter>src\Engine\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="src\Engine\Renderer\VertexArray.cpp">
-      <Filter>Engine\Renderer</Filter>
+      <Filter>src\Engine\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="src\Engine\Window\Input.cpp">
-      <Filter>Engine\Window</Filter>
+      <Filter>src\Engine\Window</Filter>
     </ClCompile>
     <ClCompile Include="src\Engine\Window\Window.cpp">
-      <Filter>Engine\Window</Filter>
+      <Filter>src\Engine\Window</Filter>
     </ClCompile>
-    <ClCompile Include="src\egpch.cpp" />
-    <ClCompile Include="vendors\stb_image\stb_image.cpp" />
+    <ClCompile Include="src\egpch.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="vendors\stb_image\stb_image.cpp">
+      <Filter>vendors\stb_image</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>
