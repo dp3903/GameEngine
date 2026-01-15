@@ -97,10 +97,14 @@
   <ItemGroup>
     <ClInclude Include="src\ExampleLayer.h" />
     <ClInclude Include="src\GameLayer1.h" />
+    <ClInclude Include="src\ParticleSystem.h" />
+    <ClInclude Include="src\Random.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\GameApp.cpp" />
     <ClCompile Include="src\GameLayer1.cpp" />
+    <ClCompile Include="src\ParticleSystem.cpp" />
+    <ClCompile Include="src\Random.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Engine\Engine.vcxproj">

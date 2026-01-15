@@ -13,6 +13,15 @@ void GameLayer1::OnAttach()
 {
 	m_CheckerboardTexture = Engine::Texture2D::Create("assets/textures/Checkerboard.png");
 
+	// Particle Init here
+	m_Particle.ColorBegin = { 3   / 255.0f, 252 / 255.0f, 252 / 255.0f, 1.0f };
+	m_Particle.ColorEnd =   { 236 / 255.0f, 3   / 255.0f, 252 / 255.0f, 1.0f };
+	m_Particle.SizeBegin = 0.2f, m_Particle.SizeVariation = 0.1f, m_Particle.SizeEnd = 0.0f;
+	m_Particle.LifeTime = 1.0f;
+	m_Particle.Velocity = { 0.0f, 0.0f };
+	m_Particle.VelocityVariation = { 3.0f, 1.0f };
+	m_Particle.Position = { 0.0f, 0.0f };
+
 	APP_LOG_INFO("Game Layer 1 Attached");
 }
 
@@ -46,9 +55,28 @@ void GameLayer1::OnUpdate(float ts)
 		for (float x = -5.0f; x < 5.0f; x += 0.5f)
 		{
 			glm::vec4 color = { (x + 5.0f) / 10.0f, 0.4f, (y + 5.0f) / 10.0f, 0.7f };
-			Engine::Renderer2D::DrawQuad({ x, y }, { 0.5f, 0.5f }, color);
+			Engine::Renderer2D::DrawQuad({ x, y }, { m_BGSquareSize, m_BGSquareSize }, color);
 		}
 	}
+
+	if (Engine::Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+	{
+		auto [x, y] = Engine::Input::GetMousePosition();
+		auto width = Engine::Application::Get().GetWindow().GetWidth();
+		auto height = Engine::Application::Get().GetWindow().GetHeight();
+
+		auto bounds = m_CameraController.GetBounds();
+		auto pos = m_CameraController.GetCamera().GetPosition();
+		x = (x / width) * bounds.GetWidth() - bounds.GetWidth() * 0.5f;
+		y = bounds.GetHeight() * 0.5f - (y / height) * bounds.GetHeight();
+		m_Particle.Position = { x + pos.x, y + pos.y };
+		for (int i = 0; i < 5; i++)
+			m_ParticleSystem.Emit(m_Particle);
+	}
+
+	m_ParticleSystem.OnUpdate(ts);
+	m_ParticleSystem.OnRender();
+	
 	Engine::Renderer2D::EndScene();
 
 }
@@ -57,6 +85,7 @@ void GameLayer1::OnImGuiRender()
 {
 	
 	ImGui::Begin("Settings");
+
 	auto stats = Engine::Renderer2D::GetStats();
 	ImGui::Text("Renderer2D Stats:");
 	ImGui::Text("Draw Calls: %d", stats.DrawCalls);
@@ -65,8 +94,8 @@ void GameLayer1::OnImGuiRender()
 	ImGui::Text("Indices: %d", stats.GetTotalIndexCount());
 
 	ImGui::ColorEdit4("Square Color", glm::value_ptr(m_SquareColor));
-	uint32_t textureID = m_CheckerboardTexture->GetRendererID();
-	ImGui::Image((void*)textureID, ImVec2{ 256, 256 });
+	ImGui::DragFloat("BG Square size", &m_BGSquareSize, 0.001f, 0.0f, 1.0f);
+
 	ImGui::End();
 
 	

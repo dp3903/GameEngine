@@ -4,6 +4,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "imgui/imgui.h"
+#include "ParticleSystem.h"
 
 class GameLayer1 : public Engine::Layer
 {
@@ -26,4 +27,8 @@ private:
 	std::shared_ptr<Engine::Texture2D> m_CheckerboardTexture;
 
 	glm::vec4 m_SquareColor = { 0.2f, 0.3f, 0.8f, 1.0f };
+	float m_BGSquareSize = 0.5f;
+
+	ParticleProps m_Particle;
+	ParticleSystem m_ParticleSystem;
 };
