@@ -29,7 +29,7 @@ project "ImGui"
 
 	includedirs
 	{
-        "%{IncludeDir.GLFW}"
+        "%{wks.location}/Engine/vendors/GLFW/include"
 	}
 
 	filter "system:windows"
