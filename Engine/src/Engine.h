@@ -7,6 +7,10 @@
 #include "Engine/Layers/Layer.h"
 #include "Engine/Layers/ImGuiLayer.h"
 
+#include "Engine/Scene/Components.h"
+#include "Engine/Scene/Entity.h"
+#include "Engine/Scene/Scene.h"
+
 #include "Engine/Window/Input.h"
 #include "Engine/Window/KeyCodes.h"
 #include "Engine/Window/MouseButtonCodes.h"

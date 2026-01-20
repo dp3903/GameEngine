@@ -22,6 +22,57 @@ namespace Engine
 		fbSpec.Height = 720;
 		m_Framebuffer = Framebuffer::Create(fbSpec);
 
+		m_ActiveScene = std::make_shared<Scene>();
+
+		// Entity
+		auto square = m_ActiveScene->CreateEntity("Green Square");
+		square.AddComponent<SpriteRendererComponent>(glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
+		auto redSquare = m_ActiveScene->CreateEntity("Red Square");
+		redSquare.AddComponent<SpriteRendererComponent>(glm::vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
+
+		m_SquareEntity = square;
+
+		m_CameraEntity = m_ActiveScene->CreateEntity("Camera Entity");
+		m_CameraEntity.AddComponent<CameraComponent>();
+
+		m_SecondCamera = m_ActiveScene->CreateEntity("Clip-Space Entity");
+		auto& cc = m_SecondCamera.AddComponent<CameraComponent>();
+		cc.Primary = false;
+
+		class CameraController : public ScriptableEntity
+		{
+		public:
+			virtual void OnCreate() override
+			{
+				auto& transform = GetComponent<TransformComponent>().Transform;
+				transform[3][0] = rand() % 10 - 5.0f;
+			}
+
+			virtual void OnDestroy() override
+			{
+			}
+
+			virtual void OnUpdate(float ts) override
+			{
+				auto& transform = GetComponent<TransformComponent>().Transform;
+				float speed = 5.0f;
+
+				if (Input::IsKeyPressed(KeyCode::A))
+					transform[3][0] -= speed * ts;
+				if (Input::IsKeyPressed(KeyCode::D))
+					transform[3][0] += speed * ts;
+				if (Input::IsKeyPressed(KeyCode::W))
+					transform[3][1] += speed * ts;
+				if (Input::IsKeyPressed(KeyCode::S))
+					transform[3][1] -= speed * ts;
+			}
+		};
+
+		m_CameraEntity.AddComponent<NativeScriptComponent>().Bind<CameraController>();
+		m_SecondCamera.AddComponent<NativeScriptComponent>().Bind<CameraController>();
+
+		m_SceneHierarchyPanel.SetContext(m_ActiveScene);
+
 		APP_LOG_INFO("Editor Attached");
 	}
 
@@ -43,6 +94,8 @@ namespace Engine
 		{
 			m_Framebuffer->Resize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 			m_CameraController.OnResize(m_ViewportSize.x, m_ViewportSize.y);
+
+			m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 		}
 
 		// Update
@@ -55,21 +108,10 @@ namespace Engine
 
 		RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1 });
 		RenderCommand::Clear();
+		
+		// Update scene
+		m_ActiveScene->OnUpdate(ts);
 
-		Renderer2D::BeginScene(m_CameraController.GetCamera());
-		Renderer2D::DrawQuad({  0.0f,  0.0f, -0.1f }, { 20.0f, 20.0f }, m_CheckerboardTexture, 10);
-		Renderer2D::DrawQuad({ -1.0f,  0.0f }, { 0.8f,  0.8f }, { 0.8f, 0.2f, 0.3f, 1.0f });
-		Renderer2D::DrawRotatedQuad({  0.5f, -0.5f }, { 0.5f,  0.75f }, rotation, m_SquareColor);
-
-		for (float y = -5.0f; y < 5.0f; y += 0.5f)
-		{
-			for (float x = -5.0f; x < 5.0f; x += 0.5f)
-			{
-				glm::vec4 color = { (x + 5.0f) / 10.0f, 0.4f, (y + 5.0f) / 10.0f, 0.7f };
-				Renderer2D::DrawQuad({ x, y }, { 0.5f, 0.5f }, color);
-			}
-		}
-		Renderer2D::EndScene();
 		m_Framebuffer->Unbind();
 	}
 
@@ -107,58 +149,89 @@ namespace Engine
 		// any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
 		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 		ImGui::Begin("DockSpace Demo", &dockspaceOpen, window_flags);
-		ImGui::PopStyleVar();
+			ImGui::PopStyleVar();
 
-		if (opt_fullscreen)
-			ImGui::PopStyleVar(2);
+			if (opt_fullscreen)
+				ImGui::PopStyleVar(2);
 
-		// DockSpace
-		ImGuiIO& io = ImGui::GetIO();
-		if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
-		{
-			ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-			ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
-		}
-
-		if (ImGui::BeginMenuBar())
-		{
-			if (ImGui::BeginMenu("File"))
+			// DockSpace
+			ImGuiIO& io = ImGui::GetIO();
+			if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
 			{
-				// Disabling fullscreen would allow the window to be moved to the front of other windows, 
-				// which we can't undo at the moment without finer window depth/z control.
-				//ImGui::MenuItem("Fullscreen", NULL, &opt_fullscreen_persistant);
-
-				if (ImGui::MenuItem("Exit")) Application::Get().Close();
-				ImGui::EndMenu();
+				ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+				ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
 			}
-			ImGui::EndMenuBar();
-		}
 
-		ImGui::Begin("Settings");
-		auto stats = Renderer2D::GetStats();
-		ImGui::Text("Renderer2D Stats:");
-		ImGui::Text("Draw Calls: %d", stats.DrawCalls);
-		ImGui::Text("Quads: %d", stats.QuadCount);
-		ImGui::Text("Vertices: %d", stats.GetTotalVertexCount());
-		ImGui::Text("Indices: %d", stats.GetTotalIndexCount());
+			if (ImGui::BeginMenuBar())
+			{
+				if (ImGui::BeginMenu("File"))
+				{
+					// Disabling fullscreen would allow the window to be moved to the front of other windows, 
+					// which we can't undo at the moment without finer window depth/z control.
+					//ImGui::MenuItem("Fullscreen", NULL, &opt_fullscreen_persistant);
 
-		ImGui::ColorEdit4("Square Color", glm::value_ptr(m_SquareColor));
-		ImGui::End();
+					if (ImGui::MenuItem("Exit")) Application::Get().Close();
+					ImGui::EndMenu();
+				}
+				ImGui::EndMenuBar();
+			}
 
-		ImGui::Begin("Viewport");
+			ImGui::Begin("Settings");
+
+				auto stats = Renderer2D::GetStats();
+				ImGui::Text("Renderer2D Stats:");
+				ImGui::Text("Draw Calls: %d", stats.DrawCalls);
+				ImGui::Text("Quads: %d", stats.QuadCount);
+				ImGui::Text("Vertices: %d", stats.GetTotalVertexCount());
+				ImGui::Text("Indices: %d", stats.GetTotalIndexCount());
+
+				if (m_SquareEntity)
+				{
+					ImGui::Separator();
+					auto& tag = m_SquareEntity.GetComponent<TagComponent>().Tag;
+					ImGui::Text("%s", tag.c_str());
+
+					auto& squareColor = m_SquareEntity.GetComponent<SpriteRendererComponent>().Color;
+					ImGui::ColorEdit4("Square Color", glm::value_ptr(squareColor));
+					ImGui::Separator();
+				}
+
+				ImGui::DragFloat3("Camera A Transform",
+					glm::value_ptr(m_CameraEntity.GetComponent<TransformComponent>().Transform[3]));
+				ImGui::DragFloat3("Camera B Transform",
+					glm::value_ptr(m_SecondCamera.GetComponent<TransformComponent>().Transform[3]));
+
+				if (ImGui::Checkbox("Camera A", &m_PrimaryCamera))
+				{
+					m_CameraEntity.GetComponent<CameraComponent>().Primary = m_PrimaryCamera;
+					m_SecondCamera.GetComponent<CameraComponent>().Primary = !m_PrimaryCamera;
+				}
+				
+				{
+					auto& camera = m_SecondCamera.GetComponent<CameraComponent>().Camera;
+					float orthoSize = camera.GetOrthographicSize();
+					if (ImGui::DragFloat("Second Camera Ortho Size", &orthoSize))
+						camera.SetOrthographicSize(orthoSize);
+				}
 		
-		m_ViewportFocused = ImGui::IsWindowFocused();
-		m_ViewportHovered = ImGui::IsWindowHovered();
-		Application::Get().GetImGuiLayer()->BlockEvents(!m_ViewportFocused || !m_ViewportHovered);
+			ImGui::End();
 
-		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+			m_SceneHierarchyPanel.OnImGuiRender();
+
+			ImGui::Begin("Viewport");
 		
-		m_ViewportSize = { viewportPanelSize.x, viewportPanelSize.y };
+				m_ViewportFocused = ImGui::IsWindowFocused();
+				m_ViewportHovered = ImGui::IsWindowHovered();
+				Application::Get().GetImGuiLayer()->BlockEvents(!m_ViewportFocused || !m_ViewportHovered);
+
+				ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+		
+				m_ViewportSize = { viewportPanelSize.x, viewportPanelSize.y };
 			
-		uint32_t textureID = m_Framebuffer->GetColorAttachmentRendererID();
-		ImGui::Image((void*)textureID, ImVec2{ m_ViewportSize.x, m_ViewportSize.y }, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+				uint32_t textureID = m_Framebuffer->GetColorAttachmentRendererID();
+				ImGui::Image((void*)textureID, ImVec2{ m_ViewportSize.x, m_ViewportSize.y }, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
 		
-		ImGui::End();
+			ImGui::End();
 
 		ImGui::End();
 		

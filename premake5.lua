@@ -15,6 +15,7 @@ IncludeDir["GLAD"] = "Engine/vendors/glad/include"
 IncludeDir["GLM"] = "Engine/vendors/glm"
 IncludeDir["ImGui"] = "Engine/vendors/imgui"
 IncludeDir["stb_image"] = "Engine/vendors/stb_image"
+IncludeDir["entt"] = "Engine/vendors/entt/include"
 
 include "Engine/vendors/glfw"
 include "Engine/vendors/glad"
@@ -48,7 +49,8 @@ project "Engine"
 		"%{IncludeDir.GLAD}",
 		"%{IncludeDir.GLM}",
 		"%{IncludeDir.ImGui}",
-		"%{IncludeDir.stb_image}"
+		"%{IncludeDir.stb_image}",
+		"%{IncludeDir.entt}"
 	}
 
 	links 
@@ -106,6 +108,7 @@ project "Editor"
 		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.GLAD}",
 		"%{IncludeDir.GLM}",
+		"%{IncludeDir.entt}"
 	}
 
 	links
@@ -155,6 +158,7 @@ project "Game"
 		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.GLAD}",
 		"%{IncludeDir.GLM}",
+		"%{IncludeDir.entt}"
 	}
 
 	links

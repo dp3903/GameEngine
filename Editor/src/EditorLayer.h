@@ -4,6 +4,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "imgui/imgui.h"
+#include "Panels/SceneHierarchyPanel.h"
 
 namespace Engine
 {
@@ -28,8 +29,18 @@ namespace Engine
 		std::shared_ptr<Texture2D> m_CheckerboardTexture;
 		std::shared_ptr<Framebuffer> m_Framebuffer;
 
+		std::shared_ptr<Scene> m_ActiveScene;
+		Entity m_SquareEntity;
+		Entity m_CameraEntity;
+		Entity m_SecondCamera;
+
+		bool m_PrimaryCamera = true;
+
 		bool m_ViewportFocused = false, m_ViewportHovered = false;
 		glm::vec2 m_ViewportSize = { 0.0f, 0.0f };
 		glm::vec4 m_SquareColor = { 0.2f, 0.3f, 0.8f, 1.0f };
+
+		// Panels
+		SceneHierarchyPanel m_SceneHierarchyPanel;
 	};
 }
