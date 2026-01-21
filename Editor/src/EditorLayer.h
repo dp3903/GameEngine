@@ -1,6 +1,8 @@
 #pragma once
 
 #include <Engine.h>
+#include <Engine/Events/KeyEvent.h>
+
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "imgui/imgui.h"
@@ -20,6 +22,14 @@ namespace Engine
 		void OnUpdate(float ts) override;
 		virtual void OnImGuiRender() override;
 		void OnEvent(Event& e) override;
+
+	private:
+		bool OnKeyPressed(KeyPressedEvent& e);
+
+		void NewScene();
+		void OpenScene();
+		void SaveSceneAs();
+
 	private:
 		Engine::OrthographicCameraController m_CameraController;
 
