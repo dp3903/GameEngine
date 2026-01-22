@@ -16,11 +16,23 @@
     <Filter Include="src\Engine\Renderer">
       <UniqueIdentifier>{F838018B-649A-DE98-ED07-254B59681558}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\Engine\Scene">
+      <UniqueIdentifier>{AF1338A9-9B0C-57FB-C43E-3C80B0963607}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\Engine\Utils">
+      <UniqueIdentifier>{F2A765A9-DEA0-84FB-07D3-6980F32A6407}</UniqueIdentifier>
+    </Filter>
     <Filter Include="src\Engine\Window">
       <UniqueIdentifier>{B98500DA-259C-FE6F-6E13-8A91DA68CFF7}</UniqueIdentifier>
     </Filter>
     <Filter Include="vendors">
       <UniqueIdentifier>{86EAAF72-F2C9-2E0E-FBE1-B9E46740956F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="vendors\ImGuizmo">
+      <UniqueIdentifier>{A69308E4-928C-2736-BBBE-0CBBA7160742}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="vendors\nlohmann_json">
+      <UniqueIdentifier>{49FF6C0D-B56B-2808-7E5F-C065EA8A4A70}</UniqueIdentifier>
     </Filter>
     <Filter Include="vendors\stb_image">
       <UniqueIdentifier>{A0FA5DE2-0C11-5C78-5588-E799C1DD2C00}</UniqueIdentifier>
@@ -66,6 +78,9 @@
     <ClInclude Include="src\Engine\Renderer\Buffer.h">
       <Filter>src\Engine\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="src\Engine\Renderer\Camera.h">
+      <Filter>src\Engine\Renderer</Filter>
+    </ClInclude>
     <ClInclude Include="src\Engine\Renderer\FrameBuffer.h">
       <Filter>src\Engine\Renderer</Filter>
     </ClInclude>
@@ -84,13 +99,34 @@
     <ClInclude Include="src\Engine\Renderer\VertexArray.h">
       <Filter>src\Engine\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="src\Engine\Scene\Components.h">
+      <Filter>src\Engine\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\Scene\Entity.h">
+      <Filter>src\Engine\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\Scene\Scene.h">
+      <Filter>src\Engine\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\Scene\SceneCamera.h">
+      <Filter>src\Engine\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\Scene\SceneSerializer.h">
+      <Filter>src\Engine\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\Utils\FileDialogs.h">
+      <Filter>src\Engine\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\Utils\Math.h">
+      <Filter>src\Engine\Utils</Filter>
+    </ClInclude>
     <ClInclude Include="src\Engine\Window\Input.h">
       <Filter>src\Engine\Window</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine\Window\KeyCodes.h">
       <Filter>src\Engine\Window</Filter>
     </ClInclude>
-    <ClInclude Include="src\Engine\Window\MouseButtonCodes.h">
+    <ClInclude Include="src\Engine\Window\MouseCodes.h">
       <Filter>src\Engine\Window</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine\Window\Window.h">
@@ -99,16 +135,16 @@
     <ClInclude Include="src\egpch.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="vendors\ImGuizmo\ImGuizmo.h">
+      <Filter>vendors\ImGuizmo</Filter>
+    </ClInclude>
+    <ClInclude Include="vendors\nlohmann_json\json.hpp">
+      <Filter>vendors\nlohmann_json</Filter>
+    </ClInclude>
     <ClInclude Include="vendors\stb_image\stb_image.h">
       <Filter>vendors\stb_image</Filter>
     </ClInclude>
-    <ClInclude Include="src\Engine\Scene\Scene.h" />
-    <ClInclude Include="src\Engine\Scene\Components.h" />
-    <ClInclude Include="src\Engine\Scene\Entity.h" />
-    <ClInclude Include="src\Engine\Renderer\Camera.h" />
-    <ClInclude Include="src\Engine\Scene\SceneCamera.h" />
-    <ClInclude Include="src\Engine\Scene\SceneSerializer.h" />
-    <ClInclude Include="src\Engine\Utils\FileDialogs.h" />
+    <ClInclude Include="src\Engine\Renderer\EditorCamera.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine\Application.cpp">
@@ -147,6 +183,24 @@
     <ClCompile Include="src\Engine\Renderer\VertexArray.cpp">
       <Filter>src\Engine\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="src\Engine\Scene\Entity.cpp">
+      <Filter>src\Engine\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Engine\Scene\Scene.cpp">
+      <Filter>src\Engine\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Engine\Scene\SceneCamera.cpp">
+      <Filter>src\Engine\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Engine\Scene\SceneSerializer.cpp">
+      <Filter>src\Engine\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Engine\Utils\FileDialogs.cpp">
+      <Filter>src\Engine\Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Engine\Utils\Math.cpp">
+      <Filter>src\Engine\Utils</Filter>
+    </ClCompile>
     <ClCompile Include="src\Engine\Window\Input.cpp">
       <Filter>src\Engine\Window</Filter>
     </ClCompile>
@@ -156,13 +210,12 @@
     <ClCompile Include="src\egpch.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="vendors\ImGuizmo\ImGuizmo.cpp">
+      <Filter>vendors\ImGuizmo</Filter>
+    </ClCompile>
     <ClCompile Include="vendors\stb_image\stb_image.cpp">
       <Filter>vendors\stb_image</Filter>
     </ClCompile>
-    <ClCompile Include="src\Engine\Scene\Scene.cpp" />
-    <ClCompile Include="src\Engine\Scene\Entity.cpp" />
-    <ClCompile Include="src\Engine\Scene\SceneCamera.cpp" />
-    <ClCompile Include="src\Engine\Scene\SceneSerializer.cpp" />
-    <ClCompile Include="src\Engine\Utils\FileDialogs.cpp" />
+    <ClCompile Include="src\Engine\Renderer\EditorCamera.cpp" />
   </ItemGroup>
 </Project>

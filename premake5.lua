@@ -16,6 +16,8 @@ IncludeDir["GLM"] = "Engine/vendors/glm"
 IncludeDir["ImGui"] = "Engine/vendors/imgui"
 IncludeDir["stb_image"] = "Engine/vendors/stb_image"
 IncludeDir["entt"] = "Engine/vendors/entt/include"
+IncludeDir["nlohmann_json"] = "Engine/vendors/nlohmann_json"
+IncludeDir["ImGuizmo"] = "Engine/vendors/ImGuizmo"
 
 include "Engine/vendors/glfw"
 include "Engine/vendors/glad"
@@ -39,6 +41,9 @@ project "Engine"
 		"%{prj.name}/vendors/stb_image/**.cpp",
 		"%{prj.name}/vendors/glm/glm/**.hpp",
 		"%{prj.name}/vendors/glm/glm/**.inl",
+		"%{prj.name}/vendors/nlohmann_json/**.hpp",
+		"%{prj.name}/vendors/ImGuizmo/ImGuizmo.h",
+		"%{prj.name}/vendors/ImGuizmo/ImGuizmo.cpp"
 	}
 
 	includedirs
@@ -50,7 +55,8 @@ project "Engine"
 		"%{IncludeDir.GLM}",
 		"%{IncludeDir.ImGui}",
 		"%{IncludeDir.stb_image}",
-		"%{IncludeDir.entt}"
+		"%{IncludeDir.entt}",
+		"%{IncludeDir.ImGuizmo}"
 	}
 
 	links 
@@ -63,6 +69,9 @@ project "Engine"
 
     pchheader "egpch.h"
     pchsource "Engine/src/egpch.cpp"
+
+	filter "files:**/ImGuizmo/**.cpp"
+	flags { "NoPCH" }
 
 	filter "system:windows"
 		systemversion "latest"
@@ -108,7 +117,8 @@ project "Editor"
 		"%{IncludeDir.GLFW}",
 		"%{IncludeDir.GLAD}",
 		"%{IncludeDir.GLM}",
-		"%{IncludeDir.entt}"
+		"%{IncludeDir.entt}",
+		"%{IncludeDir.ImGuizmo}"
 	}
 
 	links

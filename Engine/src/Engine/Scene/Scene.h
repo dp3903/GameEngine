@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Engine/Renderer/EditorCamera.h"
 #include "entt.hpp"
 
 namespace Engine {
@@ -16,9 +17,12 @@ namespace Engine {
 		Entity CreateEntity(const std::string& name = std::string());
 		void DestroyEntity(Entity entity);
 
-		void OnUpdate(float ts);
+		void OnUpdateRuntime(float ts);
+		void OnUpdateEditor(float ts, EditorCamera& camera);
 		void OnViewportResize(uint32_t width, uint32_t height);
-	
+		
+		Entity GetPrimaryCameraEntity();
+
 	private:
 		template<typename T>
 		void OnComponentAdded(Entity entity, T& component);

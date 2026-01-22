@@ -2,7 +2,7 @@
 
 #include "egpch.h"
 #include "Engine/Core.h"
-#include "MouseButtonCodes.h"
+#include "MouseCodes.h"
 #include "KeyCodes.h"
 
 namespace Engine {

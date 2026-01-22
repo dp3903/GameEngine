@@ -13,7 +13,7 @@
 
 #include "Engine/Window/Input.h"
 #include "Engine/Window/KeyCodes.h"
-#include "Engine/Window/MouseButtonCodes.h"
+#include "Engine/Window/MouseCodes.h"
 
 // ---------Renderer------------------
 

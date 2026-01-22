@@ -5,6 +5,7 @@
 #include "Engine/Renderer/OrthographicCamera.h"
 #include "Texture.h"
 #include "Camera.h"
+#include "EditorCamera.h"
 
 namespace Engine
 {
@@ -60,6 +61,7 @@ namespace Engine
 		static void Shutdown();
 
 		static void BeginScene(const Camera& camera, const glm::mat4& transform);
+		static void BeginScene(const EditorCamera& camera);
 		static void BeginScene(const OrthographicCamera& camera);
 		static void EndScene();
 		static void Flush();
@@ -89,8 +91,10 @@ namespace Engine
 		};
 		static void ResetStats();
 		static Statistics GetStats();
+	
 	private:
-		static void FlushAndReset();
+		static void StartBatch();
+		static void NextBatch();
 	};
 }
 
