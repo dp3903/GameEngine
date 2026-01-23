@@ -43,12 +43,23 @@ namespace Engine {
 		for (const auto& element : layout)
 		{
 			glEnableVertexAttribArray(index);
-			glVertexAttribPointer(index,
-				element.GetCount(),
-				element.GetGLType(),
-				element.Normalized ? GL_TRUE : GL_FALSE,
-				layout.GetStride(),
-				(const void*)element.Offset);
+			if (element.GetGLType() == GL_FLOAT)
+			{
+				glVertexAttribPointer(index,
+					element.GetCount(),
+					element.GetGLType(),
+					element.Normalized ? GL_TRUE : GL_FALSE,
+					layout.GetStride(),
+					(const void*)element.Offset);
+			}
+			else
+			{
+				glVertexAttribIPointer(index,
+					element.GetCount(),
+					element.GetGLType(),
+					layout.GetStride(),
+					(const void*)element.Offset);
+			}
 			index++;
 		}
 

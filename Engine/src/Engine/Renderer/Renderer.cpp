@@ -89,6 +89,9 @@ namespace Engine {
 		glm::vec2 TexCoord;
 		float TexIndex;
 		float TilingFactor;
+
+		// Editor-only
+		int EntityID;
 	};
 
 	struct Renderer2DData
@@ -127,7 +130,8 @@ namespace Engine {
 			{ ShaderDataType::Float4, "a_Color" },
 			{ ShaderDataType::Float2, "a_TexCoord" },
 			{ ShaderDataType::Float,  "a_TexIndex" },
-			{ ShaderDataType::Float,  "a_TilingFactor" }
+			{ ShaderDataType::Float,  "a_TilingFactor" },
+			{ ShaderDataType::Int,    "a_EntityID"     }
 		});
 
 		s_Data.QuadVertexArray->AddVertexBuffer(s_Data.QuadVertexBuffer);
@@ -242,7 +246,7 @@ namespace Engine {
 		StartBatch();
 	}
 
-	void Renderer2D::DrawQuad(const glm::mat4& transform, const glm::vec4& color)
+	void Renderer2D::DrawQuad(const glm::mat4& transform, const glm::vec4& color, int entityID)
 	{
 		if (s_Data.QuadIndexCount >= Renderer2DData::MaxIndices)
 			NextBatch();
@@ -259,6 +263,7 @@ namespace Engine {
 			s_Data.QuadVertexBufferPtr->TexCoord = textureCoords[i];
 			s_Data.QuadVertexBufferPtr->TexIndex = textureIndex;
 			s_Data.QuadVertexBufferPtr->TilingFactor = tilingFactor;
+			s_Data.QuadVertexBufferPtr->EntityID = entityID;
 			s_Data.QuadVertexBufferPtr++;
 		}
 
@@ -267,7 +272,7 @@ namespace Engine {
 		s_Data.Stats.QuadCount++;
 	}
 
-	void Renderer2D::DrawQuad(const glm::mat4& transform, const std::shared_ptr<Texture2D>& texture, float tilingFactor, const glm::vec4& tintColor)
+	void Renderer2D::DrawQuad(const glm::mat4& transform, const std::shared_ptr<Texture2D>& texture, float tilingFactor, const glm::vec4& tintColor, int entityID)
 	{
 		if (s_Data.QuadIndexCount >= Renderer2DData::MaxIndices)
 			NextBatch();
@@ -301,6 +306,7 @@ namespace Engine {
 			s_Data.QuadVertexBufferPtr->TexCoord = textureCoords[i];
 			s_Data.QuadVertexBufferPtr->TexIndex = textureIndex;
 			s_Data.QuadVertexBufferPtr->TilingFactor = tilingFactor;
+			s_Data.QuadVertexBufferPtr->EntityID = entityID;
 			s_Data.QuadVertexBufferPtr++;
 		}
 
@@ -365,6 +371,11 @@ namespace Engine {
 			* glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
 		
 		DrawQuad(transform, texture, tilingFactor, tintColor);
+	}
+
+	void Renderer2D::DrawSprite(const glm::mat4& transform, SpriteRendererComponent& src, int entityID)
+	{
+		DrawQuad(transform, src.Color, entityID);
 	}
 
 	void Renderer2D::ResetStats()
