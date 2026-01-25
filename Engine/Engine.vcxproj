@@ -121,6 +121,7 @@
     <ClInclude Include="src\Engine\Renderer\Renderer.h" />
     <ClInclude Include="src\Engine\Renderer\Shader.h" />
     <ClInclude Include="src\Engine\Renderer\Texture.h" />
+    <ClInclude Include="src\Engine\Renderer\UniformBuffer.h" />
     <ClInclude Include="src\Engine\Renderer\VertexArray.h" />
     <ClInclude Include="src\Engine\Scene\Components.h" />
     <ClInclude Include="src\Engine\Scene\Entity.h" />
@@ -129,6 +130,7 @@
     <ClInclude Include="src\Engine\Scene\SceneSerializer.h" />
     <ClInclude Include="src\Engine\Utils\FileDialogs.h" />
     <ClInclude Include="src\Engine\Utils\Math.h" />
+    <ClInclude Include="src\Engine\Utils\Timer.h" />
     <ClInclude Include="src\Engine\Window\Input.h" />
     <ClInclude Include="src\Engine\Window\KeyCodes.h" />
     <ClInclude Include="src\Engine\Window\MouseCodes.h" />
@@ -151,6 +153,7 @@
     <ClCompile Include="src\Engine\Renderer\Renderer.cpp" />
     <ClCompile Include="src\Engine\Renderer\Shader.cpp" />
     <ClCompile Include="src\Engine\Renderer\Texture.cpp" />
+    <ClCompile Include="src\Engine\Renderer\UniformBuffer.cpp" />
     <ClCompile Include="src\Engine\Renderer\VertexArray.cpp" />
     <ClCompile Include="src\Engine\Scene\Entity.cpp" />
     <ClCompile Include="src\Engine\Scene\Scene.cpp" />

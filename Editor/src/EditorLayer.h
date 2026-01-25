@@ -9,6 +9,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include "imgui/imgui.h"
 #include "Panels/SceneHierarchyPanel.h"
+#include "Panels/ContentBrowserPanel.h"
 
 namespace Engine
 {
@@ -31,6 +32,7 @@ namespace Engine
 
 		void NewScene();
 		void OpenScene();
+		void OpenScene(const std::filesystem::path& path);
 		void SaveSceneAs();
 
 	private:
@@ -63,5 +65,6 @@ namespace Engine
 
 		// Panels
 		SceneHierarchyPanel m_SceneHierarchyPanel;
+		ContentBrowserPanel m_ContentBrowserPanel;
 	};
 }

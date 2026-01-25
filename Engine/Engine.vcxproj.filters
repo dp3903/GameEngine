@@ -145,6 +145,8 @@
       <Filter>vendors\stb_image</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine\Renderer\EditorCamera.h" />
+    <ClInclude Include="src\Engine\Renderer\UniformBuffer.h" />
+    <ClInclude Include="src\Engine\Utils\Timer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine\Application.cpp">
@@ -217,5 +219,6 @@
       <Filter>vendors\stb_image</Filter>
     </ClCompile>
     <ClCompile Include="src\Engine\Renderer\EditorCamera.cpp" />
+    <ClCompile Include="src\Engine\Renderer\UniformBuffer.cpp" />
   </ItemGroup>
 </Project>

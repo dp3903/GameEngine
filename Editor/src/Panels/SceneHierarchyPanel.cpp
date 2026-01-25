@@ -1,11 +1,15 @@
 #include "SceneHierarchyPanel.h"
 
+#include <filesystem>
+
 #include <imgui/imgui.h>
 #include <imgui/imgui_internal.h>
 #include <glm/gtc/type_ptr.hpp>
 #include "Engine/Scene/Components.h"
 
 namespace Engine {
+
+	extern const std::filesystem::path g_AssetPath;
 
 	SceneHierarchyPanel::SceneHierarchyPanel(const std::shared_ptr<Scene>& context)
 	{
@@ -249,7 +253,84 @@ namespace Engine {
 
 		DrawComponent<SpriteRendererComponent>("Sprite Renderer", entity, [](auto& component)
 			{
+				// 1. Color Control
 				ImGui::ColorEdit4("Color", glm::value_ptr(component.Color));
+
+				// 2. Texture Control Group
+				//    We group this in a tree node or just a separator to make it look distinct
+				ImGui::Spacing();
+				ImGui::Text("Texture");
+
+				// Calculate the thumbnail size
+				float thumbnailSize = 128.0f;
+
+				// Get the texture ID. If the component has no texture, you likely want 
+				// to use a "White" or "Checkerboard" default texture from your engine.
+				// If you don't have a default texture getter, you can use a colored button as fallback.
+				uint32_t textureID = component.Texture ? component.Texture->GetRendererID() : 0; // Replace 0 with your white texture ID if possible
+
+				// Prepare the Drag & Drop area
+				// If we have a texture, show the ImageButton with the texture
+				if (component.Texture)
+				{
+					// Image Button (Acts as the thumbnail)
+					// We use (void*) cast for the ID because ImGui expects a pointer for IDs
+					if (ImGui::ImageButton("##texture", (ImTextureID)(uint64_t)textureID, {thumbnailSize, thumbnailSize}, {0, 1}, {1, 0}))
+					{
+						// Optional: Click to open file dialog?
+					}
+				}
+				else
+				{
+					// Placeholder Button when no texture is selected
+					if (ImGui::Button("Drag Texture\nHere", { thumbnailSize, thumbnailSize }))
+					{
+						// Optional: Open generic load dialog
+					}
+				}
+
+				// --- Drag and Drop Logic (Applies to the item directly above) ---
+				if (ImGui::BeginDragDropTarget())
+				{
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM_TEXTURE"))
+					{
+						const wchar_t* path = (const wchar_t*)payload->Data;
+						std::filesystem::path texturePath = std::filesystem::path(g_AssetPath) / path;
+						component.Texture = Texture2D::Create(texturePath.string());
+					}
+					ImGui::EndDragDropTarget();
+				}
+
+				// --- Texture Properties & Remove Button (Right side of thumbnail) ---
+				// If a texture is loaded, show its name and a remove button
+				if (component.Texture)
+				{
+					ImGui::SameLine();
+
+					// Use a group to stack the text and the remove button vertically next to the image
+					ImGui::BeginGroup();
+
+					// Display Filename (optional, requires storing path in Texture2D or Component)
+					// ImGui::Text(component.Texture->GetPath().c_str()); 
+					ImGui::Text("Texture Loaded"); // Placeholder text
+
+					// The "Remove" Button
+					// We use a red color for the button to indicate a destructive action
+					ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.1f, 0.15f, 1.0f));
+					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.2f, 0.2f, 1.0f));
+					if (ImGui::Button("Remove Texture"))
+					{
+						component.Texture = nullptr;
+					}
+					ImGui::PopStyleColor(2);
+
+					ImGui::EndGroup();
+				}
+
+				ImGui::Spacing();
+
+				// 3. Tiling Factor
+				ImGui::DragFloat("Tiling Factor", &component.TilingFactor, 0.1f, 0.0f, 100.0f);
 			});
 
 		DrawComponent<CameraComponent>("Camera", entity, [](auto& component)

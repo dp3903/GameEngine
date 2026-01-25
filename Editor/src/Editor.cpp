@@ -9,7 +9,8 @@ namespace Engine
 	class Editor : public Application
 	{
 	public:
-		Editor()
+		Editor(ApplicationCommandLineArgs args)
+			: Application("Level Editor", args)
 		{
 			//PushLayer(new ExampleLayer());
 			PushLayer(new EditorLayer());
@@ -20,8 +21,8 @@ namespace Engine
 		}
 	};
 
-	Engine::Application* Engine::CreateApplication()
+	Engine::Application* Engine::CreateApplication(ApplicationCommandLineArgs args)
 	{
-		return new Editor();
+		return new Editor(args);
 	}
 }

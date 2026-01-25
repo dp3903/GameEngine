@@ -3,6 +3,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glad/glad.h>
 #include <fstream>
+#include <Engine/Utils/Timer.h>
 
 namespace Engine {
 
@@ -37,14 +38,22 @@ namespace Engine {
 		std::unordered_map<GLenum, std::string> sources;
 		sources[GL_VERTEX_SHADER] = vertexSrc;
 		sources[GL_FRAGMENT_SHADER] = fragmentSrc;
-		Compile(sources);
+		{
+			Timer t;
+			Compile(sources);
+			ENGINE_LOG_INFO("Shader compilation complete. took {0}ms.", t.ElapsedMillis());
+		}
 	}
 
 	Shader::Shader(const std::string& filepath)
 	{
 		std::string source = ReadFile(filepath);
 		auto shaderSources = PreProcess(source);
-		Compile(shaderSources);
+		{
+			Timer t;
+			Compile(shaderSources);
+			ENGINE_LOG_INFO("Shader compilation complete. took {0}ms.", t.ElapsedMillis());
+		}
 
 		// Extract name from filepath
 		auto lastSlash = filepath.find_last_of("/\\");

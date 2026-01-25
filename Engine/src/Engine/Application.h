@@ -12,10 +12,22 @@
 
 namespace Engine
 {
+	struct ApplicationCommandLineArgs
+	{
+		int Count = 0;
+		char** Args = nullptr;
+
+		const char* operator[](int index) const
+		{
+			ASSERT(index < Count, "Index out of bounds for command line args.");
+			return Args[index];
+		}
+	};
+
 	class ENGINE_API Application
 	{
 	public:
-		Application(const std::string& name = "Game App");
+		Application(const std::string& name = "Game App", ApplicationCommandLineArgs args = ApplicationCommandLineArgs());
 		virtual ~Application();
 
 		void run();
@@ -26,11 +38,13 @@ namespace Engine
 		void Close();
 
 		inline static Application& Get() { return *s_Instance; }
+		ApplicationCommandLineArgs GetCommandLineArgs() const { return m_CommandLineArgs; }
 		ImGuiLayer* GetImGuiLayer() { return m_ImGuiLayer; }
 	private:
 		bool OnWindowClose(WindowCloseEvent& e);
 		bool OnWindowResize(WindowResizeEvent& e);
 
+		ApplicationCommandLineArgs m_CommandLineArgs;
 		std::unique_ptr<Window> m_Window;
 		ImGuiLayer* m_ImGuiLayer;
 		bool m_Running = true;
@@ -41,6 +55,6 @@ namespace Engine
 	};
 
 	// To be defined in client app
-	Application* CreateApplication();
+	Application* CreateApplication(ApplicationCommandLineArgs args);
 }
 
