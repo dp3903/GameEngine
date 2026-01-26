@@ -2,13 +2,13 @@
     "Scene": "Untitled Scene",
     "Entities": [
         {
-            "Entity": 12345678,
+            "Entity": 16296255079116542862,
             "TagComponent": {
-                "Tag": "Camera B"
+                "Tag": "Green Square"
             },
             "TransformComponent": {
                 "Translation": [
-                    -4.0,
+                    2.700000047683716,
                     0.0,
                     0.0
                 ],
@@ -23,22 +23,48 @@
                     1.0
                 ]
             },
-            "CameraComponent": {
-                "Camera": {
-                    "ProjectionType": 1,
-                    "PerspectiveFOV": 0.7853981852531433,
-                    "PerspectiveNear": 0.009999999776482582,
-                    "PerspectiveFar": 1000.0,
-                    "OrthographicSize": 10.0,
-                    "OrthographicNear": -1.0,
-                    "OrthographicFar": 1.0
-                },
-                "Primary": false,
-                "FixedAspectRatio": false
+            "SpriteRendererComponent": {
+                "Color": [
+                    0.0,
+                    1.0,
+                    0.0,
+                    1.0
+                ]
             }
         },
         {
-            "Entity": 12345678,
+            "Entity": 17517384851036913914,
+            "TagComponent": {
+                "Tag": "Red Square"
+            },
+            "TransformComponent": {
+                "Translation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "Rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "Scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            },
+            "SpriteRendererComponent": {
+                "Color": [
+                    1.0,
+                    0.0,
+                    0.0,
+                    1.0
+                ]
+            }
+        },
+        {
+            "Entity": 11673205564115809967,
             "TagComponent": {
                 "Tag": "Camera A"
             },
@@ -74,13 +100,13 @@
             }
         },
         {
-            "Entity": 12345678,
+            "Entity": 7998378658780663753,
             "TagComponent": {
-                "Tag": "Red Square"
+                "Tag": "Camera B"
             },
             "TransformComponent": {
                 "Translation": [
-                    0.0,
+                    -4.0,
                     0.0,
                     0.0
                 ],
@@ -95,44 +121,18 @@
                     1.0
                 ]
             },
-            "SpriteRendererComponent": {
-                "Color": [
-                    1.0,
-                    0.0,
-                    0.0,
-                    1.0
-                ]
-            }
-        },
-        {
-            "Entity": 12345678,
-            "TagComponent": {
-                "Tag": "Green Square"
-            },
-            "TransformComponent": {
-                "Translation": [
-                    2.700000047683716,
-                    0.0,
-                    0.0
-                ],
-                "Rotation": [
-                    0.0,
-                    0.0,
-                    0.0
-                ],
-                "Scale": [
-                    1.0,
-                    1.0,
-                    1.0
-                ]
-            },
-            "SpriteRendererComponent": {
-                "Color": [
-                    0.0,
-                    1.0,
-                    0.0,
-                    1.0
-                ]
+            "CameraComponent": {
+                "Camera": {
+                    "ProjectionType": 1,
+                    "PerspectiveFOV": 0.7853981852531433,
+                    "PerspectiveNear": 0.009999999776482582,
+                    "PerspectiveFar": 1000.0,
+                    "OrthographicSize": 10.0,
+                    "OrthographicNear": -1.0,
+                    "OrthographicFar": 1.0
+                },
+                "Primary": false,
+                "FixedAspectRatio": false
             }
         }
     ]

@@ -1,6 +1,7 @@
 #include "egpch.h"
 #include "SceneSerializer.h"
 #include "Components.h"
+#include "Entity.h"
 
 #include <fstream>
 #include <iomanip> // Required for std::setw (Pretty Printing)
@@ -9,6 +10,34 @@
 using json = nlohmann::ordered_json;
 
 namespace Engine {
+
+    static std::string RigidBody2DBodyTypeToString(Rigidbody2DComponent::BodyType bodyType)
+    {
+        switch (bodyType)
+        {
+        case Rigidbody2DComponent::BodyType::Static:    return "Static";
+        case Rigidbody2DComponent::BodyType::Dynamic:   return "Dynamic";
+        case Rigidbody2DComponent::BodyType::Kinematic: return "Kinematic";
+        }
+
+        ASSERT(false, "Unknown body type");
+        return {};
+    }
+
+    static Rigidbody2DComponent::BodyType RigidBody2DBodyTypeFromString(const std::string& bodyTypeString)
+    {
+        if (bodyTypeString == "Static")    return Rigidbody2DComponent::BodyType::Static;
+        if (bodyTypeString == "Dynamic")   return Rigidbody2DComponent::BodyType::Dynamic;
+        if (bodyTypeString == "Kinematic") return Rigidbody2DComponent::BodyType::Kinematic;
+
+        ASSERT(false, "Unknown body type");
+        return Rigidbody2DComponent::BodyType::Static;
+    }
+
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    // SceneSerializer //////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 	SceneSerializer::SceneSerializer(const std::shared_ptr<Scene>& scene)
         : m_Scene(scene)
 	{
@@ -34,7 +63,7 @@ namespace Engine {
                 json entityJson;
 
                 // Serialize Basic Info
-                entityJson["Entity"] = 12345678; //(uint64_t)entity.GetUUID(); // Assumes you have UUIDs
+                entityJson["Entity"] = (uint64_t)entity.GetUUID(); // Assumes you have UUIDs
 
                 // Serialize Tag Component
                 if (entity.HasComponent<TagComponent>())
@@ -93,6 +122,32 @@ namespace Engine {
                     };
                 }
 
+                // Serialize RigidBody2D
+                if (entity.HasComponent<Rigidbody2DComponent>())
+                {
+                    auto& rb2c = entity.GetComponent<Rigidbody2DComponent>();
+
+                    entityJson["Rigidbody2DComponent"] = {
+                        { "BodyType",       RigidBody2DBodyTypeToString(rb2c.Type) },
+                        { "FixedRotation",  rb2c.FixedRotation }
+                    };
+                }
+
+                // Serialize BoxCollider2DComponent
+                if (entity.HasComponent<BoxCollider2DComponent>())
+                {
+                    auto& bc2c = entity.GetComponent<BoxCollider2DComponent>();
+
+                    entityJson["BoxCollider2DComponent"] = {
+                        { "Offset",                 { bc2c.Offset.x, bc2c.Offset.y } },
+                        { "Size",                   { bc2c.Size.x, bc2c.Size.y } },
+                        { "Density",                bc2c.Density },
+                        { "Friction",               bc2c.Friction },
+                        { "Restitution",            bc2c.Restitution },
+                        { "RestitutionThreshold",   bc2c.RestitutionThreshold },
+                    };
+                }
+
                 // Add to main list
                 sceneData["Entities"].push_back(entityJson);
             });
@@ -130,6 +185,9 @@ namespace Engine {
         auto entities = sceneData["Entities"];
         if (entities.is_array())
         {
+            // Helper lambda to load vec2 from array
+            auto loadVec2 = [](json& j) { return glm::vec2(j[0], j[1]); };
+
             // Helper lambda to load vec3 from array
             auto loadVec3 = [](json& j) { return glm::vec3(j[0], j[1], j[2]); };
 
@@ -144,10 +202,9 @@ namespace Engine {
                 if (entityJson.contains("TagComponent"))
                     name = entityJson["TagComponent"]["Tag"];
 
-                Entity deserializedEntity = m_Scene->CreateEntity(name);
-                // deserializedEntity.SetUUID(uuid); // If you have this method
+                Entity deserializedEntity = m_Scene->CreateEntityWithUUID(uuid, name);
 
-                APP_LOG_INFO("Deserializing entity: {0}", name);
+                APP_LOG_INFO("Deserializing entity: {0} name: {1}.", uuid, name);
 
                 // Load Transform
                 if (entityJson.contains("TransformComponent"))
@@ -182,6 +239,30 @@ namespace Engine {
                     auto& sJson = entityJson["SpriteRendererComponent"];
 
                     sc.Color = loadVec4(sJson["Color"]);
+                }
+
+                // Load RigidBody2D
+                if (entityJson.contains("Rigidbody2DComponent"))
+                {
+                    auto& rb2c = deserializedEntity.AddComponent<Rigidbody2DComponent>();
+                    auto& rb2Json = entityJson["Rigidbody2DComponent"];
+
+                    rb2c.Type = RigidBody2DBodyTypeFromString(rb2Json["BodyType"]);
+                    rb2c.FixedRotation = rb2Json["FixedRotation"];
+                }
+
+                // Load BoxCollider2D
+                if (entityJson.contains("BoxCollider2DComponent"))
+                {
+                    auto& bc2c = deserializedEntity.AddComponent< BoxCollider2DComponent>();
+                    auto& bc2Json = entityJson["BoxCollider2DComponent"];
+
+                    bc2c.Offset = loadVec2(bc2Json["Offset"]);
+                    bc2c.Size = loadVec2(bc2Json["Size"]);
+                    bc2c.Density = bc2Json["Density"];
+                    bc2c.Friction = bc2Json["Friction"];
+                    bc2c.Restitution = bc2Json["Restitution"];
+                    bc2c.RestitutionThreshold = bc2Json["RestitutionThreshold"];
                 }
             }
         }

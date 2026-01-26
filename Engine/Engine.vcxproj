@@ -58,7 +58,7 @@
       <PrecompiledHeaderFile>egpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>ENGINE_PLATFORM_WINDOWS;ENGINE_BUILD_DLL;GLFW_INCLUDE_NONE;ENGINE_DEBUG;ENGINE_ENABLE_ASSERTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>vendors;src;vendors\glfw\include;vendors\glad\include;vendors\glm;vendors\imgui;vendors\stb_image;vendors\entt\include;vendors\ImGuizmo;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>vendors;src;vendors\glfw\include;vendors\glad\include;vendors\glm;vendors\box2d\include;vendors\imgui;vendors\stb_image;vendors\entt\include;vendors\ImGuizmo;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -80,7 +80,7 @@
       <PrecompiledHeaderFile>egpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>ENGINE_PLATFORM_WINDOWS;ENGINE_BUILD_DLL;GLFW_INCLUDE_NONE;ENGINE_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>vendors;src;vendors\glfw\include;vendors\glad\include;vendors\glm;vendors\imgui;vendors\stb_image;vendors\entt\include;vendors\ImGuizmo;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>vendors;src;vendors\glfw\include;vendors\glad\include;vendors\glm;vendors\box2d\include;vendors\imgui;vendors\stb_image;vendors\entt\include;vendors\ImGuizmo;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -131,6 +131,7 @@
     <ClInclude Include="src\Engine\Utils\FileDialogs.h" />
     <ClInclude Include="src\Engine\Utils\Math.h" />
     <ClInclude Include="src\Engine\Utils\Timer.h" />
+    <ClInclude Include="src\Engine\Utils\UUID.h" />
     <ClInclude Include="src\Engine\Window\Input.h" />
     <ClInclude Include="src\Engine\Window\KeyCodes.h" />
     <ClInclude Include="src\Engine\Window\MouseCodes.h" />
@@ -161,6 +162,7 @@
     <ClCompile Include="src\Engine\Scene\SceneSerializer.cpp" />
     <ClCompile Include="src\Engine\Utils\FileDialogs.cpp" />
     <ClCompile Include="src\Engine\Utils\Math.cpp" />
+    <ClCompile Include="src\Engine\Utils\UUID.cpp" />
     <ClCompile Include="src\Engine\Window\Input.cpp" />
     <ClCompile Include="src\Engine\Window\Window.cpp" />
     <ClCompile Include="src\egpch.cpp">
@@ -177,6 +179,9 @@
     </ProjectReference>
     <ProjectReference Include="vendors\glad\Glad.vcxproj">
       <Project>{BDD6857C-A90D-870D-52FA-6C103E10030F}</Project>
+    </ProjectReference>
+    <ProjectReference Include="vendors\Box2D\Box2D.vcxproj">
+      <Project>{A434E80C-1049-10BE-D9CA-B31D459E0CEF}</Project>
     </ProjectReference>
     <ProjectReference Include="vendors\imgui\ImGui.vcxproj">
       <Project>{C0FF640D-2C14-8DBE-F595-301E616989EF}</Project>

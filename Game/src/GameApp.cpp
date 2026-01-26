@@ -20,7 +20,7 @@ public:
 	}
 };
 
-Engine::Application* Engine::CreateApplication()
+Engine::Application* Engine::CreateApplication(ApplicationCommandLineArgs args)
 {
 	return new Game();
 }

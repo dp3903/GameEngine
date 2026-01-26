@@ -35,6 +35,14 @@ namespace Engine
 		void OpenScene(const std::filesystem::path& path);
 		void SaveSceneAs();
 
+		void OnScenePlay();
+		void OnSceneStop();
+
+		// UI Panels
+		void UI_Toolbar();
+		void UI_Stats();
+		void UI_Viewport();
+
 	private:
 		Engine::OrthographicCameraController m_CameraController;
 
@@ -62,6 +70,15 @@ namespace Engine
 		glm::vec4 m_SquareColor = { 0.2f, 0.3f, 0.8f, 1.0f };
 
 		int m_GizmoType = -1;
+
+		enum class SceneState
+		{
+			Edit = 0, Play = 1
+		};
+		SceneState m_SceneState = SceneState::Edit;
+
+		// Editor resources
+		std::shared_ptr<Texture2D> m_IconPlay, m_IconStop;
 
 		// Panels
 		SceneHierarchyPanel m_SceneHierarchyPanel;

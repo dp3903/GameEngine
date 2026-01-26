@@ -81,6 +81,9 @@
     <ClInclude Include="src\Engine\Renderer\Camera.h">
       <Filter>src\Engine\Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="src\Engine\Renderer\EditorCamera.h">
+      <Filter>src\Engine\Renderer</Filter>
+    </ClInclude>
     <ClInclude Include="src\Engine\Renderer\FrameBuffer.h">
       <Filter>src\Engine\Renderer</Filter>
     </ClInclude>
@@ -94,6 +97,9 @@
       <Filter>src\Engine\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine\Renderer\Texture.h">
+      <Filter>src\Engine\Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\Renderer\UniformBuffer.h">
       <Filter>src\Engine\Renderer</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine\Renderer\VertexArray.h">
@@ -120,6 +126,9 @@
     <ClInclude Include="src\Engine\Utils\Math.h">
       <Filter>src\Engine\Utils</Filter>
     </ClInclude>
+    <ClInclude Include="src\Engine\Utils\Timer.h">
+      <Filter>src\Engine\Utils</Filter>
+    </ClInclude>
     <ClInclude Include="src\Engine\Window\Input.h">
       <Filter>src\Engine\Window</Filter>
     </ClInclude>
@@ -144,9 +153,7 @@
     <ClInclude Include="vendors\stb_image\stb_image.h">
       <Filter>vendors\stb_image</Filter>
     </ClInclude>
-    <ClInclude Include="src\Engine\Renderer\EditorCamera.h" />
-    <ClInclude Include="src\Engine\Renderer\UniformBuffer.h" />
-    <ClInclude Include="src\Engine\Utils\Timer.h" />
+    <ClInclude Include="src\Engine\Utils\UUID.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine\Application.cpp">
@@ -167,6 +174,9 @@
     <ClCompile Include="src\Engine\Renderer\Buffer.cpp">
       <Filter>src\Engine\Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="src\Engine\Renderer\EditorCamera.cpp">
+      <Filter>src\Engine\Renderer</Filter>
+    </ClCompile>
     <ClCompile Include="src\Engine\Renderer\FrameBuffer.cpp">
       <Filter>src\Engine\Renderer</Filter>
     </ClCompile>
@@ -180,6 +190,9 @@
       <Filter>src\Engine\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="src\Engine\Renderer\Texture.cpp">
+      <Filter>src\Engine\Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Engine\Renderer\UniformBuffer.cpp">
       <Filter>src\Engine\Renderer</Filter>
     </ClCompile>
     <ClCompile Include="src\Engine\Renderer\VertexArray.cpp">
@@ -218,7 +231,6 @@
     <ClCompile Include="vendors\stb_image\stb_image.cpp">
       <Filter>vendors\stb_image</Filter>
     </ClCompile>
-    <ClCompile Include="src\Engine\Renderer\EditorCamera.cpp" />
-    <ClCompile Include="src\Engine\Renderer\UniformBuffer.cpp" />
+    <ClCompile Include="src\Engine\Utils\UUID.cpp" />
   </ItemGroup>
 </Project>

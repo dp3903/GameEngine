@@ -10,18 +10,20 @@ workspace "GameEngine"
 output_dir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 -- Include directories relative to root folder (solution directory)
 IncludeDir = {}
-IncludeDir["GLFW"] = "Engine/vendors/glfw/include"
-IncludeDir["GLAD"] = "Engine/vendors/glad/include"
-IncludeDir["GLM"] = "Engine/vendors/glm"
-IncludeDir["ImGui"] = "Engine/vendors/imgui"
-IncludeDir["stb_image"] = "Engine/vendors/stb_image"
-IncludeDir["entt"] = "Engine/vendors/entt/include"
-IncludeDir["nlohmann_json"] = "Engine/vendors/nlohmann_json"
-IncludeDir["ImGuizmo"] = "Engine/vendors/ImGuizmo"
+IncludeDir["GLFW"] =	 		"%{wks.location}/Engine/vendors/glfw/include"
+IncludeDir["GLAD"] = 	 		"%{wks.location}/Engine/vendors/glad/include"
+IncludeDir["GLM"] =		 		"%{wks.location}/Engine/vendors/glm"
+IncludeDir["Box2D"] =	 		"%{wks.location}/Engine/vendors/box2d/include"
+IncludeDir["ImGui"] =	 		"%{wks.location}/Engine/vendors/imgui"
+IncludeDir["stb_image"] = 		"%{wks.location}/Engine/vendors/stb_image"
+IncludeDir["entt"] =			"%{wks.location}/Engine/vendors/entt/include"
+IncludeDir["nlohmann_json"] = 	"%{wks.location}/Engine/vendors/nlohmann_json"
+IncludeDir["ImGuizmo"] =		"%{wks.location}/Engine/vendors/ImGuizmo"
 
 include "Engine/vendors/glfw"
 include "Engine/vendors/glad"
 include "Engine/vendors/imgui"
+include "Engine/vendors/Box2D"
 
 project "Engine"
 	location "Engine"
@@ -53,6 +55,7 @@ project "Engine"
         "%{IncludeDir.GLFW}",
 		"%{IncludeDir.GLAD}",
 		"%{IncludeDir.GLM}",
+		"%{IncludeDir.Box2D}",
 		"%{IncludeDir.ImGui}",
 		"%{IncludeDir.stb_image}",
 		"%{IncludeDir.entt}",
@@ -63,6 +66,7 @@ project "Engine"
 	{ 
 		"GLFW",
 		"Glad",
+		"Box2D",
 		"ImGui",
 		"opengl32.lib"
 	}
