@@ -65,7 +65,8 @@ namespace Engine
 		static void BeginScene(const EditorCamera& camera);
 		static void BeginScene(const OrthographicCamera& camera);
 		static void EndScene();
-		static void Flush();
+		static void FlushQuads();
+		static void FlushCircles();
 
 		// Primitives
 		static void DrawQuad(const glm::mat4& transform, const glm::vec4& color, int entityID = -1);
@@ -83,6 +84,8 @@ namespace Engine
 		
 		static void DrawSprite(const glm::mat4& transform, SpriteRendererComponent& src, int entityID);
 
+		static void DrawCircle(const glm::mat4& transform, const glm::vec4& color, float thickness = 1.0f, float fade = 0.005f, int entityID = -1);
+
 		// Stats
 		struct Statistics
 		{
@@ -96,8 +99,10 @@ namespace Engine
 		static Statistics GetStats();
 	
 	private:
-		static void StartBatch();
-		static void NextBatch();
+		static void StartQuadsBatch();
+		static void StartCirclesBatch();
+		static void NextQuadsBatch();
+		static void NextCirclesBatch();
 	};
 }
 

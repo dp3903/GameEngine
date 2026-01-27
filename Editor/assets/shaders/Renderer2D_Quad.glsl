@@ -1,3 +1,7 @@
+//--------------------------
+// Renderer2D Quad Shader
+// --------------------------
+
 // Basic Texture Shader
 
 #type vertex
@@ -39,8 +43,8 @@ void main()
 #type fragment
 #version 450 core
 
-layout(location = 0) out vec4 color;
-layout(location = 1) out int entityId;
+layout(location = 0) out vec4 o_Color;
+layout(location = 1) out int o_EntityID;
 
 struct VertexOutput
 {
@@ -62,7 +66,7 @@ void main()
 	if (texColor.a < 0.1)
 		discard;
 	
-	color = texColor * Input.Color;
+	o_Color = texColor * Input.Color;
 
-	entityId = v_EntityID;
+	o_EntityID = v_EntityID;
 }

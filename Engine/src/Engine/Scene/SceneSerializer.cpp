@@ -122,6 +122,18 @@ namespace Engine {
                     };
                 }
 
+                // Serialize Circle
+                if (entity.HasComponent<CircleRendererComponent>())
+                {
+                    auto& cc = entity.GetComponent<CircleRendererComponent>();
+
+                    entityJson["CircleRendererComponent"] = {
+                        { "Color",       { cc.Color.r, cc.Color.g, cc.Color.b, cc.Color.a } },
+                        { "Thickness",   cc.Thickness },
+                        { "Fade",        cc.Fade }
+                    };
+                }
+
                 // Serialize RigidBody2D
                 if (entity.HasComponent<Rigidbody2DComponent>())
                 {
@@ -239,6 +251,17 @@ namespace Engine {
                     auto& sJson = entityJson["SpriteRendererComponent"];
 
                     sc.Color = loadVec4(sJson["Color"]);
+                }
+
+                // Load Circle
+                if (entityJson.contains("CircleRendererComponent"))
+                {
+                    auto& cc = deserializedEntity.AddComponent<CircleRendererComponent>();
+                    auto& cJson = entityJson["CircleRendererComponent"];
+
+                    cc.Color = loadVec4(cJson["Color"]);
+                    cc.Thickness = cJson["Thickness"];
+                    cc.Fade = cJson["Fade"];
                 }
 
                 // Load RigidBody2D
