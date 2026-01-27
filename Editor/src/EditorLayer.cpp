@@ -34,13 +34,13 @@ namespace Engine
 		fbSpec.Height = 720;
 		m_Framebuffer = Framebuffer::Create(fbSpec);
 
-		m_ActiveScene = std::make_shared<Scene>();
+		m_EditorScene = std::make_shared<Scene>();
 
 		auto commandLineArgs = Application::Get().GetCommandLineArgs();
 		if (commandLineArgs.Count > 1)
 		{
 			auto sceneFilePath = commandLineArgs[1];
-			SceneSerializer serializer(m_ActiveScene);
+			SceneSerializer serializer(m_EditorScene);
 			serializer.Deserialize(sceneFilePath);
 		}
 
@@ -95,6 +95,7 @@ namespace Engine
 		m_SecondCamera.AddComponent<NativeScriptComponent>().Bind<CameraController>();
 #endif
 
+		m_ActiveScene = Scene::Copy(m_EditorScene);
 		m_SceneHierarchyPanel.SetContext(m_ActiveScene);
 
 		APP_LOG_INFO("Editor Attached");

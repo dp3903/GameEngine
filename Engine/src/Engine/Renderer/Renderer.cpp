@@ -18,11 +18,11 @@ namespace Engine {
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_LINE_SMOOTH);
 	}
 
 	void RenderCommand::SetClearColor(const glm::vec4& color)
 	{
-
 		glClearColor(color.r, color.g, color.b, color.a);
 	}
 
@@ -41,6 +41,17 @@ namespace Engine {
 		vertexArray->Bind();
 		uint32_t count = indexCount==0 ? vertexArray->GetIndexBuffer()->GetCount() : indexCount;
 		glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_INT, nullptr);
+	}
+
+	void RenderCommand::DrawLines(const std::shared_ptr<VertexArray>& vertexArray, uint32_t vertexCount)
+	{
+		vertexArray->Bind();
+		glDrawArrays(GL_LINES, 0, vertexCount);
+	}
+
+	void RenderCommand::SetLineWidth(float width)
+	{
+		glLineWidth(width);
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -107,6 +118,15 @@ namespace Engine {
 		int EntityID;
 	};
 
+	struct LineVertex
+	{
+		glm::vec3 Position;
+		glm::vec4 Color;
+
+		// Editor-only
+		int EntityID;
+	};
+
 
 	struct Renderer2DData
 	{
@@ -125,6 +145,10 @@ namespace Engine {
 		std::shared_ptr<VertexBuffer> CircleVertexBuffer;
 		std::shared_ptr<Shader> CircleShader;
 
+		std::shared_ptr<VertexArray> LineVertexArray;
+		std::shared_ptr<VertexBuffer> LineVertexBuffer;
+		std::shared_ptr<Shader> LineShader;
+
 		uint32_t QuadIndexCount = 0;
 		QuadVertex* QuadVertexBufferBase = nullptr;
 		QuadVertex* QuadVertexBufferPtr = nullptr;
@@ -132,6 +156,12 @@ namespace Engine {
 		uint32_t CircleIndexCount = 0;
 		CircleVertex* CircleVertexBufferBase = nullptr;
 		CircleVertex* CircleVertexBufferPtr = nullptr;
+
+		uint32_t LineVertexCount = 0;
+		LineVertex* LineVertexBufferBase = nullptr;
+		LineVertex* LineVertexBufferPtr = nullptr;
+		float LineWidth = 2.0f;
+
 
 		std::array<std::shared_ptr<Texture2D>, MaxTextureSlots> TextureSlots;
 		uint32_t TextureSlotIndex = 1; // 0 = white texture
@@ -203,6 +233,18 @@ namespace Engine {
 		s_Data.CircleVertexArray->SetIndexBuffer(quadIB); // Use quad IB
 		s_Data.CircleVertexBufferBase = new CircleVertex[s_Data.MaxVertices];
 
+		// Lines
+		s_Data.LineVertexArray = VertexArray::Create();
+
+		s_Data.LineVertexBuffer = VertexBuffer::Create(s_Data.MaxVertices * sizeof(LineVertex));
+		s_Data.LineVertexBuffer->SetLayout({
+			{ ShaderDataType::Float3, "a_Position" },
+			{ ShaderDataType::Float4, "a_Color"    },
+			{ ShaderDataType::Int,    "a_EntityID" }
+			});
+		s_Data.LineVertexArray->AddVertexBuffer(s_Data.LineVertexBuffer);
+		s_Data.LineVertexBufferBase = new LineVertex[s_Data.MaxVertices];
+
 		s_Data.WhiteTexture = Texture2D::Create(1, 1);
 		uint32_t whiteTextureData = 0xffffffff;
 		s_Data.WhiteTexture->SetData(&whiteTextureData, sizeof(uint32_t));
@@ -213,6 +255,7 @@ namespace Engine {
 
 		s_Data.QuadShader = Shader::Create("assets/shaders/Renderer2D_Quad.glsl");
 		s_Data.CircleShader = Shader::Create("assets/shaders/Renderer2D_Circle.glsl");
+		s_Data.LineShader = Shader::Create("assets/shaders/Renderer2D_Line.glsl");
 
 		// Set all texture slots to 0
 		s_Data.TextureSlots[0] = s_Data.WhiteTexture;
@@ -239,6 +282,7 @@ namespace Engine {
 
 		StartQuadsBatch();
 		StartCirclesBatch();
+		StartLinesBatch();
 	}
 
 	void Renderer2D::BeginScene(const EditorCamera& camera)
@@ -248,6 +292,7 @@ namespace Engine {
 
 		StartQuadsBatch();
 		StartCirclesBatch();
+		StartLinesBatch();
 	}
 
 	void Renderer2D::BeginScene(const OrthographicCamera& camera)
@@ -257,12 +302,14 @@ namespace Engine {
 
 		StartQuadsBatch();
 		StartCirclesBatch();
+		StartLinesBatch();
 	}
 
 	void Renderer2D::EndScene()
 	{
 		FlushQuads();
 		FlushCircles();
+		FlushLines();
 	}
 
 	void Renderer2D::StartQuadsBatch()
@@ -277,6 +324,12 @@ namespace Engine {
 	{
 		s_Data.CircleIndexCount = 0;
 		s_Data.CircleVertexBufferPtr = s_Data.CircleVertexBufferBase;
+	}
+
+	void Renderer2D::StartLinesBatch()
+	{
+		s_Data.LineVertexCount = 0;
+		s_Data.LineVertexBufferPtr = s_Data.LineVertexBufferBase;
 	}
 
 	void Renderer2D::FlushQuads()
@@ -309,6 +362,20 @@ namespace Engine {
 		}
 	}
 
+	void Renderer2D::FlushLines()
+	{
+		if (s_Data.LineVertexCount)
+		{
+			uint32_t dataSize = (uint32_t)((uint8_t*)s_Data.LineVertexBufferPtr - (uint8_t*)s_Data.LineVertexBufferBase);
+			s_Data.LineVertexBuffer->SetData(s_Data.LineVertexBufferBase, dataSize);
+
+			s_Data.LineShader->Bind();
+			RenderCommand::SetLineWidth(s_Data.LineWidth);
+			RenderCommand::DrawLines(s_Data.LineVertexArray, s_Data.LineVertexCount);
+			s_Data.Stats.DrawCalls++;
+		}
+	}
+
 	void Renderer2D::NextQuadsBatch()
 	{
 		FlushQuads();
@@ -319,6 +386,12 @@ namespace Engine {
 	{
 		FlushCircles();
 		StartCirclesBatch();
+	}
+
+	void Renderer2D::NextLinesBatch()
+	{
+		FlushLines();
+		StartLinesBatch();
 	}
 
 	void Renderer2D::DrawQuad(const glm::mat4& transform, const glm::vec4& color, int entityID)
@@ -476,6 +549,59 @@ namespace Engine {
 		s_Data.CircleIndexCount += 6;
 
 		s_Data.Stats.QuadCount++;
+	}
+
+	void Renderer2D::DrawLine(const glm::vec3& p0, glm::vec3& p1, const glm::vec4& color, int entityID)
+	{
+		if (s_Data.LineVertexCount >= Renderer2DData::MaxIndices)
+			NextLinesBatch();
+
+		s_Data.LineVertexBufferPtr->Position = p0;
+		s_Data.LineVertexBufferPtr->Color = color;
+		s_Data.LineVertexBufferPtr->EntityID = entityID;
+		s_Data.LineVertexBufferPtr++;
+
+		s_Data.LineVertexBufferPtr->Position = p1;
+		s_Data.LineVertexBufferPtr->Color = color;
+		s_Data.LineVertexBufferPtr->EntityID = entityID;
+		s_Data.LineVertexBufferPtr++;
+
+		s_Data.LineVertexCount += 2;
+	}
+
+	void Renderer2D::DrawRect(const glm::vec3& position, const glm::vec2& size, const glm::vec4& color, int entityID)
+	{
+		glm::vec3 p0 = glm::vec3(position.x - size.x * 0.5f, position.y - size.y * 0.5f, position.z);
+		glm::vec3 p1 = glm::vec3(position.x + size.x * 0.5f, position.y - size.y * 0.5f, position.z);
+		glm::vec3 p2 = glm::vec3(position.x + size.x * 0.5f, position.y + size.y * 0.5f, position.z);
+		glm::vec3 p3 = glm::vec3(position.x - size.x * 0.5f, position.y + size.y * 0.5f, position.z);
+
+		DrawLine(p0, p1, color);
+		DrawLine(p1, p2, color);
+		DrawLine(p2, p3, color);
+		DrawLine(p3, p0, color);
+	}
+
+	void Renderer2D::DrawRect(const glm::mat4& transform, const glm::vec4& color, int entityID)
+	{
+		glm::vec3 lineVertices[4];
+		for (size_t i = 0; i < 4; i++)
+			lineVertices[i] = transform * s_Data.QuadVertexPositions[i];
+
+		DrawLine(lineVertices[0], lineVertices[1], color);
+		DrawLine(lineVertices[1], lineVertices[2], color);
+		DrawLine(lineVertices[2], lineVertices[3], color);
+		DrawLine(lineVertices[3], lineVertices[0], color);
+	}
+
+	float Renderer2D::GetLineWidth()
+	{
+		return s_Data.LineWidth;
+	}
+
+	void Renderer2D::SetLineWidth(float width)
+	{
+		s_Data.LineWidth = width;
 	}
 
 	void Renderer2D::ResetStats()

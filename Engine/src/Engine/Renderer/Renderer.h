@@ -25,6 +25,8 @@ namespace Engine
 		static void Clear();
 
 		static void DrawIndexed(const std::shared_ptr<VertexArray>& vertexArray, uint32_t indexCount = 0);
+		static void DrawLines(const std::shared_ptr<VertexArray>& vertexArray, uint32_t vertexCount);
+		static void SetLineWidth(float width);
 	};
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -67,6 +69,7 @@ namespace Engine
 		static void EndScene();
 		static void FlushQuads();
 		static void FlushCircles();
+		static void FlushLines();
 
 		// Primitives
 		static void DrawQuad(const glm::mat4& transform, const glm::vec4& color, int entityID = -1);
@@ -86,6 +89,14 @@ namespace Engine
 
 		static void DrawCircle(const glm::mat4& transform, const glm::vec4& color, float thickness = 1.0f, float fade = 0.005f, int entityID = -1);
 
+		static void DrawLine(const glm::vec3& p0, glm::vec3& p1, const glm::vec4& color, int entityID = -1);
+
+		static void DrawRect(const glm::vec3& position, const glm::vec2& size, const glm::vec4& color, int entityID = -1);
+		static void DrawRect(const glm::mat4& transform, const glm::vec4& color, int entityID = -1);
+
+		static float GetLineWidth();
+		static void SetLineWidth(float width);
+
 		// Stats
 		struct Statistics
 		{
@@ -101,8 +112,10 @@ namespace Engine
 	private:
 		static void StartQuadsBatch();
 		static void StartCirclesBatch();
+		static void StartLinesBatch();
 		static void NextQuadsBatch();
 		static void NextCirclesBatch();
+		static void NextLinesBatch();
 	};
 }
 
