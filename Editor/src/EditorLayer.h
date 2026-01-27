@@ -30,6 +30,8 @@ namespace Engine
 		bool OnKeyPressed(KeyPressedEvent& e);
 		bool OnMouseButtonPressed(MouseButtonPressedEvent& e);
 
+		void OnOverlayRender();
+
 		void NewScene();
 		void OpenScene();
 		void OpenScene(const std::filesystem::path& path);
@@ -46,6 +48,7 @@ namespace Engine
 		// UI Panels
 		void UI_Toolbar();
 		void UI_Stats();
+		void UI_Settings();
 		void UI_Viewport();
 
 	private:
@@ -77,6 +80,8 @@ namespace Engine
 		glm::vec4 m_SquareColor = { 0.2f, 0.3f, 0.8f, 1.0f };
 
 		int m_GizmoType = -1;
+
+		bool m_ShowPhysicsColliders = false;
 
 		enum class SceneState
 		{

@@ -145,7 +145,7 @@ namespace Engine {
                     };
                 }
 
-                // Serialize BoxCollider2DComponent
+                // Serialize BoxCollider2D
                 if (entity.HasComponent<BoxCollider2DComponent>())
                 {
                     auto& bc2c = entity.GetComponent<BoxCollider2DComponent>();
@@ -157,6 +157,21 @@ namespace Engine {
                         { "Friction",               bc2c.Friction },
                         { "Restitution",            bc2c.Restitution },
                         { "RestitutionThreshold",   bc2c.RestitutionThreshold },
+                    };
+                }
+
+                // Serialize CircleCollider2D
+                if (entity.HasComponent<CircleCollider2DComponent>())
+                {
+                    auto& cc2c = entity.GetComponent<CircleCollider2DComponent>();
+
+                    entityJson["CircleCollider2DComponent"] = {
+                        { "Offset",                 { cc2c.Offset.x, cc2c.Offset.y } },
+                        { "Radius",                 cc2c.Radius },
+                        { "Density",                cc2c.Density },
+                        { "Friction",               cc2c.Friction },
+                        { "Restitution",            cc2c.Restitution },
+                        { "RestitutionThreshold",   cc2c.RestitutionThreshold },
                     };
                 }
 
@@ -277,7 +292,7 @@ namespace Engine {
                 // Load BoxCollider2D
                 if (entityJson.contains("BoxCollider2DComponent"))
                 {
-                    auto& bc2c = deserializedEntity.AddComponent< BoxCollider2DComponent>();
+                    auto& bc2c = deserializedEntity.AddComponent<BoxCollider2DComponent>();
                     auto& bc2Json = entityJson["BoxCollider2DComponent"];
 
                     bc2c.Offset = loadVec2(bc2Json["Offset"]);
@@ -286,6 +301,20 @@ namespace Engine {
                     bc2c.Friction = bc2Json["Friction"];
                     bc2c.Restitution = bc2Json["Restitution"];
                     bc2c.RestitutionThreshold = bc2Json["RestitutionThreshold"];
+                }
+
+                // Load CircleCollider2D
+                if (entityJson.contains("CircleCollider2DComponent"))
+                {
+                    auto& cc2c = deserializedEntity.AddComponent<CircleCollider2DComponent>();
+                    auto& cc2Json = entityJson["CircleCollider2DComponent"];
+
+                    cc2c.Offset = loadVec2(cc2Json["Offset"]);
+                    cc2c.Radius = cc2Json["Radius"];
+                    cc2c.Density = cc2Json["Density"];
+                    cc2c.Friction = cc2Json["Friction"];
+                    cc2c.Restitution = cc2Json["Restitution"];
+                    cc2c.RestitutionThreshold = cc2Json["RestitutionThreshold"];
                 }
             }
         }
