@@ -26,8 +26,12 @@ namespace Engine {
 		
 		void OnRuntimeStart();
 		void OnRuntimeStop();
+
+		void OnSimulationStart();
+		void OnSimulationStop();
 		
 		void OnUpdateRuntime(float ts);
+		void OnUpdateSimulation(float ts, EditorCamera& camera);
 		void OnUpdateEditor(float ts, EditorCamera& camera);
 		void OnViewportResize(uint32_t width, uint32_t height);
 		
@@ -44,6 +48,12 @@ namespace Engine {
 	private:
 		template<typename T>
 		void OnComponentAdded(Entity entity, T& component);
+
+		void OnPhysics2DStart();
+		void OnPhysics2DStop();
+		void OnUpdatePhysics2D(float ts);
+
+		void RenderScene();
 
 	private:
 		entt::registry m_Registry;
