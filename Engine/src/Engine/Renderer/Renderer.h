@@ -7,6 +7,7 @@
 #include "Camera.h"
 #include "EditorCamera.h"
 #include <Engine/Scene/Components.h>
+#include "Font.h"
 
 namespace Engine
 {
@@ -70,6 +71,7 @@ namespace Engine
 		static void FlushQuads();
 		static void FlushCircles();
 		static void FlushLines();
+		static void FlushText();
 
 		// Primitives
 		static void DrawQuad(const glm::mat4& transform, const glm::vec4& color, int entityID = -1);
@@ -97,6 +99,15 @@ namespace Engine
 		static float GetLineWidth();
 		static void SetLineWidth(float width);
 
+		struct TextParams
+		{
+			glm::vec4 Color{ 1.0f };
+			float Kerning = 0.0f;
+			float LineSpacing = 0.0f;
+		};
+		static void DrawString(const std::string& string, std::shared_ptr<Font> font, const glm::mat4& transform, const TextParams& textParams, int entityID = -1);
+		static void DrawString(const std::string& string, const glm::mat4& transform, const TextComponent& component, int entityID = -1);
+
 		// Stats
 		struct Statistics
 		{
@@ -113,9 +124,11 @@ namespace Engine
 		static void StartQuadsBatch();
 		static void StartCirclesBatch();
 		static void StartLinesBatch();
+		static void StartTextBatch();
 		static void NextQuadsBatch();
 		static void NextCirclesBatch();
 		static void NextLinesBatch();
+		static void NextTextBatch();
 	};
 }
 

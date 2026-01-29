@@ -3,18 +3,23 @@
 #include "Engine/Logger.h"
 #include "Engine/Renderer/Renderer.h"
 #include "glfw/glfw3.h"
+#include <filesystem>
 
 namespace Engine
 {
 	Application* Application::s_Instance = nullptr;
 
-	Application::Application(const std::string& name, ApplicationCommandLineArgs args)
-		: m_CommandLineArgs(args)
+	Application::Application(const ApplicationSpecification& specification)
+		: m_Specification(specification)
 	{
 		ASSERT(!s_Instance, "Application already exists!");
 		s_Instance = this;
 
-		m_Window = std::unique_ptr<Window>(Window::Create(WindowProps(name, 1600, 900)));
+		// Set working directory here
+		if (!m_Specification.WorkingDirectory.empty())
+			std::filesystem::current_path(m_Specification.WorkingDirectory);
+
+		m_Window = std::unique_ptr<Window>(Window::Create(WindowProps(m_Specification.Name, 1600, 900)));
 		m_Window->SetEventCallback(std::bind(&Application::OnEvent, this, std::placeholders::_1));
 
 		Renderer::Init();

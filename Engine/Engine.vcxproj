@@ -58,7 +58,7 @@
       <PrecompiledHeaderFile>egpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>ENGINE_PLATFORM_WINDOWS;ENGINE_BUILD_DLL;GLFW_INCLUDE_NONE;ENGINE_DEBUG;ENGINE_ENABLE_ASSERTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>vendors;src;vendors\glfw\include;vendors\glad\include;vendors\glm;vendors\box2d\include;vendors\imgui;vendors\stb_image;vendors\entt\include;vendors\ImGuizmo;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>vendors;src;vendors\glfw\include;vendors\glad\include;vendors\glm;vendors\box2d\include;vendors\imgui;vendors\stb_image;vendors\entt\include;vendors\ImGuizmo;vendors\msdf-atlas-gen\msdfgen;vendors\msdf-atlas-gen\msdf-atlas-gen;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -80,7 +80,7 @@
       <PrecompiledHeaderFile>egpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>ENGINE_PLATFORM_WINDOWS;ENGINE_BUILD_DLL;GLFW_INCLUDE_NONE;ENGINE_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>vendors;src;vendors\glfw\include;vendors\glad\include;vendors\glm;vendors\box2d\include;vendors\imgui;vendors\stb_image;vendors\entt\include;vendors\ImGuizmo;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>vendors;src;vendors\glfw\include;vendors\glad\include;vendors\glm;vendors\box2d\include;vendors\imgui;vendors\stb_image;vendors\entt\include;vendors\ImGuizmo;vendors\msdf-atlas-gen\msdfgen;vendors\msdf-atlas-gen\msdf-atlas-gen;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -116,7 +116,9 @@
     <ClInclude Include="src\Engine\Renderer\Buffer.h" />
     <ClInclude Include="src\Engine\Renderer\Camera.h" />
     <ClInclude Include="src\Engine\Renderer\EditorCamera.h" />
+    <ClInclude Include="src\Engine\Renderer\Font.h" />
     <ClInclude Include="src\Engine\Renderer\FrameBuffer.h" />
+    <ClInclude Include="src\Engine\Renderer\MSDFData.h" />
     <ClInclude Include="src\Engine\Renderer\OrthographicCamera.h" />
     <ClInclude Include="src\Engine\Renderer\Renderer.h" />
     <ClInclude Include="src\Engine\Renderer\Shader.h" />
@@ -149,6 +151,7 @@
     <ClCompile Include="src\Engine\Logger.cpp" />
     <ClCompile Include="src\Engine\Renderer\Buffer.cpp" />
     <ClCompile Include="src\Engine\Renderer\EditorCamera.cpp" />
+    <ClCompile Include="src\Engine\Renderer\Font.cpp" />
     <ClCompile Include="src\Engine\Renderer\FrameBuffer.cpp" />
     <ClCompile Include="src\Engine\Renderer\OrthographicCamera.cpp" />
     <ClCompile Include="src\Engine\Renderer\Renderer.cpp" />
@@ -185,6 +188,9 @@
     </ProjectReference>
     <ProjectReference Include="vendors\imgui\ImGui.vcxproj">
       <Project>{C0FF640D-2C14-8DBE-F595-301E616989EF}</Project>
+    </ProjectReference>
+    <ProjectReference Include="vendors\msdf-atlas-gen\msdf-atlas-gen.vcxproj">
+      <Project>{38BD587B-248B-4C81-0D1F-BDA7F98B28E6}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

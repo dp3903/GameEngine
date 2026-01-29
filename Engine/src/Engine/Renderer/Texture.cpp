@@ -6,6 +6,29 @@
 
 namespace Engine
 {
+	static GLenum ImageFormatToGLDataFormat(ImageFormat format)
+	{
+		switch (format)
+		{
+		case ImageFormat::RGB8:  return GL_RGB;
+		case ImageFormat::RGBA8: return GL_RGBA;
+		}
+
+		ASSERT(false, "Invalid ImageFormat");
+		return 0;
+	}
+
+	static GLenum ImageFormatToGLInternalFormat(ImageFormat format)
+	{
+		switch (format)
+		{
+		case ImageFormat::RGB8:  return GL_RGB8;
+		case ImageFormat::RGBA8: return GL_RGBA8;
+		}
+
+		ASSERT(false, "Invalid ImageFormat");
+		return 0;
+	}
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	/// Texture2D ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -16,16 +39,16 @@ namespace Engine
 		return std::shared_ptr<Texture2D>(new Texture2D(path));
 	}
 
-	std::shared_ptr<Texture2D> Texture2D::Create(uint32_t width, uint32_t height)
+	std::shared_ptr<Texture2D> Texture2D::Create(const TextureSpecification& specification)
 	{
-		return std::shared_ptr<Texture2D>(new Texture2D(width, height));
+		return std::shared_ptr<Texture2D>(new Texture2D(specification));
 	}
 
-	Texture2D::Texture2D(uint32_t width, uint32_t height)
-		: m_Width(width), m_Height(height)
+	Texture2D::Texture2D(const TextureSpecification& specification)
+		: m_Specification(specification), m_Width(m_Specification.Width), m_Height(m_Specification.Height)
 	{
-		m_InternalFormat = GL_RGBA8;
-		m_DataFormat = GL_RGBA;
+		m_InternalFormat = ImageFormatToGLInternalFormat(m_Specification.Format);
+		m_DataFormat = ImageFormatToGLDataFormat(m_Specification.Format);
 
 		glCreateTextures(GL_TEXTURE_2D, 1, &m_RendererID);
 		glTextureStorage2D(m_RendererID, 1, m_InternalFormat, m_Width, m_Height);

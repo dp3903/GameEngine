@@ -19,11 +19,14 @@ IncludeDir["stb_image"] = 		"%{wks.location}/Engine/vendors/stb_image"
 IncludeDir["entt"] =			"%{wks.location}/Engine/vendors/entt/include"
 IncludeDir["nlohmann_json"] = 	"%{wks.location}/Engine/vendors/nlohmann_json"
 IncludeDir["ImGuizmo"] =		"%{wks.location}/Engine/vendors/ImGuizmo"
+IncludeDir["msdfgen"] = 		"%{wks.location}/Engine/vendors/msdf-atlas-gen/msdfgen"
+IncludeDir["msdf_atlas_gen"] = 	"%{wks.location}/Engine/vendors/msdf-atlas-gen/msdf-atlas-gen"
 
 include "Engine/vendors/glfw"
 include "Engine/vendors/glad"
 include "Engine/vendors/imgui"
 include "Engine/vendors/Box2D"
+include "Engine/vendors/msdf-atlas-gen"
 
 project "Engine"
 	location "Engine"
@@ -59,7 +62,9 @@ project "Engine"
 		"%{IncludeDir.ImGui}",
 		"%{IncludeDir.stb_image}",
 		"%{IncludeDir.entt}",
-		"%{IncludeDir.ImGuizmo}"
+		"%{IncludeDir.ImGuizmo}",
+		"%{IncludeDir.msdfgen}",
+		"%{IncludeDir.msdf_atlas_gen}"
 	}
 
 	links 
@@ -68,6 +73,7 @@ project "Engine"
 		"Glad",
 		"Box2D",
 		"ImGui",
+		"msdf-atlas-gen",
 		"opengl32.lib"
 	}
 
@@ -122,7 +128,9 @@ project "Editor"
 		"%{IncludeDir.GLAD}",
 		"%{IncludeDir.GLM}",
 		"%{IncludeDir.entt}",
-		"%{IncludeDir.ImGuizmo}"
+		"%{IncludeDir.ImGuizmo}",
+		"%{IncludeDir.msdfgen}",
+		"%{IncludeDir.msdf_atlas_gen}"
 	}
 
 	links

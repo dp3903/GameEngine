@@ -83,6 +83,8 @@ namespace Engine
 		int m_GizmoType = -1;
 
 		bool m_ShowPhysicsColliders = false;
+		glm::vec4 m_PhysicsCollidersColor = { 0.0f, 1.0f, 0.0f, 1.0f };
+		glm::vec4 m_SelectedEntityColor = { 1.0f, 0.5f, 0.0f, 1.0f };
 
 		enum class SceneState
 		{

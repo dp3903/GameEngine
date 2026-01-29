@@ -5,6 +5,7 @@
 #include "SceneCamera.h"
 #include "Engine/Renderer/Texture.h"
 #include "Engine/Utils/UUID.h"
+#include "Engine/Renderer/Font.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
@@ -190,5 +191,18 @@ namespace Engine {
 
 		CircleCollider2DComponent() = default;
 		CircleCollider2DComponent(const CircleCollider2DComponent&) = default;
+	};
+
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	/// TextComponent ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	struct TextComponent
+	{
+		std::string TextString;
+		std::shared_ptr<Font> FontAsset = Font::GetDefault();
+		glm::vec4 Color{ 1.0f };
+		float Kerning = 0.0f;
+		float LineSpacing = 0.0f;
 	};
 }

@@ -9,11 +9,12 @@ namespace Engine
 	class Editor : public Application
 	{
 	public:
-		Editor(ApplicationCommandLineArgs args)
-			: Application("Level Editor", args)
+		Editor(const ApplicationSpecification& spec)
+			: Application(spec)
 		{
-			//PushLayer(new ExampleLayer());
+
 			PushLayer(new EditorLayer());
+		
 		}
 		~Editor()
 		{
@@ -23,6 +24,10 @@ namespace Engine
 
 	Engine::Application* Engine::CreateApplication(ApplicationCommandLineArgs args)
 	{
-		return new Editor(args);
+		ApplicationSpecification spec;
+		spec.Name = "Editor Application";
+		spec.CommandLineArgs = args;
+
+		return new Editor(spec);
 	}
 }

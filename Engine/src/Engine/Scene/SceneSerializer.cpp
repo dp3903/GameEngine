@@ -91,7 +91,9 @@ namespace Engine {
                     auto& sc = entity.GetComponent<SpriteRendererComponent>();
 
                     entityJson["SpriteRendererComponent"] = {
-                        { "Color", { sc.Color.r, sc.Color.g, sc.Color.b, sc.Color.a } }
+                        { "Color", { sc.Color.r, sc.Color.g, sc.Color.b, sc.Color.a } },
+                        { "TexturePath", sc.Texture ? sc.Texture->GetPath() : "##None##" },
+                        { "TilingFactor", sc.TilingFactor }
                     };
                 }
 
@@ -172,6 +174,19 @@ namespace Engine {
                         { "Friction",               cc2c.Friction },
                         { "Restitution",            cc2c.Restitution },
                         { "RestitutionThreshold",   cc2c.RestitutionThreshold },
+                    };
+                }
+
+                // Serialize Text
+                if (entity.HasComponent<TextComponent>())
+                {
+                    auto& tc = entity.GetComponent<TextComponent>();
+
+                    entityJson["TextComponent"] = {
+                        { "TextString",             tc.TextString },
+                        { "Color",                  { tc.Color.r, tc.Color.g, tc.Color.b, tc.Color.a } },
+                        { "Kerning",                tc.Kerning},
+                        { "LineSpacing",            tc.LineSpacing}
                     };
                 }
 
@@ -266,6 +281,9 @@ namespace Engine {
                     auto& sJson = entityJson["SpriteRendererComponent"];
 
                     sc.Color = loadVec4(sJson["Color"]);
+                    if(sJson["TexturePath"] != "##None##")
+                        sc.Texture = Texture2D::Create(sJson["TexturePath"]);
+                    sc.TilingFactor = sJson["TilingFactor"];
                 }
 
                 // Load Circle
@@ -315,6 +333,18 @@ namespace Engine {
                     cc2c.Friction = cc2Json["Friction"];
                     cc2c.Restitution = cc2Json["Restitution"];
                     cc2c.RestitutionThreshold = cc2Json["RestitutionThreshold"];
+                }
+
+                // Load Text
+                if (entityJson.contains("TextComponent"))
+                {
+                    auto& tc = deserializedEntity.AddComponent<TextComponent>();
+                    auto& tJson = entityJson["TextComponent"];
+
+                    tc.TextString = tJson["TextString"];
+                    tc.Color = loadVec4(tJson["Color"]);
+                    tc.Kerning = tJson["Kerning"];
+                    tc.LineSpacing = tJson["LineSpacing"];
                 }
             }
         }

@@ -9,7 +9,7 @@
 
 namespace Engine {
 
-	class ENGINE_API Logger
+	class Logger
 	{
 	private:
 		static std::shared_ptr<spdlog::logger> CoreLogger;

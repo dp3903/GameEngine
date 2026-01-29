@@ -9,7 +9,8 @@
 class Game : public Engine::Application
 {
 public:
-	Game()
+	Game(const Engine::ApplicationSpecification& specification)
+		: Engine::Application(specification)
 	{
 		//PushLayer(new ExampleLayer());
 		PushLayer(new GameLayer1());
@@ -22,5 +23,10 @@ public:
 
 Engine::Application* Engine::CreateApplication(ApplicationCommandLineArgs args)
 {
-	return new Game();
+	ApplicationSpecification spec;
+	spec.Name = "Game Application";
+	spec.WorkingDirectory = "../Editor";
+	spec.CommandLineArgs = args;
+
+	return new Game(spec);
 }

@@ -1,0 +1,39 @@
+{
+    "Scene": "Untitled Scene",
+    "Entities": [
+        {
+            "Entity": 9834481188225299118,
+            "TagComponent": {
+                "Tag": "Text entity"
+            },
+            "TransformComponent": {
+                "Translation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "Rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "Scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            },
+            "TextComponent": {
+                "TextString": "Hello world\nGoodBye",
+                "Color": [
+                    0.014561720192432404,
+                    0.9615011811256409,
+                    0.9901960492134094,
+                    1.0
+                ],
+                "Kerning": -0.02500000037252903,
+                "LineSpacing": -0.375
+            }
+        }
+    ]
+}

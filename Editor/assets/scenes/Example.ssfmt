@@ -2,140 +2,6 @@
     "Scene": "Untitled Scene",
     "Entities": [
         {
-            "Entity": 16296255079116542862,
-            "TagComponent": {
-                "Tag": "Green Square"
-            },
-            "TransformComponent": {
-                "Translation": [
-                    2.700000047683716,
-                    0.0,
-                    0.0
-                ],
-                "Rotation": [
-                    0.0,
-                    0.0,
-                    1.0707441568374634
-                ],
-                "Scale": [
-                    6.441912651062012,
-                    0.4089173674583435,
-                    1.0
-                ]
-            },
-            "SpriteRendererComponent": {
-                "Color": [
-                    0.0,
-                    0.6176471710205078,
-                    1.0,
-                    1.0
-                ]
-            },
-            "Rigidbody2DComponent": {
-                "BodyType": "Static",
-                "FixedRotation": false
-            },
-            "BoxCollider2DComponent": {
-                "Offset": [
-                    0.0,
-                    0.0
-                ],
-                "Size": [
-                    0.5,
-                    0.5
-                ],
-                "Density": 1.0,
-                "Friction": 0.5,
-                "Restitution": 0.0,
-                "RestitutionThreshold": 0.5
-            }
-        },
-        {
-            "Entity": 17517384851036913914,
-            "TagComponent": {
-                "Tag": "Red Square"
-            },
-            "TransformComponent": {
-                "Translation": [
-                    -1.5501470565795898,
-                    -0.13406825065612793,
-                    0.0
-                ],
-                "Rotation": [
-                    0.0,
-                    0.0,
-                    -0.542728066444397
-                ],
-                "Scale": [
-                    6.720253944396973,
-                    0.28253400325775146,
-                    1.0
-                ]
-            },
-            "SpriteRendererComponent": {
-                "Color": [
-                    1.0,
-                    0.0,
-                    0.0,
-                    1.0
-                ]
-            },
-            "Rigidbody2DComponent": {
-                "BodyType": "Static",
-                "FixedRotation": false
-            },
-            "BoxCollider2DComponent": {
-                "Offset": [
-                    0.0,
-                    0.0
-                ],
-                "Size": [
-                    0.5,
-                    0.5
-                ],
-                "Density": 1.0,
-                "Friction": 0.5,
-                "Restitution": 0.0,
-                "RestitutionThreshold": 0.5
-            }
-        },
-        {
-            "Entity": 11673205564115809967,
-            "TagComponent": {
-                "Tag": "Camera A"
-            },
-            "TransformComponent": {
-                "Translation": [
-                    2.0,
-                    0.0,
-                    0.0
-                ],
-                "Rotation": [
-                    0.0,
-                    0.0,
-                    0.0
-                ],
-                "Scale": [
-                    1.0,
-                    1.0,
-                    1.0
-                ]
-            },
-            "CameraComponent": {
-                "Camera": {
-                    "ProjectionType": 1,
-                    "PerspectiveFOV": 0.7853981852531433,
-                    "PerspectiveNear": 0.009999999776482582,
-                    "PerspectiveFar": 1000.0,
-                    "OrthographicSize": 10.0,
-                    "OrthographicNear": -1.0,
-                    "OrthographicFar": 1.0
-                },
-                "Primary": true,
-                "FixedAspectRatio": false
-            }
-        },
-        {
             "Entity": 6749246572254377597,
             "TagComponent": {
                 "Tag": "Circle"
@@ -180,6 +46,144 @@
                 "Density": 1.0,
                 "Friction": 0.5,
                 "Restitution": 0.8399999737739563,
+                "RestitutionThreshold": 0.5
+            }
+        },
+        {
+            "Entity": 11673205564115809967,
+            "TagComponent": {
+                "Tag": "Camera A"
+            },
+            "TransformComponent": {
+                "Translation": [
+                    2.0,
+                    0.0,
+                    0.0
+                ],
+                "Rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "Scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            },
+            "CameraComponent": {
+                "Camera": {
+                    "ProjectionType": 1,
+                    "PerspectiveFOV": 0.7853981852531433,
+                    "PerspectiveNear": 0.009999999776482582,
+                    "PerspectiveFar": 1000.0,
+                    "OrthographicSize": 10.0,
+                    "OrthographicNear": -1.0,
+                    "OrthographicFar": 1.0
+                },
+                "Primary": true,
+                "FixedAspectRatio": false
+            }
+        },
+        {
+            "Entity": 17517384851036913914,
+            "TagComponent": {
+                "Tag": "Red Square"
+            },
+            "TransformComponent": {
+                "Translation": [
+                    -1.5501470565795898,
+                    -0.13406825065612793,
+                    0.0
+                ],
+                "Rotation": [
+                    0.0,
+                    0.0,
+                    -0.542728066444397
+                ],
+                "Scale": [
+                    6.720253944396973,
+                    0.28253400325775146,
+                    1.0
+                ]
+            },
+            "SpriteRendererComponent": {
+                "Color": [
+                    1.0,
+                    0.0,
+                    0.0,
+                    1.0
+                ],
+                "TexturePath": "##None##",
+                "TilingFactor": 1.0
+            },
+            "Rigidbody2DComponent": {
+                "BodyType": "Static",
+                "FixedRotation": false
+            },
+            "BoxCollider2DComponent": {
+                "Offset": [
+                    0.0,
+                    0.0
+                ],
+                "Size": [
+                    0.5,
+                    0.5
+                ],
+                "Density": 1.0,
+                "Friction": 0.5,
+                "Restitution": 0.0,
+                "RestitutionThreshold": 0.5
+            }
+        },
+        {
+            "Entity": 16296255079116542862,
+            "TagComponent": {
+                "Tag": "Green Square"
+            },
+            "TransformComponent": {
+                "Translation": [
+                    2.700000047683716,
+                    0.0,
+                    0.0
+                ],
+                "Rotation": [
+                    0.0,
+                    0.0,
+                    1.0707441568374634
+                ],
+                "Scale": [
+                    6.441912651062012,
+                    0.4089173674583435,
+                    1.0
+                ]
+            },
+            "SpriteRendererComponent": {
+                "Color": [
+                    0.0,
+                    0.6176471710205078,
+                    1.0,
+                    1.0
+                ],
+                "TexturePath": "##None##",
+                "TilingFactor": 1.0
+            },
+            "Rigidbody2DComponent": {
+                "BodyType": "Static",
+                "FixedRotation": false
+            },
+            "BoxCollider2DComponent": {
+                "Offset": [
+                    0.0,
+                    0.0
+                ],
+                "Size": [
+                    0.5,
+                    0.5
+                ],
+                "Density": 1.0,
+                "Friction": 0.5,
+                "Restitution": 0.0,
                 "RestitutionThreshold": 0.5
             }
         }

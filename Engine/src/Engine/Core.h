@@ -1,17 +1,7 @@
 #pragma once
 
-#ifdef ENGINE_PLATFORM_WINDOWS
-	#if ENGINE_DYNAMIC_LINK
-		#ifdef ENGINE_BUILD_DLL
-			#define ENGINE_API __declspec(dllexport)
-		#else
-			#define ENGINE_API __declspec(dllimport)
-		#endif
-	#else
-		#define ENGINE_API
-	#endif
-#else
-	#error We only support 
+#ifndef ENGINE_PLATFORM_WINDOWS
+	#error We only support Windows
 #endif
 
 #ifdef ENGINE_ENABLE_ASSERTS

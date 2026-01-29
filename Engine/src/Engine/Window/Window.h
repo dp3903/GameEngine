@@ -21,7 +21,7 @@ namespace Engine {
 		}
 	};
 
-	class ENGINE_API Window
+	class Window
 	{
 	public:
 		Window(const WindowProps& props);

@@ -9,16 +9,19 @@
 #include "Engine/Utils/Math.h"
 
 #include "ImGuizmo.h"
+#include <Engine/Renderer/Font.h>
 
 
 namespace Engine
 {
 
 	extern const std::filesystem::path g_AssetPath;
+	static std::shared_ptr<Font> s_Font;
 
 	EditorLayer::EditorLayer()
 		: Layer("EditorLayer"), m_CameraController(1280.0f / 720.0f, true), m_SquareColor({ 0.2f, 0.3f, 0.8f, 1.0f })
 	{
+		s_Font = Font::GetDefault();
 	}
 
 	void EditorLayer::OnAttach()
@@ -37,7 +40,7 @@ namespace Engine
 
 		m_EditorScene = std::make_shared<Scene>();
 
-		auto commandLineArgs = Application::Get().GetCommandLineArgs();
+		auto commandLineArgs = Application::Get().GetSpecification().CommandLineArgs;
 		if (commandLineArgs.Count > 1)
 		{
 			auto sceneFilePath = commandLineArgs[1];
@@ -46,55 +49,6 @@ namespace Engine
 		}
 
 		m_EditorCamera = EditorCamera(30.0f, 1.778f, 0.1f, 1000.0f);
-
-#if 0
-		// Entity
-		auto square = m_ActiveScene->CreateEntity("Green Square");
-		square.AddComponent<SpriteRendererComponent>(glm::vec4{ 0.0f, 1.0f, 0.0f, 1.0f });
-		auto redSquare = m_ActiveScene->CreateEntity("Red Square");
-		redSquare.AddComponent<SpriteRendererComponent>(glm::vec4{ 1.0f, 0.0f, 0.0f, 1.0f });
-
-		m_SquareEntity = square;
-
-		m_CameraEntity = m_ActiveScene->CreateEntity("Camera A");
-		m_CameraEntity.AddComponent<CameraComponent>();
-
-		m_SecondCamera = m_ActiveScene->CreateEntity("Camera B");
-		auto& cc = m_SecondCamera.AddComponent<CameraComponent>();
-		cc.Primary = false;
-
-		class CameraController : public ScriptableEntity
-		{
-		public:
-			virtual void OnCreate() override
-			{
-				auto& translation = GetComponent<TransformComponent>().Translation;
-				translation.x = rand() % 10 - 5.0f;
-			}
-
-			virtual void OnDestroy() override
-			{
-			}
-
-			virtual void OnUpdate(float ts) override
-			{
-				auto& translation = GetComponent<TransformComponent>().Translation;
-				float speed = 5.0f;
-
-				if (Input::IsKeyPressed(KeyCode::A))
-					translation.x -= speed * ts;
-				if (Input::IsKeyPressed(KeyCode::D))
-					translation.x += speed * ts;
-				if (Input::IsKeyPressed(KeyCode::W))
-					translation.y += speed * ts;
-				if (Input::IsKeyPressed(KeyCode::S))
-					translation.y -= speed * ts;
-			}
-		};
-
-		m_CameraEntity.AddComponent<NativeScriptComponent>().Bind<CameraController>();
-		m_SecondCamera.AddComponent<NativeScriptComponent>().Bind<CameraController>();
-#endif
 
 		m_ActiveScene = Scene::Copy(m_EditorScene);
 		m_SceneHierarchyPanel.SetContext(m_ActiveScene);
@@ -246,6 +200,9 @@ namespace Engine
 
 					if (ImGui::MenuItem("Open...", "Ctrl+O"))
 						OpenScene();
+					
+					if (ImGui::MenuItem("Save", "Ctrl+S"))
+						SaveScene();
 
 					if (ImGui::MenuItem("Save As...", "Ctrl+Shift+S"))
 						SaveSceneAs();
@@ -276,7 +233,10 @@ namespace Engine
 	void EditorLayer::OnEvent(Event& e)
 	{
 		m_CameraController.OnEvent(e);
-		m_EditorCamera.OnEvent(e);
+		if (m_SceneState == SceneState::Edit)
+		{
+			m_EditorCamera.OnEvent(e);
+		}
 
 		EventDispatcher dispatcher(e);
 		dispatcher.Dispatch<KeyPressedEvent>(std::bind(&EditorLayer::OnKeyPressed, this, std::placeholders::_1));
@@ -363,22 +323,21 @@ namespace Engine
 
 	void EditorLayer::OnOverlayRender()
 	{
+		if (m_SceneState == SceneState::Play)
+		{
+			Entity camera = m_ActiveScene->GetPrimaryCameraEntity();
+			if (!camera)
+				return;
+
+			Renderer2D::BeginScene(camera.GetComponent<CameraComponent>().Camera, camera.GetComponent<TransformComponent>().GetTransform());
+		}
+		else
+		{
+			Renderer2D::BeginScene(m_EditorCamera);
+		}
 
 		if (m_ShowPhysicsColliders)
 		{
-			if (m_SceneState == SceneState::Play)
-			{
-				Entity camera = m_ActiveScene->GetPrimaryCameraEntity();
-				if (!camera)
-					return;
-
-				Renderer2D::BeginScene(camera.GetComponent<CameraComponent>().Camera, camera.GetComponent<TransformComponent>().GetTransform());
-			}
-			else
-			{
-				Renderer2D::BeginScene(m_EditorCamera);
-			}
-
 			// Box Colliders
 			{
 				auto view = m_ActiveScene->GetAllEntitiesWith<TransformComponent, BoxCollider2DComponent>();
@@ -386,14 +345,14 @@ namespace Engine
 				{
 					auto [tc, bc2d] = view.get<TransformComponent, BoxCollider2DComponent>(entity);
 
-					glm::vec3 translation = tc.Translation + glm::vec3(bc2d.Offset, 0.001f);
 					glm::vec3 scale = tc.Scale * glm::vec3(bc2d.Size * 2.0f, 1.0f);
 
-					glm::mat4 transform = glm::translate(glm::mat4(1.0f), translation)
+					glm::mat4 transform = glm::translate(glm::mat4(1.0f), tc.Translation)
+						* glm::translate(glm::mat4(1.0f), glm::vec3(bc2d.Offset, 0.001f))
 						* glm::rotate(glm::mat4(1.0f), tc.Rotation.z, glm::vec3(0.0f, 0.0f, 1.0f))
 						* glm::scale(glm::mat4(1.0f), scale);
 
-					Renderer2D::DrawRect(transform, glm::vec4(0, 1, 0, 1));
+					Renderer2D::DrawRect(transform, m_PhysicsCollidersColor);
 				}
 			}
 
@@ -410,12 +369,18 @@ namespace Engine
 					glm::mat4 transform = glm::translate(glm::mat4(1.0f), translation)
 						* glm::scale(glm::mat4(1.0f), scale);
 
-					Renderer2D::DrawCircle(transform, glm::vec4(0, 1, 0, 1), 0.1f);
+					Renderer2D::DrawCircle(transform, m_PhysicsCollidersColor, 0.1f);
 				}
 			}
-
-			Renderer2D::EndScene();
 		}
+
+		if (Entity selectedEntity = m_SceneHierarchyPanel.GetSelectedEntity())
+		{
+			const TransformComponent& transform = selectedEntity.GetComponent<TransformComponent>();
+			Renderer2D::DrawRect(transform.GetTransform(), m_SelectedEntityColor);
+		}
+		
+		Renderer2D::EndScene();
 
 	}
 
@@ -500,7 +465,13 @@ namespace Engine
 	{
 		ImGui::Begin("Settings");
 
+		ImGui::ColorEdit4("Selected entity Color", glm::value_ptr(m_SelectedEntityColor));
 		ImGui::Checkbox("Show physics colliders", &m_ShowPhysicsColliders);
+		if (m_ShowPhysicsColliders)
+		{
+			ImGui::ColorEdit4("Physics Collider Color", glm::value_ptr(m_PhysicsCollidersColor));
+		}
+		ImGui::Image((ImTextureID)s_Font->GetAtlasTexture()->GetRendererID(), { 512,512 }, { 0, 1 }, { 1, 0 });
 		
 		ImGui::End();
 	}
