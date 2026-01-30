@@ -58,7 +58,7 @@
       <PrecompiledHeaderFile>egpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>ENGINE_PLATFORM_WINDOWS;ENGINE_BUILD_DLL;GLFW_INCLUDE_NONE;ENGINE_DEBUG;ENGINE_ENABLE_ASSERTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>vendors;src;vendors\glfw\include;vendors\glad\include;vendors\glm;vendors\box2d\include;vendors\imgui;vendors\stb_image;vendors\entt\include;vendors\ImGuizmo;vendors\msdf-atlas-gen\msdfgen;vendors\msdf-atlas-gen\msdf-atlas-gen;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>vendors;src;vendors\glfw\include;vendors\glad\include;vendors\glm;vendors\box2d\include;vendors\imgui;vendors\stb_image;vendors\entt\include;vendors\ImGuizmo;vendors\msdf-atlas-gen\msdfgen;vendors\msdf-atlas-gen\msdf-atlas-gen;vendors\lua\include;vendors\sol2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -80,7 +80,7 @@
       <PrecompiledHeaderFile>egpch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>ENGINE_PLATFORM_WINDOWS;ENGINE_BUILD_DLL;GLFW_INCLUDE_NONE;ENGINE_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>vendors;src;vendors\glfw\include;vendors\glad\include;vendors\glm;vendors\box2d\include;vendors\imgui;vendors\stb_image;vendors\entt\include;vendors\ImGuizmo;vendors\msdf-atlas-gen\msdfgen;vendors\msdf-atlas-gen\msdf-atlas-gen;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>vendors;src;vendors\glfw\include;vendors\glad\include;vendors\glm;vendors\box2d\include;vendors\imgui;vendors\stb_image;vendors\entt\include;vendors\ImGuizmo;vendors\msdf-atlas-gen\msdfgen;vendors\msdf-atlas-gen\msdf-atlas-gen;vendors\lua\include;vendors\sol2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -183,7 +183,7 @@
     <ProjectReference Include="vendors\glad\Glad.vcxproj">
       <Project>{BDD6857C-A90D-870D-52FA-6C103E10030F}</Project>
     </ProjectReference>
-    <ProjectReference Include="vendors\Box2D\Box2D.vcxproj">
+    <ProjectReference Include="vendors\box2D\Box2D.vcxproj">
       <Project>{A434E80C-1049-10BE-D9CA-B31D459E0CEF}</Project>
     </ProjectReference>
     <ProjectReference Include="vendors\imgui\ImGui.vcxproj">
@@ -191,6 +191,9 @@
     </ProjectReference>
     <ProjectReference Include="vendors\msdf-atlas-gen\msdf-atlas-gen.vcxproj">
       <Project>{38BD587B-248B-4C81-0D1F-BDA7F98B28E6}</Project>
+    </ProjectReference>
+    <ProjectReference Include="vendors\lua\Lua.vcxproj">
+      <Project>{A705880B-130F-887C-9C8A-9E7C0893937C}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

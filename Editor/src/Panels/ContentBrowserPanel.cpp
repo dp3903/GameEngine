@@ -68,6 +68,16 @@ namespace Engine {
 					ImGui::EndDragDropSource();
 				}
 			}
+			else if (ext == ".lua")
+			{
+				if (ImGui::BeginDragDropSource())
+				{
+					const wchar_t* itemPath = relativePath.c_str();
+					ImGui::SetDragDropPayload("CONTENT_BROWSER_ITEM_SCRIPT", itemPath, (wcslen(itemPath) + 1) * sizeof(wchar_t));
+					ImGui::EndDragDropSource();
+				}
+			}
+
 
 			if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 			{

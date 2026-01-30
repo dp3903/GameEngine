@@ -52,6 +52,8 @@ namespace Engine {
 			dst.AddOrReplaceComponent<Component>(src.GetComponent<Component>());
 	}
 
+	static sol::state lua;
+
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Scene //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -91,7 +93,7 @@ namespace Engine {
 		CopyComponent<TransformComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<SpriteRendererComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<CameraComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
-		CopyComponent<NativeScriptComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
+		CopyComponent<ScriptComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<CircleRendererComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<Rigidbody2DComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<BoxCollider2DComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
@@ -109,7 +111,7 @@ namespace Engine {
 		CopyComponentIfExists<TransformComponent>(newEntity, entity);
 		CopyComponentIfExists<SpriteRendererComponent>(newEntity, entity);
 		CopyComponentIfExists<CameraComponent>(newEntity, entity);
-		CopyComponentIfExists<NativeScriptComponent>(newEntity, entity);
+		CopyComponentIfExists<ScriptComponent>(newEntity, entity);
 		CopyComponentIfExists<CircleRendererComponent>(newEntity, entity);
 		CopyComponentIfExists<Rigidbody2DComponent>(newEntity, entity);
 		CopyComponentIfExists<BoxCollider2DComponent>(newEntity, entity);
@@ -141,10 +143,12 @@ namespace Engine {
 	void Scene::OnRuntimeStart()
 	{
 		OnPhysics2DStart();
+		OnScriptingStart();
 	}
 
 	void Scene::OnRuntimeStop()
 	{
+		OnScriptingStop();
 		OnPhysics2DStop();
 	}
 
@@ -161,20 +165,7 @@ namespace Engine {
 	void Scene::OnUpdateRuntime(float ts)
 	{
 		// Update scripts
-		{
-			m_Registry.view<NativeScriptComponent>().each([=](auto entity, auto& nsc)
-				{
-					if (!nsc.Instance)
-					{
-						nsc.Instance = nsc.InstantiateScript();
-						nsc.Instance->m_Entity = Entity{ entity, this };
-
-						nsc.Instance->OnCreate();
-					}
-
-					nsc.Instance->OnUpdate(ts);
-				});
-		}
+		RunScripts(ts);
 
 		// Physics
 		OnUpdatePhysics2D(ts);
@@ -316,6 +307,97 @@ namespace Engine {
 		
 	}
 
+	void Scene::OnScriptingStart()
+	{
+		lua.open_libraries(sol::lib::base, sol::lib::math);
+
+		// 1. DEFINE THE TYPE (Do this ONCE)
+		// This teaches Lua what an "Entity" is and what functions it has.
+		lua.new_usertype<Entity>("Entity",
+			"GetName", &Entity::GetName,
+			"GetTransform", &Entity::GetComponent<TransformComponent>
+		);
+
+		// 2. Iterate all entities with scripts
+		auto view = m_Registry.view<ScriptComponent, TagComponent>();
+		for (auto e : view)
+		{
+			Entity entity = { e, this };
+			auto [sc, tag] = view.get<ScriptComponent, TagComponent>(e);
+
+			// 3. Load the file (Get the "Class" table)
+			// Note: In a real engine, you would cache this result so you don't 
+			// read the disk 1000 times for 1000 enemies.
+			sol::protected_function_result result = lua.script_file(sc.ScriptPath);
+
+			if (result.valid())
+			{
+				// 4. Create the Instance
+				// We take the "Class" table returned by the script and deep copy it
+				// into our component's Instance slot.
+				sol::table scriptClass = result;
+				sc.Instance = lua.create_table();
+
+				// Setup metatable for inheritance (so Instance behaves like Class)
+				// This is Lua magic to make the instance allow variable overrides
+				sc.Instance[sol::metatable_key] = lua.create_table_with("__index", scriptClass);
+
+				// 5. Inject the Entity into the instance
+				// This is how the script knows which entity it belongs to!
+				sc.Instance["Entity"] = entity;
+
+				// 6. Call OnCreate
+				if (sc.Instance["OnCreate"].valid())
+					sc.Instance["OnCreate"](sc.Instance);
+			}
+		}
+	}
+
+	void Scene::OnScriptingStop()
+	{
+		auto view = m_Registry.view<ScriptComponent>();
+		for (auto e : view)
+		{
+			auto& sc = view.get<ScriptComponent>(e);
+
+			// Call OnDestroy(self)
+			if (sc.Instance["OnDestroy"].valid())
+			{
+				// We must pass 'sc.Instance' as the first argument to simulate ':' call
+				sc.Instance["OnDestroy"](sc.Instance);
+			}
+
+		}
+	}
+
+	void Scene::RunScripts(float ts)
+	{
+		// Update Scripts
+		auto view = m_Registry.view<ScriptComponent>();
+		for (auto e : view)
+		{
+			auto& sc = view.get<ScriptComponent>(e);
+
+			// Use protected_function to catch errors
+			if (sc.Instance["OnUpdate"].valid())
+			{
+				sol::protected_function onUpdate = sc.Instance["OnUpdate"];
+
+				// Call the function and capture the result
+				sol::protected_function_result result = onUpdate(sc.Instance, ts);
+
+				// Check if the script crashed
+				if (!result.valid())
+				{
+					sol::error err = result;
+					// LOG_ERROR("Lua Error: {0}", err.what()); // Use your engine logger
+					std::cout << "Lua Error: " << err.what() << std::endl;
+				}
+			}
+
+		}
+	}
+
 	void Scene::RenderScene()
 	{
 
@@ -416,7 +498,7 @@ namespace Engine {
 	}
 
 	template<>
-	void Scene::OnComponentAdded<NativeScriptComponent>(Entity entity, NativeScriptComponent& component)
+	void Scene::OnComponentAdded<ScriptComponent>(Entity entity, ScriptComponent& component)
 	{
 	}
 

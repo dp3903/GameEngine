@@ -10,7 +10,9 @@
 
 #include "ImGuizmo.h"
 #include <Engine/Renderer/Font.h>
-
+// Temporary includes
+#include "sol/sol.hpp"
+#include "lua.hpp" // If this fails, your include paths are wrong
 
 namespace Engine
 {
@@ -52,6 +54,22 @@ namespace Engine
 
 		m_ActiveScene = Scene::Copy(m_EditorScene);
 		m_SceneHierarchyPanel.SetContext(m_ActiveScene);
+
+		{
+			// 1. Initialize Lua via Sol
+			sol::state lua;
+			lua.open_libraries(sol::lib::base);
+
+			// 2. Run a tiny script
+			lua.script("print('LUA IS WORKING! This is printed from the script engine.')");
+
+			// 3. Read a variable back
+			lua["someVar"] = 42;
+			int value = lua["someVar"];
+
+			// 4. Log it (Replace with your engine's logger if you have one)
+			std::cout << "Lua Read Check: " << value << std::endl;
+		}
 
 		APP_LOG_INFO("Editor Attached");
 	}
@@ -489,7 +507,7 @@ namespace Engine
 
 		m_ViewportFocused = ImGui::IsWindowFocused();
 		m_ViewportHovered = ImGui::IsWindowHovered();
-		Application::Get().GetImGuiLayer()->BlockEvents(!m_ViewportFocused && !m_ViewportHovered);
+		Application::Get().GetImGuiLayer()->BlockEvents(!m_ViewportFocused || !m_ViewportHovered);
 
 		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
 
@@ -610,7 +628,7 @@ namespace Engine
 
 		m_SceneState = SceneState::Play;
 
-		m_ActiveScene = Scene::Copy(m_EditorScene);
+		m_EditorScene = Scene::Copy(m_ActiveScene);
 		m_ActiveScene->OnRuntimeStart();
 		
 		m_SceneHierarchyPanel.SetContext(m_ActiveScene);
@@ -623,7 +641,7 @@ namespace Engine
 
 		m_SceneState = SceneState::Simulate;
 
-		m_ActiveScene = Scene::Copy(m_EditorScene);
+		m_EditorScene = Scene::Copy(m_ActiveScene);
 		m_ActiveScene->OnSimulationStart();
 
 		m_SceneHierarchyPanel.SetContext(m_ActiveScene);

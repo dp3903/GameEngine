@@ -190,6 +190,16 @@ namespace Engine {
                     };
                 }
 
+                // Serialize Script
+                if (entity.HasComponent<ScriptComponent>())
+                {
+                    auto& sc = entity.GetComponent<ScriptComponent>();
+
+                    entityJson["ScriptComponent"] = {
+                        { "ScriptFile", sc.ScriptPath }
+                    };
+                }
+
                 // Add to main list
                 sceneData["Entities"].push_back(entityJson);
             });
@@ -345,6 +355,15 @@ namespace Engine {
                     tc.Color = loadVec4(tJson["Color"]);
                     tc.Kerning = tJson["Kerning"];
                     tc.LineSpacing = tJson["LineSpacing"];
+                }
+
+                // Load Script
+                if (entityJson.contains("ScriptComponent"))
+                {
+                    auto& sc = deserializedEntity.AddComponent<ScriptComponent>();
+                    auto& sJson = entityJson["ScriptComponent"];
+
+                    sc.ScriptPath = sJson["ScriptFile"];
                 }
             }
         }

@@ -53,6 +53,10 @@ namespace Engine {
 		void OnPhysics2DStop();
 		void OnUpdatePhysics2D(float ts);
 
+		void OnScriptingStart();
+		void OnScriptingStop();
+		void RunScripts(float ts);
+
 		void RenderScene();
 
 	private:

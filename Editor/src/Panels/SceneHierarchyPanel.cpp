@@ -240,6 +240,7 @@ namespace Engine {
 			DisplayAddComponentEntry<BoxCollider2DComponent>("Box Collider 2D");
 			DisplayAddComponentEntry<CircleCollider2DComponent>("Circle Collider 2D");
 			DisplayAddComponentEntry<TextComponent>("Text Component");
+			DisplayAddComponentEntry<ScriptComponent>("Script");
 
 			ImGui::EndPopup();
 		}
@@ -455,6 +456,29 @@ namespace Engine {
 				ImGui::ColorEdit4("Color", glm::value_ptr(component.Color));
 				ImGui::DragFloat("Kerning", &component.Kerning, 0.025f);
 				ImGui::DragFloat("Line Spacing", &component.LineSpacing, 0.025f);
+			});
+
+		DrawComponent<ScriptComponent>("Script", entity, [](ScriptComponent& component)
+			{
+				// 1. Script File Name (Drop Target)
+				std::string filename = "None";
+				if (!component.ScriptPath.empty())
+					filename = component.ScriptPath; // or use std::filesystem::path(..).filename()
+
+				ImGui::Button(filename.c_str(), ImVec2(100.0f, 0.0f));
+
+				// Drag and Drop Logic
+				if (ImGui::BeginDragDropTarget())
+				{
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM_SCRIPT"))
+					{
+						const wchar_t* path = (const wchar_t*)payload->Data;
+						std::filesystem::path scriptPath = std::filesystem::path(g_AssetPath) / path;
+						component.ScriptPath = scriptPath.string();
+						// TODO: Trigger a reload here!
+					}
+					ImGui::EndDragDropTarget();
+				}
 			});
 	}
 }
