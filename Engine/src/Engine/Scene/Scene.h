@@ -3,7 +3,7 @@
 #include "Engine/Utils/UUID.h"
 #include "Engine/Renderer/EditorCamera.h"
 #include "entt.hpp"
-
+#include "sol/sol.hpp"
 
 class b2World;
 
@@ -53,6 +53,7 @@ namespace Engine {
 		void OnPhysics2DStop();
 		void OnUpdatePhysics2D(float ts);
 
+		void BindLuaTypes();
 		void OnScriptingStart();
 		void OnScriptingStop();
 		void RunScripts(float ts);
@@ -64,6 +65,7 @@ namespace Engine {
 		uint32_t m_ViewportWidth = 0, m_ViewportHeight = 0;
 		
 		b2World* m_PhysicsWorld = nullptr;
+		sol::state* m_Lua = nullptr;
 
 	friend class Entity;
 	friend class SceneHierarchyPanel;

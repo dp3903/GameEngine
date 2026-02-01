@@ -4,7 +4,7 @@
         {
             "Entity": 6749246572254377597,
             "TagComponent": {
-                "Tag": "Circle"
+                "Tag": "Ball"
             },
             "TransformComponent": {
                 "Translation": [
@@ -83,6 +83,9 @@
                 },
                 "Primary": true,
                 "FixedAspectRatio": false
+            },
+            "ScriptComponent": {
+                "ScriptFile": "assets\\scripts\\CameraFolloer.lua"
             }
         },
         {

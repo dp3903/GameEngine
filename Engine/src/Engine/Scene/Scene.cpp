@@ -4,6 +4,7 @@
 #include "Components.h"
 #include "Entity.h"
 
+#include "Engine/Window/Input.h"
 #include "Engine/Renderer/Renderer.h"
 
 #include <glm/glm.hpp>
@@ -52,8 +53,6 @@ namespace Engine {
 			dst.AddOrReplaceComponent<Component>(src.GetComponent<Component>());
 	}
 
-	static sol::state lua;
-
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Scene //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -65,7 +64,10 @@ namespace Engine {
 
 	Scene::~Scene()
 	{
-		delete m_PhysicsWorld;
+		if (m_Lua)
+			OnScriptingStop();
+		if (m_PhysicsWorld)
+			OnPhysics2DStop();
 	}
 
 	std::shared_ptr<Scene> Scene::Copy(std::shared_ptr<Scene> other)
@@ -307,46 +309,131 @@ namespace Engine {
 		
 	}
 
+	void Scene::BindLuaTypes()
+	{
+
+		m_Lua->new_usertype<glm::vec2>("Vec2",
+			sol::constructors<glm::vec2(float, float), glm::vec2(float)>(),
+			"x", &glm::vec2::x,
+			"y", &glm::vec2::y
+		);
+		m_Lua->new_usertype<glm::vec3>("Vec3",
+			sol::constructors<glm::vec3(float, float, float), glm::vec3(float)>(),
+			"x", &glm::vec3::x,
+			"y", &glm::vec3::y,
+			"z", &glm::vec3::z
+		);
+		m_Lua->new_usertype<glm::vec4>("Vec4",
+			sol::constructors<glm::vec4(float, float, float, float), glm::vec4(float)>(),
+			"r", &glm::vec4::r,
+			"g", &glm::vec4::g,
+			"b", &glm::vec4::b,
+			"a", &glm::vec4::a
+		);
+		m_Lua->new_usertype<TransformComponent>("Transform",
+			"Translation", &TransformComponent::Translation,
+			"Rotation", &TransformComponent::Rotation,
+			"Scale", &TransformComponent::Scale
+		);
+		m_Lua->new_usertype<Entity>("Entity",
+			"GetUUID", &Entity::GetUUID,
+			"GetName", &Entity::GetName,
+			"Transform", sol::property([this](Entity& entity) -> TransformComponent& {
+				// Return REFERENCE (std::ref is automatic here because of return type &)
+				return entity.GetComponent<TransformComponent>();
+				}),
+			"SpriteRenderer", sol::property([](Entity& entity) -> SpriteRendererComponent* {
+				if (entity.HasComponent<SpriteRendererComponent>())
+				{
+					return &entity.GetComponent<SpriteRendererComponent>();
+				}
+
+				// If missing, return nullptr. Sol2 converts this to Lua 'nil'
+				return nullptr;
+				})
+		);
+		m_Lua->set_function("GetEntityByTag", [&](std::string tag) -> sol::object {
+
+			auto& view = m_Registry.view<TagComponent>();
+			for (auto& e : view)
+			{
+				if (view.get<TagComponent>(e).Tag == tag)
+					return sol::make_object(*m_Lua, Entity{ e, this });
+			}
+			return sol::make_object(*m_Lua, sol::nil); // Returns Lua 'nil'
+			});
+
+		// Group Input into a table for cleaner Lua code (Input.IsKeyPressed)
+		auto inputTable = m_Lua->create_named_table("Input");
+		inputTable.set_function("IsKeyPressed", &Input::IsKeyPressed);
+		inputTable.set_function("GetMouseX", &Input::GetMouseX);
+		inputTable.set_function("GetMouseY", &Input::GetMouseY);
+		inputTable.set_function("GetMousePosition", &Input::GetMousePosition);
+	}
+
 	void Scene::OnScriptingStart()
 	{
-		lua.open_libraries(sol::lib::base, sol::lib::math);
+		m_Lua = new sol::state();
 
-		// 1. DEFINE THE TYPE (Do this ONCE)
-		// This teaches Lua what an "Entity" is and what functions it has.
-		lua.new_usertype<Entity>("Entity",
-			"GetName", &Entity::GetName,
-			"GetTransform", &Entity::GetComponent<TransformComponent>
-		);
+		// Load standard libraries
+		m_Lua->open_libraries(sol::lib::base, sol::lib::math);
 
-		// 2. Iterate all entities with scripts
+		// bind lua types and functions
+		BindLuaTypes();
+
+		// Iterate all entities with scripts
 		auto view = m_Registry.view<ScriptComponent, TagComponent>();
 		for (auto e : view)
 		{
 			Entity entity = { e, this };
 			auto [sc, tag] = view.get<ScriptComponent, TagComponent>(e);
 
-			// 3. Load the file (Get the "Class" table)
+			if (sc.ScriptPath.empty())
+			{
+				// Just skip this entity, it has no script attached.
+				ENGINE_LOG_WARN("Entity {0} has script entity but no script path.", tag.Tag);
+				continue;
+			}
+
+			// Prevents crashing if you deleted the file but didn't update the entity
+			if (!std::filesystem::exists(sc.ScriptPath))
+			{
+				ENGINE_LOG_ERROR("Script file not found: {0} for Entity: {1}", sc.ScriptPath, tag.Tag);
+				continue;
+			}
+
+			// Load the file (Get the "Class" table)
 			// Note: In a real engine, you would cache this result so you don't 
 			// read the disk 1000 times for 1000 enemies.
-			sol::protected_function_result result = lua.script_file(sc.ScriptPath);
+
+			sol::protected_function_result result = m_Lua->safe_script_file(sc.ScriptPath);
+
+			if (!result.valid())
+			{
+				// Handle Syntax Errors (e.g., "unexpected symbol near 'if'")
+				sol::error err = result;
+				ENGINE_LOG_ERROR("Failed to compile script '{0}'", sc.ScriptPath);
+				ENGINE_LOG_ERROR("Error: {0}", err.what());
+				continue; // Skip this entity
+			}
 
 			if (result.valid())
 			{
-				// 4. Create the Instance
+				// Create the Instance
 				// We take the "Class" table returned by the script and deep copy it
 				// into our component's Instance slot.
 				sol::table scriptClass = result;
-				sc.Instance = lua.create_table();
+				sc.Instance = m_Lua->create_table();
 
 				// Setup metatable for inheritance (so Instance behaves like Class)
 				// This is Lua magic to make the instance allow variable overrides
-				sc.Instance[sol::metatable_key] = lua.create_table_with("__index", scriptClass);
+				sc.Instance[sol::metatable_key] = m_Lua->create_table_with("__index", scriptClass);
 
-				// 5. Inject the Entity into the instance
+				// Inject the Entity into the instance
 				// This is how the script knows which entity it belongs to!
 				sc.Instance["Entity"] = entity;
 
-				// 6. Call OnCreate
+				// Call OnCreate
 				if (sc.Instance["OnCreate"].valid())
 					sc.Instance["OnCreate"](sc.Instance);
 			}
@@ -360,6 +447,10 @@ namespace Engine {
 		{
 			auto& sc = view.get<ScriptComponent>(e);
 
+			// Check if instance exists
+			if (!sc.Instance.valid())
+				continue;
+
 			// Call OnDestroy(self)
 			if (sc.Instance["OnDestroy"].valid())
 			{
@@ -367,7 +458,12 @@ namespace Engine {
 				sc.Instance["OnDestroy"](sc.Instance);
 			}
 
+			// Assigning a default (empty) table disconnects it from the Lua State.
+			sc.Instance = sol::table();
 		}
+
+		delete m_Lua;
+		m_Lua = nullptr;
 	}
 
 	void Scene::RunScripts(float ts)
@@ -377,6 +473,10 @@ namespace Engine {
 		for (auto e : view)
 		{
 			auto& sc = view.get<ScriptComponent>(e);
+
+			// Check if instance exists
+			if (!sc.Instance.valid())
+				continue;
 
 			// Use protected_function to catch errors
 			if (sc.Instance["OnUpdate"].valid())

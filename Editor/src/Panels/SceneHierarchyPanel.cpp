@@ -463,9 +463,9 @@ namespace Engine {
 				// 1. Script File Name (Drop Target)
 				std::string filename = "None";
 				if (!component.ScriptPath.empty())
-					filename = component.ScriptPath; // or use std::filesystem::path(..).filename()
+					filename = std::filesystem::path(component.ScriptPath).filename().string();
 
-				ImGui::Button(filename.c_str(), ImVec2(100.0f, 0.0f));
+				ImGui::Button(filename.c_str(), ImVec2(-1.0f, 0.0f));
 
 				// Drag and Drop Logic
 				if (ImGui::BeginDragDropTarget())
@@ -478,6 +478,19 @@ namespace Engine {
 						// TODO: Trigger a reload here!
 					}
 					ImGui::EndDragDropTarget();
+				}
+
+				if (!component.ScriptPath.empty())
+				{
+					// The "Remove" Button
+					// We use a red color for the button to indicate a destructive action
+					ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.1f, 0.15f, 1.0f));
+					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.2f, 0.2f, 1.0f));
+					if (ImGui::Button("Remove Script"))
+					{
+						component.ScriptPath = std::string();
+					}
+					ImGui::PopStyleColor(2);
 				}
 			});
 	}
