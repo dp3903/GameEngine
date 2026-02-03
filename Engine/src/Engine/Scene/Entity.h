@@ -56,7 +56,7 @@ namespace Engine {
 			m_Scene->m_Registry.remove<T>(m_EntityHandle);
 		}
 
-		operator bool() const { return m_EntityHandle != entt::null; }
+		operator bool() const { return m_EntityHandle != entt::null && m_Scene->m_Registry.valid(m_EntityHandle); } // Checks if the handle is not null AND exists in the registry
 		operator entt::entity() const { return m_EntityHandle; }
 		operator uint32_t() const { return (uint32_t)m_EntityHandle; }
 

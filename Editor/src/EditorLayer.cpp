@@ -5,6 +5,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "Engine/Scene/SceneSerializer.h"
+#include "Engine/Scene/SceneRuntimeData.h"
 #include "Engine/Utils/FileDialogs.h"
 #include "Engine/Utils/Math.h"
 
@@ -17,22 +18,19 @@
 namespace Engine
 {
 
-	extern const std::filesystem::path g_AssetPath;
-	static std::shared_ptr<Font> s_Font;
-
 	EditorLayer::EditorLayer()
-		: Layer("EditorLayer"), m_CameraController(1280.0f / 720.0f, true), m_SquareColor({ 0.2f, 0.3f, 0.8f, 1.0f })
+		: Layer("EditorLayer")
 	{
-		s_Font = Font::GetDefault();
+
 	}
 
 	void EditorLayer::OnAttach()
 	{
-		m_CheckerboardTexture = Texture2D::Create("assets/textures/Checkerboard.png");
-
 		m_IconPlay = Texture2D::Create("Resources/Icons/PlayButton.png");
 		m_IconStop = Texture2D::Create("Resources/Icons/StopButton.png");
 		m_IconSimulate = Texture2D::Create("Resources/Icons/SimulateButton.png");
+
+		m_SceneHierarchyPanel = std::make_unique<SceneHierarchyPanel>();
 
 		FramebufferSpecification fbSpec;
 		fbSpec.Attachments = { FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::RED_INTEGER, FramebufferTextureFormat::Depth };
@@ -45,31 +43,23 @@ namespace Engine
 		auto commandLineArgs = Application::Get().GetSpecification().CommandLineArgs;
 		if (commandLineArgs.Count > 1)
 		{
-			auto sceneFilePath = commandLineArgs[1];
-			SceneSerializer serializer(m_EditorScene);
-			serializer.Deserialize(sceneFilePath);
+			auto projectFilePath = commandLineArgs[1];
+			OpenProject(projectFilePath);
 		}
+		else
+		{
+			// TODO(Yan): prompt the user to select a directory
+			//NewProject();
+
+			OpenProject("Projects/GameProject/GameProject.gmproj");
+		}
+
+		m_ContentBrowserPanel = std::make_unique<ContentBrowserPanel>();
 
 		m_EditorCamera = EditorCamera(30.0f, 1.778f, 0.1f, 1000.0f);
 
 		m_ActiveScene = Scene::Copy(m_EditorScene);
-		m_SceneHierarchyPanel.SetContext(m_ActiveScene);
-
-		{
-			// 1. Initialize Lua via Sol
-			sol::state lua;
-			lua.open_libraries(sol::lib::base);
-
-			// 2. Run a tiny script
-			lua.script("print('LUA IS WORKING! This is printed from the script engine.')");
-
-			// 3. Read a variable back
-			lua["someVar"] = 42;
-			int value = lua["someVar"];
-
-			// 4. Log it (Replace with your engine's logger if you have one)
-			std::cout << "Lua Read Check: " << value << std::endl;
-		}
+		m_SceneHierarchyPanel->SetContext(m_ActiveScene);
 
 		APP_LOG_INFO("Editor Attached");
 	}
@@ -91,7 +81,6 @@ namespace Engine
 			(spec.Width != m_ViewportSize.x || spec.Height != m_ViewportSize.y))
 		{
 			m_Framebuffer->Resize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
-			m_CameraController.OnResize(m_ViewportSize.x, m_ViewportSize.y);
 
 			m_EditorCamera.SetViewportSize(m_ViewportSize.x, m_ViewportSize.y);
 			m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
@@ -113,9 +102,6 @@ namespace Engine
 		{
 			case SceneState::Edit:
 			{
-				if (m_ViewportFocused)
-					m_CameraController.OnUpdate(ts);
-
 				m_EditorCamera.OnUpdate(ts);
 
 				m_ActiveScene->OnUpdateEditor(ts, m_EditorCamera);
@@ -152,6 +138,24 @@ namespace Engine
 		OnOverlayRender();
 
 		m_Framebuffer->Unbind();
+
+		// handle scene change request
+		if (RuntimeData::RequestStatus().Requested)
+		{
+			m_ActiveScene->OnRuntimeStop();
+
+			std::shared_ptr<Scene> newScene = std::make_shared<Scene>();
+			SceneSerializer serializer(newScene);
+			serializer.Deserialize(Project::GetAssetFileSystemPath(RuntimeData::RequestStatus().scenePath).string());
+			
+			m_ActiveScene = newScene;
+			m_ActiveScene->OnRuntimeStart();
+			m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+
+			m_SceneHierarchyPanel->SetContext(m_ActiveScene);
+
+			RuntimeData::ResetChangeRequest();
+		}
 	}
 
 	void EditorLayer::OnImGuiRender()
@@ -237,8 +241,8 @@ namespace Engine
 
 			UI_Settings();
 
-			m_SceneHierarchyPanel.OnImGuiRender();
-			m_ContentBrowserPanel.OnImGuiRender();
+			m_SceneHierarchyPanel->OnImGuiRender();
+			m_ContentBrowserPanel->OnImGuiRender();
 
 			UI_Viewport();
 
@@ -250,7 +254,6 @@ namespace Engine
 
 	void EditorLayer::OnEvent(Event& e)
 	{
-		m_CameraController.OnEvent(e);
 		if (m_SceneState == SceneState::Edit)
 		{
 			m_EditorCamera.OnEvent(e);
@@ -334,7 +337,7 @@ namespace Engine
 		if (e.GetMouseButton() == Mouse::ButtonLeft)
 		{
 			if (m_ViewportHovered && !ImGuizmo::IsOver() && !Input::IsKeyPressed(Key::LeftAlt))
-				m_SceneHierarchyPanel.SetSelectedEntity(m_HoveredEntity);
+				m_SceneHierarchyPanel->SetSelectedEntity(m_HoveredEntity);
 		}
 		return false;
 	}
@@ -392,7 +395,7 @@ namespace Engine
 			}
 		}
 
-		if (Entity selectedEntity = m_SceneHierarchyPanel.GetSelectedEntity())
+		if (Entity selectedEntity = m_SceneHierarchyPanel->GetSelectedEntity())
 		{
 			const TransformComponent& transform = selectedEntity.GetComponent<TransformComponent>();
 			Renderer2D::DrawRect(transform.GetTransform(), m_SelectedEntityColor);
@@ -402,11 +405,36 @@ namespace Engine
 
 	}
 
+	void EditorLayer::NewProject()
+	{
+		Project::New();
+	}
+
+	void EditorLayer::OpenProject(const std::filesystem::path& path)
+	{
+		if (path.extension().string() != ".gmproj")
+		{
+			ENGINE_LOG_ERROR("Invalid game project file: {0}", path.string());
+			ASSERT(false);
+		}
+		if (Project::Load(path))
+		{
+			auto startScenePath = Project::GetAssetFileSystemPath(Project::GetActive()->GetConfig().StartScene);
+			OpenScene(startScenePath);
+			m_ContentBrowserPanel = std::make_unique<ContentBrowserPanel>();
+		}
+	}
+
+	void EditorLayer::SaveProject()
+	{
+		// Project::SaveActive();
+	}
+
 	void EditorLayer::NewScene()
 	{
 		m_ActiveScene = std::make_shared<Scene>();
 		m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
-		m_SceneHierarchyPanel.SetContext(m_ActiveScene);
+		m_SceneHierarchyPanel->SetContext(m_ActiveScene);
 
 		m_EditorScenePath = std::filesystem::path();
 	}
@@ -434,7 +462,7 @@ namespace Engine
 		{
 			m_EditorScene = newScene;
 			m_EditorScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
-			m_SceneHierarchyPanel.SetContext(m_EditorScene);
+			m_SceneHierarchyPanel->SetContext(m_EditorScene);
 
 			m_ActiveScene = m_EditorScene;
 			m_EditorScenePath = path;
@@ -489,7 +517,6 @@ namespace Engine
 		{
 			ImGui::ColorEdit4("Physics Collider Color", glm::value_ptr(m_PhysicsCollidersColor));
 		}
-		ImGui::Image((ImTextureID)s_Font->GetAtlasTexture()->GetRendererID(), { 512,512 }, { 0, 1 }, { 1, 0 });
 		
 		ImGui::End();
 	}
@@ -523,14 +550,15 @@ namespace Engine
 				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM_SCENE"))
 				{
 					const wchar_t* path = (const wchar_t*)payload->Data;
-					OpenScene(std::filesystem::path(g_AssetPath) / path);
+					std::filesystem::path scenePath = Project::GetAssetFileSystemPath(path);
+					OpenScene(scenePath);
 				}
 				ImGui::EndDragDropTarget();
 			}
 		}
 
 		// Gizmos
-		Entity selectedEntity = m_SceneHierarchyPanel.GetSelectedEntity();
+		Entity selectedEntity = m_SceneHierarchyPanel->GetSelectedEntity();
 		if (selectedEntity && m_GizmoType != -1)
 		{
 			ImGuizmo::SetOrthographic(false);
@@ -631,7 +659,7 @@ namespace Engine
 		m_EditorScene = Scene::Copy(m_ActiveScene);
 		m_ActiveScene->OnRuntimeStart();
 		
-		m_SceneHierarchyPanel.SetContext(m_ActiveScene);
+		m_SceneHierarchyPanel->SetContext(m_ActiveScene);
 	}
 
 	void EditorLayer::OnSceneSimulate()
@@ -644,7 +672,7 @@ namespace Engine
 		m_EditorScene = Scene::Copy(m_ActiveScene);
 		m_ActiveScene->OnSimulationStart();
 
-		m_SceneHierarchyPanel.SetContext(m_ActiveScene);
+		m_SceneHierarchyPanel->SetContext(m_ActiveScene);
 	}
 
 	void EditorLayer::OnSceneStop()
@@ -658,7 +686,7 @@ namespace Engine
 
 		m_ActiveScene = m_EditorScene;
 
-		m_SceneHierarchyPanel.SetContext(m_ActiveScene);
+		m_SceneHierarchyPanel->SetContext(m_ActiveScene);
 	}
 
 	void EditorLayer::SerializeScene(std::shared_ptr<Scene> scene, const std::filesystem::path& path)
@@ -672,7 +700,7 @@ namespace Engine
 		if (m_SceneState != SceneState::Edit)
 			return;
 
-		Entity selectedEntity = m_SceneHierarchyPanel.GetSelectedEntity();
+		Entity selectedEntity = m_SceneHierarchyPanel->GetSelectedEntity();
 		if (selectedEntity)
 			m_EditorScene->DuplicateEntity(selectedEntity);
 	}

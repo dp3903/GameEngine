@@ -12,6 +12,13 @@ function CameraFollower:OnUpdate(ts)
     -- Update this entity's Translation to follow the ball
     self.Entity.Transform.Translation.x = ballTransform.Translation.x
     self.Entity.Transform.Translation.y = ballTransform.Translation.y
+
+    if Input.IsKeyPressed(Key.P) then
+        print("Health:", GetGlobal("Health"))
+        print("PlayerName:", GetGlobal("PlayerName"))
+        print("IsAlive:", GetGlobal("IsAlive"))
+        print("Position:", GetGlobal("Position").x, GetGlobal("Position").y, GetGlobal("Position").z)
+    end
 end
 
 function CameraFollower:OnDestroy()

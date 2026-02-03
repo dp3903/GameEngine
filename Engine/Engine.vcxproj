@@ -113,6 +113,8 @@
     <ClInclude Include="src\Engine\Layers\Layer.h" />
     <ClInclude Include="src\Engine\Layers\LayerStack.h" />
     <ClInclude Include="src\Engine\Logger.h" />
+    <ClInclude Include="src\Engine\Project\Project.h" />
+    <ClInclude Include="src\Engine\Project\ProjectSerializer.h" />
     <ClInclude Include="src\Engine\Renderer\Buffer.h" />
     <ClInclude Include="src\Engine\Renderer\Camera.h" />
     <ClInclude Include="src\Engine\Renderer\EditorCamera.h" />
@@ -129,9 +131,11 @@
     <ClInclude Include="src\Engine\Scene\Entity.h" />
     <ClInclude Include="src\Engine\Scene\Scene.h" />
     <ClInclude Include="src\Engine\Scene\SceneCamera.h" />
+    <ClInclude Include="src\Engine\Scene\SceneRuntimeData.h" />
     <ClInclude Include="src\Engine\Scene\SceneSerializer.h" />
     <ClInclude Include="src\Engine\Utils\FileDialogs.h" />
     <ClInclude Include="src\Engine\Utils\Math.h" />
+    <ClInclude Include="src\Engine\Utils\Random.h" />
     <ClInclude Include="src\Engine\Utils\Timer.h" />
     <ClInclude Include="src\Engine\Utils\UUID.h" />
     <ClInclude Include="src\Engine\Window\Input.h" />
@@ -149,6 +153,8 @@
     <ClCompile Include="src\Engine\Layers\Layer.cpp" />
     <ClCompile Include="src\Engine\Layers\LayerStack.cpp" />
     <ClCompile Include="src\Engine\Logger.cpp" />
+    <ClCompile Include="src\Engine\Project\Project.cpp" />
+    <ClCompile Include="src\Engine\Project\ProjectSerializer.cpp" />
     <ClCompile Include="src\Engine\Renderer\Buffer.cpp" />
     <ClCompile Include="src\Engine\Renderer\EditorCamera.cpp" />
     <ClCompile Include="src\Engine\Renderer\Font.cpp" />

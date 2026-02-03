@@ -63,7 +63,7 @@
                     0.6715686321258545,
                     1.0
                 ],
-                "TexturePath": "assets\\textures\\Checkerboard.png",
+                "TexturePath": "textures\\Checkerboard.png",
                 "TilingFactor": 1.899999976158142
             }
         },

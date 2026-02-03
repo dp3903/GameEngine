@@ -6,7 +6,8 @@ extern Engine::Application* Engine::CreateApplication(ApplicationCommandLineArgs
 
 int main(int argc, char** argv)
 {
-	Engine::Logger::init();
+	Engine::Logger::Init();
+	Engine::Random::Init();
 
 	auto app = Engine::CreateApplication({ argc, argv });
 	app->run();

@@ -10,8 +10,6 @@
 
 namespace Engine {
 
-	extern const std::filesystem::path g_AssetPath;
-
 	SceneHierarchyPanel::SceneHierarchyPanel(const std::shared_ptr<Scene>& context)
 	{
 		SetContext(context);
@@ -300,7 +298,7 @@ namespace Engine {
 					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM_TEXTURE"))
 					{
 						const wchar_t* path = (const wchar_t*)payload->Data;
-						std::filesystem::path texturePath = std::filesystem::path(g_AssetPath) / path;
+						std::filesystem::path texturePath = Project::GetAssetFileSystemPath(path);
 						component.Texture = Texture2D::Create(texturePath.string());
 					}
 					ImGui::EndDragDropTarget();
@@ -473,7 +471,7 @@ namespace Engine {
 					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM_SCRIPT"))
 					{
 						const wchar_t* path = (const wchar_t*)payload->Data;
-						std::filesystem::path scriptPath = std::filesystem::path(g_AssetPath) / path;
+						std::filesystem::path scriptPath(path);
 						component.ScriptPath = scriptPath.string();
 						// TODO: Trigger a reload here!
 					}

@@ -2,6 +2,7 @@
 #include "SceneSerializer.h"
 #include "Components.h"
 #include "Entity.h"
+#include "Engine/Project/Project.h"
 
 #include <fstream>
 #include <iomanip> // Required for std::setw (Pretty Printing)
@@ -292,7 +293,7 @@ namespace Engine {
 
                     sc.Color = loadVec4(sJson["Color"]);
                     if(sJson["TexturePath"] != "##None##")
-                        sc.Texture = Texture2D::Create(sJson["TexturePath"]);
+                        sc.Texture = Texture2D::Create(Project::GetAssetFileSystemPath(sJson["TexturePath"]).string());
                     sc.TilingFactor = sJson["TilingFactor"];
                 }
 

@@ -16,7 +16,7 @@ namespace Engine {
 		static std::shared_ptr<spdlog::logger> ClientLogger;
 
 	public:
-		static void init();
+		static void Init();
 
 		static std::shared_ptr<spdlog::logger>& GetEngineLogger();
 		static std::shared_ptr<spdlog::logger>& GetAppLogger();

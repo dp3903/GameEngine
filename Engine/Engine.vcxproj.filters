@@ -162,6 +162,10 @@
     <ClInclude Include="vendors\stb_image\stb_image.h">
       <Filter>vendors\stb_image</Filter>
     </ClInclude>
+    <ClInclude Include="src\Engine\Project\Project.h" />
+    <ClInclude Include="src\Engine\Project\ProjectSerializer.h" />
+    <ClInclude Include="src\Engine\Scene\SceneRuntimeData.h" />
+    <ClInclude Include="src\Engine\Utils\Random.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine\Application.cpp">
@@ -245,5 +249,7 @@
     <ClCompile Include="vendors\stb_image\stb_image.cpp">
       <Filter>vendors\stb_image</Filter>
     </ClCompile>
+    <ClCompile Include="src\Engine\Project\Project.cpp" />
+    <ClCompile Include="src\Engine\Project\ProjectSerializer.cpp" />
   </ItemGroup>
 </Project>

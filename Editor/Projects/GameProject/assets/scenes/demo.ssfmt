@@ -65,6 +65,9 @@
                 ],
                 "TexturePath": "##None##",
                 "TilingFactor": 1.0
+            },
+            "ScriptComponent": {
+                "ScriptFile": "scripts\\test.lua"
             }
         },
         {
@@ -100,42 +103,6 @@
                     "OrthographicFar": 1.0
                 },
                 "Primary": true,
-                "FixedAspectRatio": false
-            }
-        },
-        {
-            "Entity": 11661090723973711896,
-            "TagComponent": {
-                "Tag": "Camera B"
-            },
-            "TransformComponent": {
-                "Translation": [
-                    -4.0,
-                    0.0,
-                    0.0
-                ],
-                "Rotation": [
-                    0.0,
-                    0.0,
-                    0.0
-                ],
-                "Scale": [
-                    1.0,
-                    1.0,
-                    1.0
-                ]
-            },
-            "CameraComponent": {
-                "Camera": {
-                    "ProjectionType": 1,
-                    "PerspectiveFOV": 0.7853981852531433,
-                    "PerspectiveNear": 0.009999999776482582,
-                    "PerspectiveFar": 1000.0,
-                    "OrthographicSize": 10.0,
-                    "OrthographicNear": -1.0,
-                    "OrthographicFar": 1.0
-                },
-                "Primary": false,
                 "FixedAspectRatio": false
             }
         }

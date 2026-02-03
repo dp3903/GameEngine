@@ -8,7 +8,7 @@ namespace Engine
 	std::shared_ptr<spdlog::logger> Logger::CoreLogger;
 	std::shared_ptr<spdlog::logger> Logger::ClientLogger;
 
-	void Logger::init()
+	void Logger::Init()
 	{
 		spdlog::set_pattern("%^[%D %T] [%l] [%n] [%@]%$ \"%v\"");
 		CoreLogger = spdlog::stdout_color_mt("ENGINE");
@@ -21,7 +21,7 @@ namespace Engine
 	{
 		// Safety check: If accessing before init, initialize immediately.
 		if (!CoreLogger) {
-			init();
+			Init();
 		}
 		return CoreLogger;
 	}
@@ -30,7 +30,7 @@ namespace Engine
 	{
 		// Safety check
 		if (!ClientLogger) {
-			init();
+			Init();
 		}
 		return ClientLogger;
 	}
