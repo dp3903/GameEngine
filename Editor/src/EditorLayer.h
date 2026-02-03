@@ -32,7 +32,8 @@ namespace Engine
 
 		void OnOverlayRender();
 
-		void NewProject();
+		void NewProject(const std::string& projectDir);
+		void OpenProject();
 		void OpenProject(const std::filesystem::path& path);
 		void SaveProject();
 

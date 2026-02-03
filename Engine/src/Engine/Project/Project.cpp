@@ -5,9 +5,14 @@
 
 namespace Engine {
 
-	std::shared_ptr<Project> Project::New()
+	std::shared_ptr<Project> Project::New(const std::filesystem::path& projectDir)
 	{
 		s_ActiveProject = std::make_shared<Project>();
+		s_ActiveProject->m_ProjectDirectory = projectDir;
+
+		ProjectSerializer serializer(s_ActiveProject);
+		serializer.Serialize(projectDir / (s_ActiveProject->GetConfig().Name + ".gmproj"));
+		
 		return s_ActiveProject;
 	}
 
@@ -26,12 +31,11 @@ namespace Engine {
 		return nullptr;
 	}
 
-	bool Project::SaveActive(const std::filesystem::path& path)
+	bool Project::SaveActive()
 	{
 		ProjectSerializer serializer(s_ActiveProject);
-		if (serializer.Serialize(path))
+		if (serializer.Serialize(s_ActiveProject->m_ProjectDirectory / (s_ActiveProject->GetConfig().Name + ".gmproj")))
 		{
-			s_ActiveProject->m_ProjectDirectory = path.parent_path();
 			return true;
 		}
 

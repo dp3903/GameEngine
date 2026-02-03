@@ -42,9 +42,9 @@ namespace Engine {
 
 		static std::shared_ptr<Project> GetActive() { return s_ActiveProject; }
 
-		static std::shared_ptr<Project> New();
+		static std::shared_ptr<Project> New(const std::filesystem::path& projectDir);
 		static std::shared_ptr<Project> Load(const std::filesystem::path& path);
-		static bool SaveActive(const std::filesystem::path& path);
+		static bool SaveActive();
 	private:
 		ProjectConfig m_Config;
 		std::filesystem::path m_ProjectDirectory;

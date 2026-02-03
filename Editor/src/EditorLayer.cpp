@@ -48,10 +48,8 @@ namespace Engine
 		}
 		else
 		{
-			// TODO(Yan): prompt the user to select a directory
-			//NewProject();
-
-			OpenProject("Projects/GameProject/GameProject.gmproj");
+			//OpenProject("Projects/GameProject/GameProject.gmproj");
+			OpenProject();
 		}
 
 		m_ContentBrowserPanel = std::make_unique<ContentBrowserPanel>();
@@ -217,16 +215,19 @@ namespace Engine
 					// which we can't undo at the moment without finer window depth/z control.
 					//ImGui::MenuItem("Fullscreen", NULL, &opt_fullscreen_persistant);
 
-					if (ImGui::MenuItem("New", "Ctrl+N"))
-						NewScene();
+					if (ImGui::MenuItem("Open new or existing project...", "Ctrl+O"))
+						OpenProject();
 
-					if (ImGui::MenuItem("Open...", "Ctrl+O"))
-						OpenScene();
+					if (ImGui::MenuItem("Save Project", "Ctrl+Alt+S"))
+						SaveProject();
+
+					if (ImGui::MenuItem("New Scene", "Ctrl+N"))
+						NewScene();
 					
-					if (ImGui::MenuItem("Save", "Ctrl+S"))
+					if (ImGui::MenuItem("Save Scene", "Ctrl+S"))
 						SaveScene();
 
-					if (ImGui::MenuItem("Save As...", "Ctrl+Shift+S"))
+					if (ImGui::MenuItem("Save Scene As...", "Ctrl+Shift+S"))
 						SaveSceneAs();
 
 					if (ImGui::MenuItem("Exit"))
@@ -272,6 +273,8 @@ namespace Engine
 
 		bool control = Input::IsKeyPressed(Key::LeftControl) || Input::IsKeyPressed(Key::RightControl);
 		bool shift = Input::IsKeyPressed(Key::LeftShift) || Input::IsKeyPressed(Key::RightShift);
+		bool alt = Input::IsKeyPressed(Key::LeftAlt) || Input::IsKeyPressed(Key::RightAlt);
+
 		switch (e.GetKeyCode())
 		{
 			case Key::N:
@@ -284,7 +287,7 @@ namespace Engine
 			case Key::O:
 			{
 				if (control)
-					OpenScene();
+					OpenProject();
 
 				break;
 			}
@@ -292,6 +295,8 @@ namespace Engine
 			{
 				if (control)
 				{
+					if (alt)
+						SaveProject();
 					if (shift)
 						SaveSceneAs();
 					else
@@ -405,9 +410,41 @@ namespace Engine
 
 	}
 
-	void EditorLayer::NewProject()
+	void EditorLayer::NewProject(const std::string& projectDir)
 	{
-		Project::New();
+		Project::New(projectDir);
+		NewScene();
+	}
+
+	void EditorLayer::OpenProject()
+	{
+		std::string projectDir = FileDialogs::SelectDirectory();
+
+		if (!std::filesystem::exists(projectDir))
+			return;
+
+		std::filesystem::path projectFile = "";
+
+		// Iterate through the directory to find a .gmproj file
+		for (const auto& entry : std::filesystem::directory_iterator(projectDir))
+		{
+			if (entry.is_regular_file() && entry.path().extension() == ".gmproj")
+			{
+				projectFile = entry.path();
+				break; // Found one!
+			}
+		}
+
+		if (!projectFile.empty())
+		{
+			// CASE A: Project Exists -> Load it
+			OpenProject(projectFile);
+		}
+		else
+		{
+			// CASE B: No Project -> Create New
+			NewProject(projectDir);
+		}
 	}
 
 	void EditorLayer::OpenProject(const std::filesystem::path& path)
@@ -427,7 +464,7 @@ namespace Engine
 
 	void EditorLayer::SaveProject()
 	{
-		// Project::SaveActive();
+		 Project::SaveActive();
 	}
 
 	void EditorLayer::NewScene()
@@ -453,6 +490,7 @@ namespace Engine
 		if (path.extension().string() != ".ssfmt")
 		{
 			APP_LOG_WARN("Could not load {0} - not a scene file", path.filename().string());
+			NewScene();
 			return;
 		}
 
