@@ -1,0 +1,230 @@
+{
+    "Scene": "Untitled Scene",
+    "Entities": [
+        {
+            "Entity": 6613223927987356968,
+            "TagComponent": {
+                "Tag": "ground"
+            },
+            "TransformComponent": {
+                "Translation": [
+                    0.0,
+                    -1.100000023841858,
+                    0.0
+                ],
+                "Rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "Scale": [
+                    4.800000190734863,
+                    0.5,
+                    1.0
+                ]
+            },
+            "SpriteRendererComponent": {
+                "Color": [
+                    0.9558823704719543,
+                    0.06559979170560837,
+                    0.9035127758979797,
+                    1.0
+                ],
+                "TexturePath": "##None##",
+                "TilingFactor": 1.0
+            },
+            "Rigidbody2DComponent": {
+                "BodyType": "Static",
+                "FixedRotation": false
+            },
+            "BoxCollider2DComponent": {
+                "Offset": [
+                    0.0,
+                    0.0
+                ],
+                "Size": [
+                    0.5,
+                    0.5
+                ],
+                "Density": 1.0,
+                "Friction": 0.5,
+                "Restitution": 0.0,
+                "RestitutionThreshold": 0.5
+            },
+            "Children": []
+        },
+        {
+            "Entity": 459235005114257525,
+            "TagComponent": {
+                "Tag": "table"
+            },
+            "TransformComponent": {
+                "Translation": [
+                    0.0,
+                    1.100000023841858,
+                    0.0
+                ],
+                "Rotation": [
+                    0.0,
+                    0.0,
+                    0.4380776584148407
+                ],
+                "Scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            },
+            "Rigidbody2DComponent": {
+                "BodyType": "Dynamic",
+                "FixedRotation": false
+            },
+            "Children": [
+                {
+                    "Entity": 5855050262742979815,
+                    "TagComponent": {
+                        "Tag": "right leg"
+                    },
+                    "TransformComponent": {
+                        "Translation": [
+                            -0.30000001192092896,
+                            0.0,
+                            0.0
+                        ],
+                        "Rotation": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "Scale": [
+                            0.10000000149011612,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "SpriteRendererComponent": {
+                        "Color": [
+                            0.0,
+                            0.20588231086730957,
+                            1.0,
+                            1.0
+                        ],
+                        "TexturePath": "##None##",
+                        "TilingFactor": 1.0
+                    },
+                    "BoxCollider2DComponent": {
+                        "Offset": [
+                            0.0,
+                            0.0
+                        ],
+                        "Size": [
+                            0.5,
+                            0.5
+                        ],
+                        "Density": 1.0,
+                        "Friction": 0.5,
+                        "Restitution": 0.0,
+                        "RestitutionThreshold": 0.5
+                    },
+                    "Children": []
+                },
+                {
+                    "Entity": 6049315317695483917,
+                    "TagComponent": {
+                        "Tag": "left leg"
+                    },
+                    "TransformComponent": {
+                        "Translation": [
+                            0.30000001192092896,
+                            0.0,
+                            0.0
+                        ],
+                        "Rotation": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "Scale": [
+                            0.10000000149011612,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "SpriteRendererComponent": {
+                        "Color": [
+                            0.0,
+                            0.20588231086730957,
+                            1.0,
+                            1.0
+                        ],
+                        "TexturePath": "##None##",
+                        "TilingFactor": 1.0
+                    },
+                    "BoxCollider2DComponent": {
+                        "Offset": [
+                            0.0,
+                            0.0
+                        ],
+                        "Size": [
+                            0.5,
+                            0.5
+                        ],
+                        "Density": 1.0,
+                        "Friction": 0.5,
+                        "Restitution": 0.0,
+                        "RestitutionThreshold": 0.5
+                    },
+                    "Children": []
+                },
+                {
+                    "Entity": 17924126736093799058,
+                    "TagComponent": {
+                        "Tag": "top"
+                    },
+                    "TransformComponent": {
+                        "Translation": [
+                            0.0,
+                            0.5,
+                            0.0
+                        ],
+                        "Rotation": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "Scale": [
+                            1.0,
+                            0.10000000149011612,
+                            1.0
+                        ]
+                    },
+                    "SpriteRendererComponent": {
+                        "Color": [
+                            1.0,
+                            1.0,
+                            1.0,
+                            1.0
+                        ],
+                        "TexturePath": "##None##",
+                        "TilingFactor": 1.0
+                    },
+                    "BoxCollider2DComponent": {
+                        "Offset": [
+                            0.0,
+                            0.0
+                        ],
+                        "Size": [
+                            0.5,
+                            0.5
+                        ],
+                        "Density": 1.0,
+                        "Friction": 0.5,
+                        "Restitution": 0.0,
+                        "RestitutionThreshold": 0.5
+                    },
+                    "Children": []
+                }
+            ]
+        }
+    ]
+}

@@ -19,6 +19,7 @@ namespace Engine {
 		~Scene();
 
 		Entity CreateEntity(const std::string& name = std::string());
+		Entity CreateNewChildEntity(Entity parentEntity);
 		Entity CreateEntityWithUUID(UUID uuid, const std::string& name = std::string());
 		void DestroyEntity(Entity entity);
 
@@ -37,6 +38,7 @@ namespace Engine {
 		
 		void DuplicateEntity(Entity entity);
 
+		const entt::entity& GetSceneRoot() { return m_SceneRoot; }
 		Entity GetPrimaryCameraEntity();
 
 		template<typename... Components>
@@ -48,6 +50,10 @@ namespace Engine {
 	private:
 		template<typename T>
 		void OnComponentAdded(Entity entity, T& component);
+
+		Entity DuplicateEntityRecursive(Entity entity);
+		void UpdateGlobalTransforms();
+		void UpdateTransformRecursive(entt::entity entity, const glm::mat4& parentTransform);
 
 		void OnPhysics2DStart();
 		void OnPhysics2DStop();
@@ -62,6 +68,7 @@ namespace Engine {
 
 	private:
 		entt::registry m_Registry;
+		entt::entity m_SceneRoot;
 		uint32_t m_ViewportWidth = 0, m_ViewportHeight = 0;
 		
 		b2World* m_PhysicsWorld = nullptr;

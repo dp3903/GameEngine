@@ -15,6 +15,13 @@
 #include "sol/sol.hpp"
 #include "lua.hpp" // If this fails, your include paths are wrong
 
+
+#include "box2d/include/box2d/b2_world.h"
+#include "box2d/include/box2d/b2_body.h"
+#include "box2d/include/box2d/b2_fixture.h"
+#include "box2d/include/box2d/b2_polygon_shape.h"
+#include "box2d/include/box2d/b2_circle_shape.h"
+
 namespace Engine
 {
 
@@ -48,8 +55,9 @@ namespace Engine
 		}
 		else
 		{
-			//OpenProject("Projects/GameProject/GameProject.gmproj");
-			OpenProject();
+			//OpenProject();
+			// TODO remove temporary while not debugging
+			OpenProject("Projects/GameProject/GameProject.gmproj");
 		}
 
 		m_ContentBrowserPanel = std::make_unique<ContentBrowserPanel>();
@@ -209,31 +217,34 @@ namespace Engine
 
 			if (ImGui::BeginMenuBar())
 			{
-				if (ImGui::BeginMenu("File"))
+				if (m_SceneState == SceneState::Edit)
 				{
-					// Disabling fullscreen would allow the window to be moved to the front of other windows, 
-					// which we can't undo at the moment without finer window depth/z control.
-					//ImGui::MenuItem("Fullscreen", NULL, &opt_fullscreen_persistant);
+					if (ImGui::BeginMenu("File"))
+					{
+						// Disabling fullscreen would allow the window to be moved to the front of other windows, 
+						// which we can't undo at the moment without finer window depth/z control.
+						//ImGui::MenuItem("Fullscreen", NULL, &opt_fullscreen_persistant);
 
-					if (ImGui::MenuItem("Open new or existing project...", "Ctrl+O"))
-						OpenProject();
+						if (ImGui::MenuItem("Open new or existing project...", "Ctrl+O"))
+							OpenProject();
 
-					if (ImGui::MenuItem("Save Project", "Ctrl+Alt+S"))
-						SaveProject();
+						if (ImGui::MenuItem("Save Project", "Ctrl+Alt+S"))
+							SaveProject();
 
-					if (ImGui::MenuItem("New Scene", "Ctrl+N"))
-						NewScene();
+						if (ImGui::MenuItem("New Scene", "Ctrl+N"))
+							NewScene();
 					
-					if (ImGui::MenuItem("Save Scene", "Ctrl+S"))
-						SaveScene();
+						if (ImGui::MenuItem("Save Scene", "Ctrl+S"))
+							SaveScene();
 
-					if (ImGui::MenuItem("Save Scene As...", "Ctrl+Shift+S"))
-						SaveSceneAs();
+						if (ImGui::MenuItem("Save Scene As...", "Ctrl+Shift+S"))
+							SaveSceneAs();
 
-					if (ImGui::MenuItem("Exit"))
-						Application::Get().Close();
+						if (ImGui::MenuItem("Exit"))
+							Application::Get().Close();
 
-					ImGui::EndMenu();
+						ImGui::EndMenu();
+					}
 				}
 				ImGui::EndMenuBar();
 			}
@@ -255,7 +266,7 @@ namespace Engine
 
 	void EditorLayer::OnEvent(Event& e)
 	{
-		if (m_SceneState == SceneState::Edit)
+		if (m_SceneState != SceneState::Play)
 		{
 			m_EditorCamera.OnEvent(e);
 		}
@@ -268,7 +279,7 @@ namespace Engine
 	bool EditorLayer::OnKeyPressed(KeyPressedEvent& e)
 	{
 		// Shortcuts
-		if (e.GetRepeatCount() > 0)
+		if (e.GetRepeatCount() > 0 || m_SceneState == SceneState::Play)
 			return false;
 
 		bool control = Input::IsKeyPressed(Key::LeftControl) || Input::IsKeyPressed(Key::RightControl);
@@ -355,7 +366,7 @@ namespace Engine
 			if (!camera)
 				return;
 
-			Renderer2D::BeginScene(camera.GetComponent<CameraComponent>().Camera, camera.GetComponent<TransformComponent>().GetTransform());
+			Renderer2D::BeginScene(camera.GetComponent<CameraComponent>().Camera, camera.GetComponent<TransformComponent>().GlobalTransform);
 		}
 		else
 		{
@@ -364,38 +375,70 @@ namespace Engine
 
 		if (m_ShowPhysicsColliders)
 		{
-			// Box Colliders
+			// 1. Draw Box Colliders
 			{
-				auto view = m_ActiveScene->GetAllEntitiesWith<TransformComponent, BoxCollider2DComponent>();
-				for (auto entity : view)
+				auto view = m_ActiveScene->GetAllEntitiesWith<BoxCollider2DComponent>();
+				for (auto e : view)
 				{
-					auto [tc, bc2d] = view.get<TransformComponent, BoxCollider2DComponent>(entity);
+					auto& bc2d = view.get<BoxCollider2DComponent>(e);
 
-					glm::vec3 scale = tc.Scale * glm::vec3(bc2d.Size * 2.0f, 1.0f);
+					// Only draw if physics is running and fixture exists
+					if (bc2d.RuntimeFixture)
+					{
+						b2Fixture* fixture = (b2Fixture*)bc2d.RuntimeFixture;
+						b2Body* body = fixture->GetBody();
+						const b2PolygonShape* shape = (const b2PolygonShape*)fixture->GetShape();
 
-					glm::mat4 transform = glm::translate(glm::mat4(1.0f), tc.Translation)
-						* glm::translate(glm::mat4(1.0f), glm::vec3(bc2d.Offset, 0.001f))
-						* glm::rotate(glm::mat4(1.0f), tc.Rotation.z, glm::vec3(0.0f, 0.0f, 1.0f))
-						* glm::scale(glm::mat4(1.0f), scale);
+						// Box2D Polygon Shapes store 4 vertices in Local Space.
+						// We use the Body's transform to convert them to World Space.
 
-					Renderer2D::DrawRect(transform, m_PhysicsCollidersColor);
+						int vertexCount = shape->m_count; // Usually 4 for a box
+						std::vector<glm::vec3> worldVertices;
+
+						for (int i = 0; i < vertexCount; i++)
+						{
+							// "GetWorldPoint" handles Rotation + Position + Offset automatically
+							b2Vec2 p = body->GetWorldPoint(shape->m_vertices[i]);
+							worldVertices.push_back({ p.x, p.y, 0.0f });
+						}
+
+						// Draw lines between vertices (0-1, 1-2, 2-3, 3-0)
+						for (int i = 0; i < vertexCount; i++)
+						{
+							glm::vec3 p1 = worldVertices[i];
+							glm::vec3 p2 = worldVertices[(i + 1) % vertexCount];
+							Renderer2D::DrawLine(p1, p2, m_PhysicsCollidersColor); // Green Box
+						}
+					}
 				}
 			}
 
-			// Circle Colliders
+			// 2. Draw Circle Colliders
 			{
-				auto view = m_ActiveScene->GetAllEntitiesWith<TransformComponent, CircleCollider2DComponent>();
-				for (auto entity : view)
+				auto view = m_ActiveScene->GetAllEntitiesWith<CircleCollider2DComponent>();
+				for (auto e : view)
 				{
-					auto [tc, cc2d] = view.get<TransformComponent, CircleCollider2DComponent>(entity);
+					auto& cc2d = view.get<CircleCollider2DComponent>(e);
 
-					glm::vec3 translation = tc.Translation + glm::vec3(cc2d.Offset, 0.001f);
-					glm::vec3 scale = tc.Scale * glm::vec3(cc2d.Radius * 2.0f);
+					if (cc2d.RuntimeFixture)
+					{
+						b2Fixture* fixture = (b2Fixture*)cc2d.RuntimeFixture;
+						b2Body* body = fixture->GetBody();
+						const b2CircleShape* shape = (const b2CircleShape*)fixture->GetShape();
 
-					glm::mat4 transform = glm::translate(glm::mat4(1.0f), translation)
-						* glm::scale(glm::mat4(1.0f), scale);
+						// Calculate World Center
+						// b2CircleShape::m_p is the local offset relative to the body center
+						b2Vec2 worldCenter = body->GetWorldPoint(shape->m_p);
 
-					Renderer2D::DrawCircle(transform, m_PhysicsCollidersColor, 0.1f);
+						// Radius is stored directly in the shape (already scaled during creation)
+						float radius = shape->m_radius;
+
+						// Draw
+						glm::mat4 transform = glm::translate(glm::mat4(1.0f), { worldCenter.x, worldCenter.y, 0.0f })
+							* glm::scale(glm::mat4(1.0f), { radius * 2.0f, radius * 2.0f, 1.0f });
+
+						Renderer2D::DrawCircle(transform, m_PhysicsCollidersColor, 0.1f);
+					}
 				}
 			}
 		}
@@ -403,7 +446,7 @@ namespace Engine
 		if (Entity selectedEntity = m_SceneHierarchyPanel->GetSelectedEntity())
 		{
 			const TransformComponent& transform = selectedEntity.GetComponent<TransformComponent>();
-			Renderer2D::DrawRect(transform.GetTransform(), m_SelectedEntityColor);
+			Renderer2D::DrawRect(transform.GlobalTransform, m_SelectedEntityColor);
 		}
 		
 		Renderer2D::EndScene();
@@ -597,7 +640,7 @@ namespace Engine
 
 		// Gizmos
 		Entity selectedEntity = m_SceneHierarchyPanel->GetSelectedEntity();
-		if (selectedEntity && m_GizmoType != -1)
+		if (selectedEntity && m_GizmoType != -1 && m_SceneState != SceneState::Play)
 		{
 			ImGuizmo::SetOrthographic(false);
 			ImGuizmo::SetDrawlist();
@@ -618,7 +661,7 @@ namespace Engine
 
 			// Entity transform
 			auto& tc = selectedEntity.GetComponent<TransformComponent>();
-			glm::mat4 transform = tc.GetTransform();
+			glm::mat4 transform = tc.GlobalTransform;
 
 			// Snapping
 			bool snap = Input::IsKeyPressed(Key::LeftControl);

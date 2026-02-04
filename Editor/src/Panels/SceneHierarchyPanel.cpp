@@ -30,11 +30,14 @@ namespace Engine {
 	{
 		ImGui::Begin("Scene Hierarchy");
 
-		m_Context->m_Registry.each([&](auto entityID)
-			{
-				Entity entity{ entityID , m_Context.get() };
-				DrawEntityNode(entity);
-			});
+		Entity sceneRoot = { m_Context->m_SceneRoot, m_Context.get() };
+		Entity child = { sceneRoot.GetComponent<RelationshipComponent>().FirstChild, m_Context.get() };
+		while (child)
+		{
+			Entity next = { child.GetComponent<RelationshipComponent>().NextSibling, m_Context.get() };
+			DrawEntityNode(child);
+			child = next;
+		}
 		
 		if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered())
 			m_SelectionContext = {};
@@ -43,7 +46,7 @@ namespace Engine {
 		if (ImGui::BeginPopupContextWindow(0, 1 | ImGuiPopupFlags_NoOpenOverItems))
 		{
 			if (ImGui::MenuItem("Create Empty Entity"))
-				m_Context->CreateEntity("Empty Entity");
+				m_Context->CreateNewChildEntity(sceneRoot);
 
 			ImGui::EndPopup();
 		}
@@ -74,6 +77,8 @@ namespace Engine {
 		bool entityDeleted = false;
 		if (ImGui::BeginPopupContextItem())
 		{
+			if (ImGui::MenuItem("Create Child Entity"))
+				m_Context->CreateNewChildEntity(entity);
 			if (ImGui::MenuItem("Delete Entity"))
 				entityDeleted = true;
 
@@ -82,10 +87,17 @@ namespace Engine {
 
 		if (opened)
 		{
-			ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
-			bool opened = ImGui::TreeNodeEx((void*)9817239, flags, tag.c_str());
-			if (opened)
-				ImGui::TreePop();
+			Entity child = { entity.GetComponent<RelationshipComponent>().FirstChild, m_Context.get() };
+			while (child)
+			{
+				// If DrawEntityNode(child) deletes the child, 'child' becomes invalid, and trying to get 'child.GetComponent' in the next line would CRASH.
+				Entity next = { child.GetComponent<RelationshipComponent>().NextSibling, m_Context.get() };
+
+				DrawEntityNode(child);
+
+				child = next;
+			}
+
 			ImGui::TreePop();
 		}
 
@@ -252,6 +264,14 @@ namespace Engine {
 				DrawVec3Control("Rotation", rotation);
 				component.Rotation = glm::radians(rotation);
 				DrawVec3Control("Scale", component.Scale, 1.0f);
+			});
+
+		DrawComponent<RelationshipComponent>("Hierarchy relationship", entity, [&](RelationshipComponent& component)
+			{
+				Entity parent = Entity(component.Parent, m_Context.get());
+				ImGui::Text("Parent: ");
+				ImGui::SameLine();
+				ImGui::Text(parent.GetComponent<TagComponent>().Tag.c_str());
 			});
 
 		DrawComponent<SpriteRendererComponent>("Sprite Renderer", entity, [](SpriteRendererComponent& component)

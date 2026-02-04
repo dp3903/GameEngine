@@ -7,6 +7,7 @@
 #include "Engine/Utils/UUID.h"
 #include "Engine/Renderer/Font.h"
 #include "sol/sol.hpp"
+#include "entt.hpp"
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/gtx/quaternion.hpp>
@@ -49,6 +50,9 @@ namespace Engine {
 		glm::vec3 Translation = { 0.0f, 0.0f, 0.0f };
 		glm::vec3 Rotation = { 0.0f, 0.0f, 0.0f };
 		glm::vec3 Scale = { 1.0f, 1.0f, 1.0f };
+
+		// engine only. not to be serialized. represents the global transform matrix. added here for caching to prevent recalculation of transform for each child
+		glm::mat4 GlobalTransform = GetTransform();
 
 		TransformComponent() = default;
 		TransformComponent(const TransformComponent&) = default;
@@ -196,5 +200,17 @@ namespace Engine {
 		glm::vec4 Color{ 1.0f };
 		float Kerning = 0.0f;
 		float LineSpacing = 0.0f;
+	};
+
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	/// RelationshipComponent ///////////////////////////////////////////////////////////////////////////////////////////////////////
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	struct RelationshipComponent
+	{
+		entt::entity Parent = entt::null;
+		entt::entity FirstChild = entt::null;
+		entt::entity NextSibling = entt::null; // Linked list of children
+		entt::entity PrevSibling = entt::null;
 	};
 }

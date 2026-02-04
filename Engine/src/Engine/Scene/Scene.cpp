@@ -7,6 +7,7 @@
 #include "SceneRuntimeData.h"
 
 #include "Engine/Utils/Random.h"
+#include "Engine/Utils/Math.h"
 #include "Engine/Window/Input.h"
 #include "Engine/Renderer/Renderer.h"
 #include "Engine/Project/Project.h"
@@ -50,11 +51,174 @@ namespace Engine {
 		}
 	}
 
+	// relationship component requires a special copy function as the entt::entity handles may be different in src and dst registries
+	template<>
+	static void CopyComponent<RelationshipComponent>(entt::registry& dst, entt::registry& src, const std::unordered_map<UUID, entt::entity>& enttMap)
+	{
+		auto view = src.view<RelationshipComponent>();
+		for (auto e : view)
+		{
+			UUID uuid = src.get<IDComponent>(e).ID;
+			ASSERT(enttMap.find(uuid) != enttMap.end(), "Entity from source not found in the map.");
+			entt::entity dstEnttID = enttMap.at(uuid);
+
+			auto& srcRelation = src.get<RelationshipComponent>(e);
+			auto& dstRelation = dst.get<RelationshipComponent>(dstEnttID);
+			
+			auto GetMappedEntity = [&](entt::entity originalHandle) -> entt::entity
+				{
+					// Check for null BEFORE accessing the registry
+					if (originalHandle == entt::null)
+						return entt::null;
+
+					// ensure the handle is actually valid in source
+					if (!src.valid(originalHandle))
+						return entt::null;
+
+					UUID originalUUID = src.get<IDComponent>(originalHandle).ID;
+
+					// If the linked entity wasn't copied (e.g. it's outside the selection), return null
+					if (enttMap.find(originalUUID) == enttMap.end())
+						return entt::null;
+
+					return enttMap.at(originalUUID);
+				};
+
+			// Assign to the correct member variables
+			dstRelation.Parent = GetMappedEntity(srcRelation.Parent);
+			dstRelation.FirstChild = GetMappedEntity(srcRelation.FirstChild);
+			dstRelation.NextSibling = GetMappedEntity(srcRelation.NextSibling);
+			dstRelation.PrevSibling = GetMappedEntity(srcRelation.PrevSibling);
+		}
+	}
+
 	template<typename Component>
 	static void CopyComponentIfExists(Entity dst, Entity src)
 	{
 		if (src.HasComponent<Component>())
 			dst.AddOrReplaceComponent<Component>(src.GetComponent<Component>());
+	}
+
+	// Helper to transform child data into parent's local space
+	static void AttachColliders(b2Body* body, Entity rootEntity, Entity currentEntity, Scene* scene)
+	{
+		// 1. Get Global Transforms for BOTH
+		// We need to compare Child vs Root to find the relative difference
+		glm::vec3 rootPos, rootRot, rootScale;
+		Math::DecomposeTransform(rootEntity.GetComponent<TransformComponent>().GlobalTransform, rootPos, rootRot, rootScale);
+
+		glm::vec3 childPos, childRot, childScale;
+		Math::DecomposeTransform(currentEntity.GetComponent<TransformComponent>().GlobalTransform, childPos, childRot, childScale);
+
+		// 2. Prepare Box2D Parameters
+		// Box2D Shape Dimensions should match the VISUAL Global Scale
+		// (We use abs because physics shapes can't be negative)
+		float finalScaleX = std::abs(childScale.x);
+		float finalScaleY = std::abs(childScale.y);
+
+		// Box2D Fixture Angle is RELATIVE to the Body
+		float relativeRotation = childRot.z - rootRot.z;
+
+		// 3. Calculate Relative Position (The Tricky Part)
+		// We need the Child's position in the Root's LOCAL space.
+		// Step A: Get distance vector in World Space
+		glm::vec2 worldOffset = { childPos.x - rootPos.x, childPos.y - rootPos.y };
+
+		// Step B: Rotate this vector "backwards" by the Root's rotation 
+		// to align it with the Root's local axes.
+		float c = cos(-rootRot.z);
+		float s = sin(-rootRot.z);
+		glm::vec2 localOffset = {
+			worldOffset.x * c - worldOffset.y * s,
+			worldOffset.x * s + worldOffset.y * c
+		};
+
+		// 4. Attach Box Collider
+		if (currentEntity.HasComponent<BoxCollider2DComponent>())
+		{
+			auto& bc2d = currentEntity.GetComponent<BoxCollider2DComponent>();
+			b2PolygonShape boxShape;
+
+			// Calculate the center of the box relative to the Body
+			// This includes the Entity's offset from parent + The Collider's offset from Entity
+			// Note: Collider Offset must be rotated by the RELATIVE rotation
+			float offX = bc2d.Offset.x * finalScaleX;
+			float offY = bc2d.Offset.y * finalScaleY;
+
+			float relC = cos(relativeRotation);
+			float relS = sin(relativeRotation);
+
+			// Rotate collider offset and add to entity offset
+			float finalOffsetX = localOffset.x + (offX * relC - offY * relS);
+			float finalOffsetY = localOffset.y + (offX * relS + offY * relC);
+
+			boxShape.SetAsBox(
+				bc2d.Size.x * finalScaleX,
+				bc2d.Size.y * finalScaleY,
+				b2Vec2(finalOffsetX, finalOffsetY),
+				relativeRotation
+			);
+
+			b2FixtureDef fixtureDef;
+			fixtureDef.shape = &boxShape;
+			fixtureDef.density = bc2d.Density;
+			fixtureDef.friction = bc2d.Friction;
+			fixtureDef.restitution = bc2d.Restitution;
+			fixtureDef.restitutionThreshold = bc2d.RestitutionThreshold;
+
+			bc2d.RuntimeFixture = body->CreateFixture(&fixtureDef);
+		}
+
+		// 5. Attach Circle Collider
+		if (currentEntity.HasComponent<CircleCollider2DComponent>())
+		{
+			auto& cc2d = currentEntity.GetComponent<CircleCollider2DComponent>();
+			b2CircleShape circleShape;
+
+			float maxScale = std::max(finalScaleX, finalScaleY);
+
+			// Same offset logic as box
+			float offX = cc2d.Offset.x * finalScaleX; // Circle offset is usually pre-scaling, but let's stick to standard
+			float offY = cc2d.Offset.y * finalScaleY; // (Wait, circle scale should be uniform usually)
+
+			// For circles, we just set Position (m_p)
+			// We still need to rotate the offset if the circle is not centered on the entity
+			// (Though rotating a circle around its center does nothing, rotating it around the entity pivot does)
+			float relC = cos(relativeRotation);
+			float relS = sin(relativeRotation);
+
+			circleShape.m_p.Set(
+				localOffset.x + (offX * relC - offY * relS),
+				localOffset.y + (offX * relS + offY * relC)
+			);
+			circleShape.m_radius = cc2d.Radius * maxScale;
+
+			b2FixtureDef fixtureDef;
+			fixtureDef.shape = &circleShape;
+			fixtureDef.density = cc2d.Density;
+			fixtureDef.friction = cc2d.Friction;
+			fixtureDef.restitution = cc2d.Restitution;
+			fixtureDef.restitutionThreshold = cc2d.RestitutionThreshold;
+
+			cc2d.RuntimeFixture = body->CreateFixture(&fixtureDef);
+		}
+
+		// 6. Recursion
+		if (currentEntity.HasComponent<RelationshipComponent>())
+		{
+			auto& rel = currentEntity.GetComponent<RelationshipComponent>();
+			entt::entity childHandle = rel.FirstChild;
+
+			while (childHandle != entt::null)
+			{
+				Entity child = { childHandle, scene };
+				if (!child.HasComponent<Rigidbody2DComponent>())
+				{
+					AttachColliders(body, rootEntity, child, scene);
+				}
+				childHandle = child.GetComponent<RelationshipComponent>().NextSibling;
+			}
+		}
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -63,7 +227,7 @@ namespace Engine {
 
 	Scene::Scene()
 	{
-
+		m_SceneRoot = CreateEntity("::SCENE_ROOT::");
 	}
 
 	Scene::~Scene()
@@ -90,9 +254,16 @@ namespace Engine {
 		for (auto e : idView)
 		{
 			UUID uuid = srcSceneRegistry.get<IDComponent>(e).ID;
-			const auto& name = srcSceneRegistry.get<TagComponent>(e).Tag;
-			Entity newEntity = newScene->CreateEntityWithUUID(uuid, name);
-			enttMap[uuid] = (entt::entity)newEntity;
+			if (e != other->m_SceneRoot)
+			{
+				const auto& name = srcSceneRegistry.get<TagComponent>(e).Tag;
+				Entity newEntity = newScene->CreateEntityWithUUID(uuid, name);
+				enttMap[uuid] = (entt::entity)newEntity;
+			}
+			else
+			{
+				enttMap[uuid] = newScene->m_SceneRoot;
+			}
 		}
 
 		// Copy components (except IDComponent and TagComponent)
@@ -104,14 +275,46 @@ namespace Engine {
 		CopyComponent<Rigidbody2DComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<BoxCollider2DComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<CircleCollider2DComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
-		CopyComponent< TextComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
+		CopyComponent<TextComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
+		CopyComponent<RelationshipComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 
 		return newScene;
 	}
 
 	void Scene::DuplicateEntity(Entity entity)
 	{
+		if (entity == m_SceneRoot)
+		{
+			ASSERT(false, "Trying duplicate root is not valid.")
+			return;
+		}
+
+		Entity newEntity = DuplicateEntityRecursive(entity);
+
+		auto& srcRelation = entity.GetComponent<RelationshipComponent>();
+		auto& dstRelation = newEntity.GetComponent<RelationshipComponent>();
+
+		if (srcRelation.NextSibling != entt::null)
+		{
+			Entity nextOld = Entity(srcRelation.NextSibling, this);
+			nextOld.GetComponent<RelationshipComponent>().PrevSibling = newEntity;
+		}
+		dstRelation.Parent = srcRelation.Parent;
+		dstRelation.NextSibling = srcRelation.NextSibling;
+		dstRelation.PrevSibling = entity;
+		srcRelation.NextSibling = newEntity;
+	}
+
+	Entity Scene::DuplicateEntityRecursive(Entity entity)
+	{
+		if (entity == m_SceneRoot)
+		{
+			ASSERT(false, "Trying duplicate root is not valid.")
+			return Entity();
+		}
+
 		std::string name = entity.GetName();
+		ENGINE_LOG_INFO("Duplicating entity {}", name);
 		Entity newEntity = CreateEntity(name);
 
 		CopyComponentIfExists<TransformComponent>(newEntity, entity);
@@ -122,7 +325,30 @@ namespace Engine {
 		CopyComponentIfExists<Rigidbody2DComponent>(newEntity, entity);
 		CopyComponentIfExists<BoxCollider2DComponent>(newEntity, entity);
 		CopyComponentIfExists<CircleCollider2DComponent>(newEntity, entity);
-		CopyComponentIfExists< TextComponent>(newEntity, entity);
+		CopyComponentIfExists<TextComponent>(newEntity, entity);
+
+		auto& srcRelation = entity.GetComponent<RelationshipComponent>();
+
+		if (srcRelation.FirstChild != entt::null)
+		{
+			Entity prevNew;
+			Entity crntOld = Entity(srcRelation.FirstChild, this);
+			while (crntOld)
+			{
+				Entity crntNew = DuplicateEntityRecursive(crntOld);
+				auto& crntNewRelation = crntNew.GetComponent<RelationshipComponent>();
+				crntNewRelation.Parent = newEntity;
+				crntNewRelation.PrevSibling = prevNew;
+				if (prevNew)
+					prevNew.GetComponent<RelationshipComponent>().NextSibling = crntNew;
+				else
+					newEntity.GetComponent<RelationshipComponent>().FirstChild = crntNew;
+				prevNew = crntNew;
+				crntOld = Entity(crntOld.GetComponent<RelationshipComponent>().NextSibling, this);
+			}
+		}
+
+		return newEntity;
 	}
 
 
@@ -131,19 +357,108 @@ namespace Engine {
 		return CreateEntityWithUUID(UUID(), name);
 	}
 
+	Entity Scene::CreateNewChildEntity(Entity parentEntity)
+	{
+		auto& childEntity = CreateEntity("Empty entity");
+		auto& childRelation = childEntity.GetComponent<RelationshipComponent>();
+		auto& parentRelation = parentEntity.GetComponent<RelationshipComponent>();
+
+		childRelation.Parent = parentEntity;
+		if (parentRelation.FirstChild != entt::null)
+		{
+			Entity oldFirstChild = { parentRelation.FirstChild, this };
+			auto& oldChildRelation = oldFirstChild.GetComponent<RelationshipComponent>();
+			oldChildRelation.PrevSibling = childEntity;
+		}
+		childRelation.NextSibling = parentRelation.FirstChild;
+		parentRelation.FirstChild = childEntity;
+
+		UpdateTransformRecursive(childEntity, parentEntity.GetComponent<TransformComponent>().GlobalTransform);
+
+		return childEntity;
+	}
+
 	Entity Scene::CreateEntityWithUUID(UUID uuid, const std::string & name)
 	{
 		Entity entity = { m_Registry.create(), this };
 		entity.AddComponent<IDComponent>(uuid);
 		entity.AddComponent<TransformComponent>();
+		auto& relation = entity.AddComponent<RelationshipComponent>();
 		auto& tag = entity.AddComponent<TagComponent>();
 		tag.Tag = name.empty() ? "Entity" : name;
+		relation.Parent = m_SceneRoot;
+
 		return entity;
 	}
 	
 	void Scene::DestroyEntity(Entity entity)
 	{
+		if (entity == m_SceneRoot)
+			return;
+
+		auto& entityRelation = entity.GetComponent<RelationshipComponent>();
+		
+		if (entityRelation.FirstChild != entt::null)
+		{
+			Entity child = Entity(entityRelation.FirstChild, this);
+			while (child)
+			{
+				// If delete the child, 'child' becomes invalid, and trying to get 'child.GetComponent' in the next line would CRASH.
+				Entity next = { child.GetComponent<RelationshipComponent>().NextSibling, this };
+
+				DestroyEntity(child);
+
+				child = next;
+			}
+		}
+
+		if (entityRelation.PrevSibling != entt::null)
+		{
+			Entity prev = Entity(entityRelation.PrevSibling, this);
+			prev.GetComponent<RelationshipComponent>().NextSibling = entityRelation.NextSibling;
+		}
+
+		if (entityRelation.NextSibling != entt::null)
+		{
+			Entity next = Entity(entityRelation.NextSibling, this);
+			next.GetComponent<RelationshipComponent>().PrevSibling = entityRelation.PrevSibling;
+		}
+		
+		Entity parent = Entity(entityRelation.Parent, this);
+		if (parent.GetComponent<RelationshipComponent>().FirstChild == entity)
+		{
+			parent.GetComponent<RelationshipComponent>().FirstChild = entityRelation.NextSibling;
+		}
+
 		m_Registry.destroy(entity);
+	}
+
+	void Scene::UpdateGlobalTransforms()
+	{
+		// Start directly at the top. 
+		// The Root's transform is always Identity, so passing Identity is correct.
+		UpdateTransformRecursive(m_SceneRoot, glm::mat4(1.0f));
+	}
+
+	void Scene::UpdateTransformRecursive(entt::entity entity, const glm::mat4& parentTransform)
+	{
+		// Calculate Global = Parent * Local
+		// (Optimization: If entity == m_SceneRoot, we know it's Identity, but the math holds up anyway)
+		auto& tc = m_Registry.get<TransformComponent>(entity);
+		tc.GlobalTransform = parentTransform * tc.GetTransform();
+
+		// Iterate the Linked List of Children
+		auto& rel = m_Registry.get<RelationshipComponent>(entity);
+		entt::entity child = rel.FirstChild;
+
+		while (child != entt::null)
+		{
+			// Recursion
+			UpdateTransformRecursive(child, tc.GlobalTransform);
+
+			// Next Sibling
+			child = m_Registry.get<RelationshipComponent>(child).NextSibling;
+		}
 	}
 
 	void Scene::OnRuntimeStart()
@@ -173,8 +488,14 @@ namespace Engine {
 		// Update scripts
 		RunScripts(ts);
 
+		// Update global transforms
+		UpdateGlobalTransforms();
+
 		// Physics
 		OnUpdatePhysics2D(ts);
+
+		// Update global transforms
+		UpdateGlobalTransforms();
 
 		// Render 2D
 		Camera* mainCamera = nullptr;
@@ -188,7 +509,7 @@ namespace Engine {
 				if (camera.Primary)
 				{
 					mainCamera = &camera.Camera;
-					cameraTransform = transform.GetTransform();
+					cameraTransform = transform.GlobalTransform;
 					break;
 				}
 			}
@@ -210,6 +531,9 @@ namespace Engine {
 		// Physics
 		OnUpdatePhysics2D(ts);
 
+		// Update global transforms
+		UpdateGlobalTransforms();
+
 		// Render
 		Renderer2D::BeginScene(camera);
 
@@ -220,6 +544,9 @@ namespace Engine {
 
 	void Scene::OnUpdateEditor(float ts, EditorCamera& camera)
 	{
+		// Update global transforms
+		UpdateGlobalTransforms();
+
 		// Render
 		Renderer2D::BeginScene(camera);
 
@@ -237,49 +564,26 @@ namespace Engine {
 		{
 			Entity entity = { e, this };
 			auto& transform = entity.GetComponent<TransformComponent>();
+			glm::vec3 scale;
+			glm::vec3 rotation;
+			glm::vec3 translation;
+			if (!Math::DecomposeTransform(transform.GlobalTransform, translation, rotation, scale))
+			{
+				ASSERT(false, "Could not decompose transform.");
+				return;
+			}
 			auto& rb2d = entity.GetComponent<Rigidbody2DComponent>();
 
 			b2BodyDef bodyDef;
 			bodyDef.type = Rigidbody2DTypeToBox2DBody(rb2d.Type);
-			bodyDef.position.Set(transform.Translation.x, transform.Translation.y);
-			bodyDef.angle = transform.Rotation.z;
+			bodyDef.position.Set(translation.x, translation.y);
+			bodyDef.angle = rotation.z;
 
 			b2Body* body = m_PhysicsWorld->CreateBody(&bodyDef);
 			body->SetFixedRotation(rb2d.FixedRotation);
 			rb2d.RuntimeBody = body;
 
-			if (entity.HasComponent<BoxCollider2DComponent>())
-			{
-				auto& bc2d = entity.GetComponent<BoxCollider2DComponent>();
-
-				b2PolygonShape boxShape;
-				boxShape.SetAsBox(bc2d.Size.x * transform.Scale.x, bc2d.Size.y * transform.Scale.y, b2Vec2(bc2d.Offset.x, bc2d.Offset.y), 0.0f);
-
-				b2FixtureDef fixtureDef;
-				fixtureDef.shape = &boxShape;
-				fixtureDef.density = bc2d.Density;
-				fixtureDef.friction = bc2d.Friction;
-				fixtureDef.restitution = bc2d.Restitution;
-				fixtureDef.restitutionThreshold = bc2d.RestitutionThreshold;
-				body->CreateFixture(&fixtureDef);
-			}
-
-			if (entity.HasComponent<CircleCollider2DComponent>())
-			{
-				auto& cc2d = entity.GetComponent<CircleCollider2DComponent>();
-
-				b2CircleShape circleShape;
-				circleShape.m_p.Set(cc2d.Offset.x, cc2d.Offset.y);
-				circleShape.m_radius = transform.Scale.x * cc2d.Radius;
-
-				b2FixtureDef fixtureDef;
-				fixtureDef.shape = &circleShape;
-				fixtureDef.density = cc2d.Density;
-				fixtureDef.friction = cc2d.Friction;
-				fixtureDef.restitution = cc2d.Restitution;
-				fixtureDef.restitutionThreshold = cc2d.RestitutionThreshold;
-				body->CreateFixture(&fixtureDef);
-			}
+			AttachColliders(body, entity, entity, this);
 		}
 	}
 
@@ -728,7 +1032,7 @@ namespace Engine {
 			{
 				auto [transform, sprite] = group.get<TransformComponent, SpriteRendererComponent>(entity);
 
-				Renderer2D::DrawSprite(transform.GetTransform(), sprite, (int)entity);
+				Renderer2D::DrawSprite(transform.GlobalTransform, sprite, (int)entity);
 			}
 		}
 
@@ -739,7 +1043,7 @@ namespace Engine {
 			{
 				auto [transform, circle] = view.get<TransformComponent, CircleRendererComponent>(entity);
 
-				Renderer2D::DrawCircle(transform.GetTransform(), circle.Color, circle.Thickness, circle.Fade, (int)entity);
+				Renderer2D::DrawCircle(transform.GlobalTransform, circle.Color, circle.Thickness, circle.Fade, (int)entity);
 			}
 		}
 
@@ -750,7 +1054,7 @@ namespace Engine {
 			{
 				auto [transform, text] = view.get<TransformComponent, TextComponent>(entity);
 
-				Renderer2D::DrawString(text.TextString, transform.GetTransform(), text, (int)entity);
+				Renderer2D::DrawString(text.TextString, transform.GlobalTransform, text, (int)entity);
 			}
 		}
 
@@ -844,6 +1148,11 @@ namespace Engine {
 
 	template<>
 	void Scene::OnComponentAdded<TextComponent>(Entity entity, TextComponent& component)
+	{
+	}
+
+	template<>
+	void Scene::OnComponentAdded<RelationshipComponent>(Entity entity, RelationshipComponent& component)
 	{
 	}
 }
