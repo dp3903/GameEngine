@@ -3,12 +3,19 @@ local Player = {}
 -- Properties
 Player.Speed = 5.0
 
+function Greeting(name, age)
+    print("Hello from the registered function! My name is " .. name .. " and I am " .. age .. " years old.")
+end
+
+
 function Player:OnCreate()
     print("Player Created!")
     SetGlobal("Health", 78.42)
     SetGlobal("PlayerName", "Hero123")
     SetGlobal("IsAlive", true)
     SetGlobal("Position", Vec3.new(10.0, 5.0, 0.0))
+
+    RegisterFunction("Greeting", Greeting)
 end
 
 function Player:OnUpdate(ts)
@@ -21,7 +28,9 @@ function Player:OnUpdate(ts)
     if Input.IsKeyPressed(Key.D2) then
         RequestSceneChange("scenes/Example.ssfmt")
     end
-   
+    if Input.IsKeyPressed(Key.F) then
+        CallFunction("Greeting", "Alice", 25)
+    end
 end
 
 function Player:OnDestroy()

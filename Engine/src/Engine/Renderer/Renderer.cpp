@@ -1,6 +1,5 @@
 #include "egpch.h"
 #include "Renderer.h"
-#include "OrthographicCamera.h"
 #include "Shader.h"
 #include "glad/glad.h"
 #include <glm/gtc/matrix_transform.hpp>
@@ -58,8 +57,6 @@ namespace Engine {
 	/// Renderer //////////////////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	Renderer::SceneData* Renderer::m_SceneData = new Renderer::SceneData;
-
 	void Renderer::Init()
 	{
 		RenderCommand::Init();
@@ -69,25 +66,6 @@ namespace Engine {
 	void Renderer::OnWindowResize(uint32_t width, uint32_t height)
 	{
 		RenderCommand::SetViewport(0, 0, width, height);
-	}
-
-	void Renderer::BeginScene(OrthographicCamera& camera)
-	{
-		m_SceneData->ViewProjectionMatrix = camera.GetViewProjectionMatrix();
-	}
-
-	void Renderer::EndScene()
-	{
-	}
-
-	void Renderer::Submit(const std::shared_ptr<Shader>& shader, const std::shared_ptr<VertexArray>& vertexArray, const glm::mat4& transform)
-	{
-		shader->Bind();
-		shader->SetMat4("u_ViewProjection", m_SceneData->ViewProjectionMatrix);
-		shader->SetMat4("u_Transform", transform);
-
-		vertexArray->Bind();
-		RenderCommand::DrawIndexed(vertexArray);
 	}
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -335,17 +313,6 @@ namespace Engine {
 		StartTextBatch();
 	}
 
-	void Renderer2D::BeginScene(const OrthographicCamera& camera)
-	{
-		s_Data.CameraBuffer.ViewProjection = camera.GetViewProjectionMatrix();
-		s_Data.CameraUniformBuffer->SetData(&s_Data.CameraBuffer, sizeof(Renderer2DData::CameraData));
-
-		StartQuadsBatch();
-		StartCirclesBatch();
-		StartLinesBatch();
-		StartTextBatch();
-	}
-
 	void Renderer2D::EndScene()
 	{
 		FlushQuads();
@@ -458,6 +425,12 @@ namespace Engine {
 		StartLinesBatch();
 	}
 
+	void Renderer2D::NextTextBatch()
+	{
+		FlushText();
+		StartTextBatch();
+	}
+
 	void Renderer2D::DrawQuad(const glm::mat4& transform, const glm::vec4& color, int entityID)
 	{
 		if (s_Data.QuadIndexCount >= Renderer2DData::MaxIndices)
@@ -484,7 +457,7 @@ namespace Engine {
 		s_Data.Stats.QuadCount++;
 	}
 
-	void Renderer2D::DrawQuad(const glm::mat4& transform, const std::shared_ptr<Texture2D>& texture, float tilingFactor, const glm::vec4& tintColor, int entityID)
+	void Renderer2D::DrawQuad(const glm::mat4& transform, const std::shared_ptr<Texture2D>& texture, float tilingFactor, const glm::vec4& tintColor, const glm::vec2& uv0, const glm::vec2& uv1, int entityID)
 	{
 		if (s_Data.QuadIndexCount >= Renderer2DData::MaxIndices)
 			NextQuadsBatch();
@@ -509,7 +482,12 @@ namespace Engine {
 			s_Data.TextureSlotIndex++;
 		}
 		constexpr size_t quadVertexCount = 4;
-		constexpr glm::vec2 textureCoords[] = { { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 1.0f } };
+		glm::vec2 textureCoords[quadVertexCount] = {
+			uv0,
+			{ uv1.x, uv0.y },
+			uv1,
+			{ uv0.x, uv1.y }
+		};
 
 		for (size_t i = 0; i < quadVertexCount; i++)
 		{
@@ -540,18 +518,18 @@ namespace Engine {
 		DrawQuad(transform, color);
 	}
 
-	void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, const std::shared_ptr<Texture2D>& texture, float tilingFactor, const glm::vec4& tintColor)
+	void Renderer2D::DrawQuad(const glm::vec2& position, const glm::vec2& size, const std::shared_ptr<Texture2D>& texture, float tilingFactor, const glm::vec4& tintColor, const glm::vec2& uv0, const glm::vec2& uv1)
 	{
-		DrawQuad({ position.x, position.y, 0.0f }, size, texture, tilingFactor, tintColor);
+		DrawQuad({ position.x, position.y, 0.0f }, size, texture, tilingFactor, tintColor, uv0, uv1);
 	}
 
-	void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, const std::shared_ptr<Texture2D>& texture, float tilingFactor, const glm::vec4& tintColor)
+	void Renderer2D::DrawQuad(const glm::vec3& position, const glm::vec2& size, const std::shared_ptr<Texture2D>& texture, float tilingFactor, const glm::vec4& tintColor, const glm::vec2& uv0, const glm::vec2& uv1)
 	{
 
 		glm::mat4 transform = glm::translate(glm::mat4(1.0f), position)
 			* glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
 
-		DrawQuad(transform, texture, tilingFactor);
+		DrawQuad(transform, texture, tilingFactor, tintColor, uv0, uv1);
 	}
 
 
@@ -570,25 +548,34 @@ namespace Engine {
 		DrawQuad(transform, color);
 	}
 
-	void Renderer2D::DrawRotatedQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const std::shared_ptr<Texture2D>& texture, float tilingFactor, const glm::vec4& tintColor)
+	void Renderer2D::DrawRotatedQuad(const glm::vec2& position, const glm::vec2& size, float rotation, const std::shared_ptr<Texture2D>& texture, float tilingFactor, const glm::vec4& tintColor, const glm::vec2& uv0, const glm::vec2& uv1)
 	{
-		DrawRotatedQuad({ position.x, position.y, 0.0f }, size, rotation, texture, tilingFactor, tintColor);
+		DrawRotatedQuad({ position.x, position.y, 0.0f }, size, rotation, texture, tilingFactor, tintColor, uv0, uv1);
 	}
 
-	void Renderer2D::DrawRotatedQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const std::shared_ptr<Texture2D>& texture, float tilingFactor, const glm::vec4& tintColor)
+	void Renderer2D::DrawRotatedQuad(const glm::vec3& position, const glm::vec2& size, float rotation, const std::shared_ptr<Texture2D>& texture, float tilingFactor, const glm::vec4& tintColor, const glm::vec2& uv0, const glm::vec2& uv1)
 	{
 		
 		glm::mat4 transform = glm::translate(glm::mat4(1.0f), position)
 			* glm::rotate(glm::mat4(1.0f), rotation, { 0.0f, 0.0f, 1.0f })
 			* glm::scale(glm::mat4(1.0f), { size.x, size.y, 1.0f });
 		
-		DrawQuad(transform, texture, tilingFactor, tintColor);
+		DrawQuad(transform, texture, tilingFactor, tintColor, uv0, uv1);
 	}
 
 	void Renderer2D::DrawSprite(const glm::mat4& transform, SpriteRendererComponent& src, int entityID)
 	{
 		if (src.Texture)
-			DrawQuad(transform, src.Texture, src.TilingFactor, src.Color, entityID);
+		{
+			glm::vec2 uv0 = { 0.0f, 0.0f };
+			glm::vec2 uv1 = { 1.0f, 1.0f };
+			if (src.IsSubTexture)
+			{
+				uv0 = { (float)(src.XSpriteIndex + 0) * src.SpriteWidth / (float)src.Texture->GetWidth(), (float)(src.YSpriteIndex + 0) * src.SpriteHeight / (float)src.Texture->GetHeight() };
+				uv1 = { (float)(src.XSpriteIndex + 1) * src.SpriteWidth / (float)src.Texture->GetWidth(), (float)(src.YSpriteIndex + 1) * src.SpriteHeight / (float)src.Texture->GetHeight() };
+			}
+			DrawQuad(transform, src.Texture, src.TilingFactor, src.Color, uv0, uv1, entityID);
+		}
 		else
 			DrawQuad(transform, src.Color, entityID);
 	}

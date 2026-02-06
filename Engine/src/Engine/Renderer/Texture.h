@@ -25,51 +25,34 @@ namespace Engine {
 	};
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	/// Texture /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	class Texture
-	{
-	public:
-		virtual ~Texture() = default;
-
-		virtual uint32_t GetWidth() const = 0;
-		virtual uint32_t GetHeight() const = 0;
-		virtual uint32_t GetRendererID() const = 0;
-		virtual const std::string& GetPath() const = 0;
-		virtual const TextureSpecification& GetSpecification() const = 0;
-
-		virtual void SetData(void* data, uint32_t size) = 0;
-
-		virtual void Bind(uint32_t slot = 0) const = 0;
-	};
-
-	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	/// Texture2D ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	class Texture2D : public Texture
+	class Texture2D
 	{
 	public:
+
 		static std::shared_ptr<Texture2D> Create(const TextureSpecification& specification);
 		static std::shared_ptr<Texture2D> Create(const std::string& path);
 		~Texture2D();
 
-		virtual uint32_t GetWidth() const override { return m_Width; }
-		virtual uint32_t GetHeight() const override { return m_Height; }
-		virtual uint32_t GetRendererID() const override { return m_RendererID; }
-		virtual const std::string& GetPath() const override { return m_Path; }
-		virtual const TextureSpecification& GetSpecification() const { return m_Specification; }
+		uint32_t GetWidth() const { return m_Width; }
+		uint32_t GetHeight() const { return m_Height; }
+		uint32_t GetRendererID() const { return m_RendererID; }
+		const std::string& GetPath() const { return m_Path; }
+		const TextureSpecification& GetSpecification() const { return m_Specification; }
 
-		virtual void SetData(void* data, uint32_t size) override;
+		void SetData(void* data, uint32_t size);
 
-		virtual void Bind(uint32_t slot = 0) const override;
+		void Bind(uint32_t slot = 0) const;
 
-		bool operator==(const Texture& other) const
+		bool operator==(const Texture2D& other) const
 		{
 			return m_RendererID == other.GetRendererID();
 		}
 	private:
+		inline static std::unordered_map<std::string, std::shared_ptr<Texture2D>> TextureRegistry;
+
 		Texture2D(const std::string& path);
 		Texture2D(const TextureSpecification& specification);
 
@@ -79,6 +62,8 @@ namespace Engine {
 		uint32_t m_Width, m_Height;
 		uint32_t m_RendererID;
 		GLenum m_InternalFormat, m_DataFormat;
+
+		friend class Font; // to have access to TextureRegistry
 	};
 
 }

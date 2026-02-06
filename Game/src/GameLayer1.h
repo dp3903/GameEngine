@@ -19,7 +19,8 @@ public:
 	virtual void OnImGuiRender() override;
 	void OnEvent(Engine::Event& e) override;
 private:
-	Engine::OrthographicCameraController m_CameraController;
+	Engine::SceneCamera m_Camera;
+	glm::vec3 m_CameraPosition = {0.0, 0.0, 0.0};
 
 	// Temp
 	std::shared_ptr<Engine::VertexArray> m_SquareVA;

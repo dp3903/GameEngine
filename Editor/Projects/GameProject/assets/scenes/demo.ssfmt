@@ -29,9 +29,7 @@
                     1.0,
                     0.0,
                     1.0
-                ],
-                "TexturePath": "##None##",
-                "TilingFactor": 1.0
+                ]
             }
         },
         {
@@ -62,9 +60,7 @@
                     0.0,
                     0.0,
                     1.0
-                ],
-                "TexturePath": "##None##",
-                "TilingFactor": 1.0
+                ]
             },
             "ScriptComponent": {
                 "ScriptFile": "scripts\\test.lua"

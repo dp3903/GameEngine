@@ -8,7 +8,6 @@
 #include "Renderer/Shader.h"
 #include "Renderer/Buffer.h"
 #include "Renderer/VertexArray.h"
-#include "Renderer/OrthographicCamera.h"
 
 namespace Engine
 {

@@ -81,10 +81,26 @@ namespace Engine {
             auto& sc = entity.GetComponent<SpriteRendererComponent>();
 
             entityJson["SpriteRendererComponent"] = {
-                { "Color", { sc.Color.r, sc.Color.g, sc.Color.b, sc.Color.a } },
-                { "TexturePath", sc.Texture ? sc.Texture->GetPath() : "##None##" },
-                { "TilingFactor", sc.TilingFactor }
+                { "Color", { sc.Color.r, sc.Color.g, sc.Color.b, sc.Color.a } }
             };
+
+            if (sc.Texture)
+            {
+                entityJson["SpriteRendererComponent"]["Texture"] = {
+                    { "TexturePath", std::filesystem::relative(sc.Texture->GetPath(), Project::GetAssetDirectory()) },
+                    { "TilingFactor", sc.TilingFactor }
+                };
+
+                if (sc.IsSubTexture)
+                {
+                    entityJson["SpriteRendererComponent"]["Texture"]["SubTexture"] = {
+                        { "SpriteWidth", sc.SpriteWidth },
+                        { "SpriteHeight", sc.SpriteHeight },
+                        { "XSpriteIndex", sc.XSpriteIndex },
+                        { "YSpriteIndex", sc.YSpriteIndex }
+                    };
+                }
+            }
         }
 
         // Serialize Camera
@@ -250,9 +266,19 @@ namespace Engine {
             auto& sJson = entityJson["SpriteRendererComponent"];
 
             sc.Color = loadVec4(sJson["Color"]);
-            if (sJson["TexturePath"] != "##None##")
-                sc.Texture = Texture2D::Create(Project::GetAssetFileSystemPath(sJson["TexturePath"]).string());
-            sc.TilingFactor = sJson["TilingFactor"];
+            if (sJson.contains("Texture"))
+            {
+                sc.Texture = Texture2D::Create(Project::GetAssetFileSystemPath(sJson["Texture"]["TexturePath"]).string());
+                sc.TilingFactor = sJson["Texture"]["TilingFactor"];
+                if (sJson["Texture"].contains("SubTexture"))
+                {
+                    sc.IsSubTexture = true;
+                    sc.SpriteWidth = sJson["Texture"]["SubTexture"]["SpriteWidth"];
+                    sc.SpriteHeight = sJson["Texture"]["SubTexture"]["SpriteHeight"];
+                    sc.XSpriteIndex = sJson["Texture"]["SubTexture"]["XSpriteIndex"];
+                    sc.YSpriteIndex = sJson["Texture"]["SubTexture"]["YSpriteIndex"];
+                }
+            }
         }
 
         // Load Circle

@@ -37,6 +37,12 @@ namespace Engine {
 	Font::Font(const std::filesystem::path& filepath)
 		: m_Data(new MSDFData())
 	{
+		if (Texture2D::TextureRegistry.find(filepath.string()) != Texture2D::TextureRegistry.end())
+		{
+			m_AtlasTexture = Texture2D::TextureRegistry.at(filepath.string());
+			return;
+		}
+
 		msdfgen::FreetypeHandle* ft = msdfgen::initializeFreetype();
 		
 		ASSERT(ft, "Unable to initialize freetype handler.");
@@ -114,9 +120,8 @@ namespace Engine {
 			}
 		}
 
-
 		m_AtlasTexture = CreateAndCacheAtlas<uint8_t, float, 3, msdf_atlas::msdfGenerator>("Test", (float)emSize, m_Data->Glyphs, m_Data->FontGeometry, width, height);
-
+		Texture2D::TextureRegistry[filepath.string()] = m_AtlasTexture;
 
 #if 0
 		msdfgen::Shape shape;

@@ -155,10 +155,10 @@ namespace Engine
 			serializer.Deserialize(Project::GetAssetFileSystemPath(RuntimeData::RequestStatus().scenePath).string());
 			
 			m_ActiveScene = newScene;
-			m_ActiveScene->OnRuntimeStart();
+			m_SceneHierarchyPanel->SetContext(m_ActiveScene);
 			m_ActiveScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 
-			m_SceneHierarchyPanel->SetContext(m_ActiveScene);
+			m_ActiveScene->OnRuntimeStart();
 
 			RuntimeData::ResetChangeRequest();
 		}

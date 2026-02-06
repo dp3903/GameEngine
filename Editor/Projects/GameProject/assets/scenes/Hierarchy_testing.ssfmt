@@ -29,9 +29,7 @@
                     0.06559979170560837,
                     0.9035127758979797,
                     1.0
-                ],
-                "TexturePath": "##None##",
-                "TilingFactor": 1.0
+                ]
             },
             "Rigidbody2DComponent": {
                 "BodyType": "Static",
@@ -108,9 +106,7 @@
                             0.20588231086730957,
                             1.0,
                             1.0
-                        ],
-                        "TexturePath": "##None##",
-                        "TilingFactor": 1.0
+                        ]
                     },
                     "BoxCollider2DComponent": {
                         "Offset": [
@@ -156,9 +152,7 @@
                             0.20588231086730957,
                             1.0,
                             1.0
-                        ],
-                        "TexturePath": "##None##",
-                        "TilingFactor": 1.0
+                        ]
                     },
                     "BoxCollider2DComponent": {
                         "Offset": [
@@ -204,9 +198,7 @@
                             1.0,
                             1.0,
                             1.0
-                        ],
-                        "TexturePath": "##None##",
-                        "TilingFactor": 1.0
+                        ]
                     },
                     "BoxCollider2DComponent": {
                         "Offset": [

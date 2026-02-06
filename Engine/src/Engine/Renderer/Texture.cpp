@@ -36,7 +36,10 @@ namespace Engine
 
 	std::shared_ptr<Texture2D> Texture2D::Create(const std::string& path)
 	{
-		return std::shared_ptr<Texture2D>(new Texture2D(path));
+		if (TextureRegistry.find(path) == TextureRegistry.end())
+			TextureRegistry[path] = std::shared_ptr<Texture2D>(new Texture2D(path));
+		return TextureRegistry.at(path);
+
 	}
 
 	std::shared_ptr<Texture2D> Texture2D::Create(const TextureSpecification& specification)

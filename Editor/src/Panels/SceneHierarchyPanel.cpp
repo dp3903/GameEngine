@@ -336,18 +336,51 @@ namespace Engine {
 					// Display Filename (optional, requires storing path in Texture2D or Component)
 					// ImGui::Text(component.Texture->GetPath().c_str()); 
 					ImGui::Text("Texture Loaded"); // Placeholder text
+					ImGui::Text("Texture Width: %d", component.Texture->GetWidth());
+					ImGui::Text("Texture Height: %d", component.Texture->GetHeight());
+
+					ImGui::Checkbox("Use Sub-Texture", &component.IsSubTexture);
+					
 
 					// The "Remove" Button
 					// We use a red color for the button to indicate a destructive action
 					ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.1f, 0.15f, 1.0f));
 					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.2f, 0.2f, 1.0f));
+					bool removeTexture = false;
 					if (ImGui::Button("Remove Texture"))
 					{
-						component.Texture = nullptr;
+						// cannot set texture to nullptr directly as it is used in subtexture if present. instead use deferred removal
+						removeTexture = true;
 					}
 					ImGui::PopStyleColor(2);
 
 					ImGui::EndGroup();
+
+					// SubTexture group
+					if (component.IsSubTexture)
+					{
+						
+						ImVec2 uv0 = ImVec2((float)(component.XSpriteIndex + 0) * component.SpriteWidth / (float)component.Texture->GetWidth(), (float)(component.YSpriteIndex + 1) * component.SpriteHeight / (float)component.Texture->GetHeight());
+						ImVec2 uv1 = ImVec2((float)(component.XSpriteIndex + 1) * component.SpriteWidth / (float)component.Texture->GetWidth(), (float)(component.YSpriteIndex + 0) * component.SpriteHeight / (float)component.Texture->GetHeight());
+						ImGui::Image(component.Texture->GetRendererID(), ImVec2(thumbnailSize / 2, thumbnailSize / 2), uv0, uv1);
+						ImGui::SameLine();
+						
+						ImGui::BeginGroup();
+						
+						ImGui::DragInt("Sprite Width", (int*)&component.SpriteWidth, 1, 1, component.Texture->GetWidth());
+						ImGui::DragInt("Sprite Height", (int*)&component.SpriteHeight, 1, 1, component.Texture->GetHeight());
+
+						ImGui::DragInt("Sprite Index X", (int*)&component.XSpriteIndex, 1, 0, component.Texture->GetWidth() / component.SpriteWidth - 1);
+						ImGui::DragInt("Sprite Index Y", (int*)&component.YSpriteIndex, 1, 0, component.Texture->GetHeight() / component.SpriteHeight - 1);
+						
+						ImGui::EndGroup();
+					}
+
+					if (removeTexture)
+					{
+						component.IsSubTexture = false;
+						component.Texture = nullptr;
+					}
 				}
 
 				ImGui::Spacing();

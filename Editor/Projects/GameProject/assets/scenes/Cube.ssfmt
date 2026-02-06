@@ -29,10 +29,9 @@
                     1.0,
                     1.0,
                     1.0
-                ],
-                "TexturePath": "##None##",
-                "TilingFactor": 1.0
-            }
+                ]
+            },
+            "Children": []
         },
         {
             "Entity": 5989700762971159677,
@@ -63,9 +62,18 @@
                     0.6715686321258545,
                     1.0
                 ],
-                "TexturePath": "textures\\Checkerboard.png",
-                "TilingFactor": 1.899999976158142
-            }
+                "Texture": {
+                    "TexturePath": "textures\\testSprite.jpg",
+                    "TilingFactor": 1.0,
+                    "SubTexture": {
+                        "SpriteWidth": 1344,
+                        "SpriteHeight": 1792,
+                        "XSpriteIndex": 2,
+                        "YSpriteIndex": 0
+                    }
+                }
+            },
+            "Children": []
         },
         {
             "Entity": 15900089106900809613,
@@ -95,10 +103,9 @@
                     0.8774510025978088,
                     0.8774510025978088,
                     1.0
-                ],
-                "TexturePath": "##None##",
-                "TilingFactor": 1.0
-            }
+                ]
+            },
+            "Children": []
         }
     ]
 }

@@ -80,6 +80,10 @@ namespace Engine {
 		std::shared_ptr<Texture2D> Texture;
 		float TilingFactor = 1.0f;
 
+		bool IsSubTexture = false;
+		uint32_t SpriteHeight = 1, SpriteWidth = 1;
+		uint32_t XSpriteIndex = 0, YSpriteIndex = 0;
+
 		SpriteRendererComponent() = default;
 		SpriteRendererComponent(const SpriteRendererComponent&) = default;
 		SpriteRendererComponent(const glm::vec4& color)

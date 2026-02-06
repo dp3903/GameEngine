@@ -13,6 +13,9 @@
     <Filter Include="src\Engine\Layers">
       <UniqueIdentifier>{910FCDBF-FD25-CB55-469D-5677B2F29BDD}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\Engine\Project">
+      <UniqueIdentifier>{58374D14-441B-0E6A-AD7B-08BD997EF8EB}</UniqueIdentifier>
+    </Filter>
     <Filter Include="src\Engine\Renderer">
       <UniqueIdentifier>{F838018B-649A-DE98-ED07-254B59681558}</UniqueIdentifier>
     </Filter>
@@ -75,6 +78,12 @@
     <ClInclude Include="src\Engine\Logger.h">
       <Filter>src\Engine</Filter>
     </ClInclude>
+    <ClInclude Include="src\Engine\Project\Project.h">
+      <Filter>src\Engine\Project</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\Project\ProjectSerializer.h">
+      <Filter>src\Engine\Project</Filter>
+    </ClInclude>
     <ClInclude Include="src\Engine\Renderer\Buffer.h">
       <Filter>src\Engine\Renderer</Filter>
     </ClInclude>
@@ -123,6 +132,9 @@
     <ClInclude Include="src\Engine\Scene\SceneCamera.h">
       <Filter>src\Engine\Scene</Filter>
     </ClInclude>
+    <ClInclude Include="src\Engine\Scene\SceneRuntimeData.h">
+      <Filter>src\Engine\Scene</Filter>
+    </ClInclude>
     <ClInclude Include="src\Engine\Scene\SceneSerializer.h">
       <Filter>src\Engine\Scene</Filter>
     </ClInclude>
@@ -130,6 +142,9 @@
       <Filter>src\Engine\Utils</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine\Utils\Math.h">
+      <Filter>src\Engine\Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine\Utils\Random.h">
       <Filter>src\Engine\Utils</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine\Utils\Timer.h">
@@ -162,10 +177,6 @@
     <ClInclude Include="vendors\stb_image\stb_image.h">
       <Filter>vendors\stb_image</Filter>
     </ClInclude>
-    <ClInclude Include="src\Engine\Project\Project.h" />
-    <ClInclude Include="src\Engine\Project\ProjectSerializer.h" />
-    <ClInclude Include="src\Engine\Scene\SceneRuntimeData.h" />
-    <ClInclude Include="src\Engine\Utils\Random.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine\Application.cpp">
@@ -182,6 +193,12 @@
     </ClCompile>
     <ClCompile Include="src\Engine\Logger.cpp">
       <Filter>src\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Engine\Project\Project.cpp">
+      <Filter>src\Engine\Project</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Engine\Project\ProjectSerializer.cpp">
+      <Filter>src\Engine\Project</Filter>
     </ClCompile>
     <ClCompile Include="src\Engine\Renderer\Buffer.cpp">
       <Filter>src\Engine\Renderer</Filter>
@@ -249,7 +266,5 @@
     <ClCompile Include="vendors\stb_image\stb_image.cpp">
       <Filter>vendors\stb_image</Filter>
     </ClCompile>
-    <ClCompile Include="src\Engine\Project\Project.cpp" />
-    <ClCompile Include="src\Engine\Project\ProjectSerializer.cpp" />
   </ItemGroup>
 </Project>

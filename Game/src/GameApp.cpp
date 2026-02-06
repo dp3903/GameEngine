@@ -2,7 +2,6 @@
 #include <Engine.h>
 #include "Engine/Entrypoint.h"
 
-#include "ExampleLayer.h"
 #include "GameLayer1.h"
 
 
@@ -12,7 +11,6 @@ public:
 	Game(const Engine::ApplicationSpecification& specification)
 		: Engine::Application(specification)
 	{
-		//PushLayer(new ExampleLayer());
 		PushLayer(new GameLayer1());
 	}
 	~Game()

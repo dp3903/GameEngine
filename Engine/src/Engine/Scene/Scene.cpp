@@ -463,6 +463,7 @@ namespace Engine {
 
 	void Scene::OnRuntimeStart()
 	{
+		UpdateGlobalTransforms();
 		OnPhysics2DStart();
 		OnScriptingStart();
 	}
@@ -888,6 +889,9 @@ namespace Engine {
 			&RuntimeData::SetData<glm::vec3>,
 			&RuntimeData::SetData<glm::vec4>
 		));
+		m_Lua->set_function("RegisterFunction", &RuntimeData::RegisterFunction);
+		m_Lua->set_function("HasFunction", &RuntimeData::HasFunction);
+		m_Lua->set_function("CallFunction", &RuntimeData::CallFunction);
 
 		// Scene change request handler
 		m_Lua->set_function("RequestSceneChange", &RuntimeData::RequestSceneChange);
@@ -902,6 +906,9 @@ namespace Engine {
 
 		// bind lua types and functions
 		BindLuaTypes();
+
+		// Create a cache to store file's returned class
+		std::unordered_map<std::filesystem::path, sol::table> script_cache;
 
 		// Iterate all entities with scripts
 		auto view = m_Registry.view<ScriptComponent, TagComponent>();
@@ -926,41 +933,45 @@ namespace Engine {
 				continue;
 			}
 
-			// Load the file (Get the "Class" table)
-			// Note: In a real engine, you would cache this result so you don't 
-			// read the disk 1000 times for 1000 enemies.
-
-			sol::protected_function_result result = m_Lua->safe_script_file(scriptPath.string());
-
-			if (!result.valid())
+			// add script class to script cache if it does not exists, get from the cache otherwise
+			sol::table scriptClass;
+			if (script_cache.find(scriptPath) == script_cache.end())
 			{
-				// Handle Syntax Errors (e.g., "unexpected symbol near 'if'")
-				sol::error err = result;
-				ENGINE_LOG_ERROR("Failed to compile script '{0}'", scriptPath.string());
-				ENGINE_LOG_ERROR("Error: {0}", err.what());
-				continue; // Skip this entity
-			}
 
-			if (result.valid())
-			{
+				// Load the file (Get the "Class" table)
+				sol::protected_function_result result = m_Lua->safe_script_file(scriptPath.string());
+
+				if (!result.valid())
+				{
+					// Handle Syntax Errors (e.g., "unexpected symbol near 'if'")
+					sol::error err = result;
+					ENGINE_LOG_ERROR("Failed to compile script '{0}'", scriptPath.string());
+					ENGINE_LOG_ERROR("Error: {0}", err.what());
+					continue; // Skip this entity
+				}
+
 				// Create the Instance
 				// We take the "Class" table returned by the script and deep copy it
 				// into our component's Instance slot.
-				sol::table scriptClass = result;
-				sc.Instance = m_Lua->create_table();
-
-				// Setup metatable for inheritance (so Instance behaves like Class)
-				// This is Lua magic to make the instance allow variable overrides
-				sc.Instance[sol::metatable_key] = m_Lua->create_table_with("__index", scriptClass);
-
-				// Inject the Entity into the instance
-				// This is how the script knows which entity it belongs to!
-				sc.Instance["Entity"] = entity;
-
-				// Call OnCreate
-				if (sc.Instance["OnCreate"].valid())
-					sc.Instance["OnCreate"](sc.Instance);
+				scriptClass = result;
+				script_cache[scriptPath] = scriptClass;
 			}
+			else
+				scriptClass = script_cache.at(scriptPath);
+
+			sc.Instance = m_Lua->create_table();
+
+			// Setup metatable for inheritance (so Instance behaves like Class)
+			// This is Lua magic to make the instance allow variable overrides
+			sc.Instance[sol::metatable_key] = m_Lua->create_table_with("__index", scriptClass);
+
+			// Inject the Entity into the instance
+			// This is how the script knows which entity it belongs to!
+			sc.Instance["Entity"] = entity;
+
+			// Call OnCreate
+			if (sc.Instance["OnCreate"].valid())
+				sc.Instance["OnCreate"](sc.Instance);
 		}
 	}
 
@@ -972,19 +983,23 @@ namespace Engine {
 			auto& sc = view.get<ScriptComponent>(e);
 
 			// Check if instance exists
-			if (!sc.Instance.valid())
-				continue;
-
-			// Call OnDestroy(self)
-			if (sc.Instance["OnDestroy"].valid())
+			if (sc.Instance.valid())
 			{
-				// We must pass 'sc.Instance' as the first argument to simulate ':' call
-				sc.Instance["OnDestroy"](sc.Instance);
+				// Call OnDestroy(self)
+				if (sc.Instance["OnDestroy"].valid())
+				{
+					// We must pass 'sc.Instance' as the first argument to simulate ':' call
+					sc.Instance["OnDestroy"](sc.Instance);
+				}
 			}
 
 			// Assigning a default (empty) table disconnects it from the Lua State.
-			sc.Instance = sol::table();
+			sc.Instance = sol::nil;
 		}
+
+		// IMPORTANT : DO NOT REMOVE
+		// clear runtime function registry
+		RuntimeData::ClearFunctionRegistry();
 
 		delete m_Lua;
 		m_Lua = nullptr;

@@ -2,6 +2,41 @@
     "Scene": "Untitled Scene",
     "Entities": [
         {
+            "Entity": 159156900446284462,
+            "TagComponent": {
+                "Tag": "Text entity 2"
+            },
+            "TransformComponent": {
+                "Translation": [
+                    -2.6549062728881836,
+                    1.1187939643859863,
+                    0.0
+                ],
+                "Rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "Scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            },
+            "TextComponent": {
+                "TextString": "Another Text",
+                "Color": [
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0
+                ],
+                "Kerning": 0.0,
+                "LineSpacing": 0.0
+            },
+            "Children": []
+        },
+        {
             "Entity": 9834481188225299118,
             "TagComponent": {
                 "Tag": "Text entity"
@@ -33,7 +68,8 @@
                 ],
                 "Kerning": -0.02500000037252903,
                 "LineSpacing": -0.375
-            }
+            },
+            "Children": []
         }
     ]
 }

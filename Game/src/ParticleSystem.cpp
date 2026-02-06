@@ -1,6 +1,6 @@
 #include "ParticleSystem.h"
 
-#include "Random.h"
+#include "Engine.h"
 
 #include <glm/gtc/constants.hpp>
 #define GLM_ENABLE_EXPERIMENTAL
@@ -55,12 +55,12 @@ void ParticleSystem::Emit(const ParticleProps& particleProps)
 	Particle& particle = m_ParticlePool[m_PoolIndex];
 	particle.Active = true;
 	particle.Position = particleProps.Position;
-	particle.Rotation = Random::Float() * 2.0f * glm::pi<float>();
+	particle.Rotation = Engine::Random::Float() * 2.0f * glm::pi<float>();
 
 	// Velocity
 	particle.Velocity = particleProps.Velocity;
-	particle.Velocity.x += particleProps.VelocityVariation.x * (Random::Float() - 0.5f);
-	particle.Velocity.y += particleProps.VelocityVariation.y * (Random::Float() - 0.5f);
+	particle.Velocity.x += particleProps.VelocityVariation.x * (Engine::Random::Float() - 0.5f);
+	particle.Velocity.y += particleProps.VelocityVariation.y * (Engine::Random::Float() - 0.5f);
 
 	// Color
 	particle.ColorBegin = particleProps.ColorBegin;
@@ -68,7 +68,7 @@ void ParticleSystem::Emit(const ParticleProps& particleProps)
 
 	particle.LifeTime = particleProps.LifeTime;
 	particle.LifeRemaining = particleProps.LifeTime;
-	particle.SizeBegin = particleProps.SizeBegin + particleProps.SizeVariation * (Random::Float() - 0.5f);
+	particle.SizeBegin = particleProps.SizeBegin + particleProps.SizeVariation * (Engine::Random::Float() - 0.5f);
 	particle.SizeEnd = particleProps.SizeEnd;
 
 	m_PoolIndex = --m_PoolIndex % m_ParticlePool.size();

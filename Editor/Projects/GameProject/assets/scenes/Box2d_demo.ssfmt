@@ -29,9 +29,7 @@
                     1.0,
                     1.0,
                     1.0
-                ],
-                "TexturePath": "##None##",
-                "TilingFactor": 1.0
+                ]
             },
             "Rigidbody2DComponent": {
                 "BodyType": "Dynamic",
@@ -80,9 +78,7 @@
                     1.0,
                     1.0,
                     1.0
-                ],
-                "TexturePath": "##None##",
-                "TilingFactor": 1.0
+                ]
             },
             "Rigidbody2DComponent": {
                 "BodyType": "Static",
@@ -167,9 +163,7 @@
                     1.0,
                     1.0,
                     1.0
-                ],
-                "TexturePath": "##None##",
-                "TilingFactor": 1.0
+                ]
             },
             "Rigidbody2DComponent": {
                 "BodyType": "Static",

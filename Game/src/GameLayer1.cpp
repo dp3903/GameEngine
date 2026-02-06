@@ -5,13 +5,14 @@
 #include <glm/gtc/type_ptr.hpp>
 
 GameLayer1::GameLayer1()
-	: Layer("GameLayer1"), m_CameraController(1280.0f / 720.0f, true), m_SquareColor({ 0.2f, 0.3f, 0.8f, 1.0f })
+	: Layer("GameLayer1"), m_SquareColor({ 0.2f, 0.3f, 0.8f, 1.0f })
 {
+	m_Camera.SetProjectionType(Engine::SceneCamera::ProjectionType::Orthographic);
 }
 
 void GameLayer1::OnAttach()
 {
-	m_CheckerboardTexture = Engine::Texture2D::Create("assets/textures/Checkerboard.png");
+	m_CheckerboardTexture = Engine::Texture2D::Create("E:/Visual-studio-Apps/GameEngine/Game/assets/textures/Checkerboard.png");
 
 	// Particle Init here
 	m_Particle.ColorBegin = { 3   / 255.0f, 252 / 255.0f, 252 / 255.0f, 1.0f };
@@ -36,8 +37,7 @@ void GameLayer1::OnUpdate(float ts)
 	static float rotation = 0.0f;
 	rotation += ts * 50.0f;
 
-	// Update
-	m_CameraController.OnUpdate(ts);
+	glm::mat4 cameraTransform = glm::translate(glm::mat4(1), m_CameraPosition);
 
 	// Render
 	Engine::Renderer2D::ResetStats();
@@ -45,7 +45,7 @@ void GameLayer1::OnUpdate(float ts)
 	Engine::RenderCommand::SetClearColor({ 0.1f, 0.1f, 0.1f, 1 });
 	Engine::RenderCommand::Clear();
 
-	Engine::Renderer2D::BeginScene(m_CameraController.GetCamera());
+	Engine::Renderer2D::BeginScene(m_Camera, cameraTransform);
 	Engine::Renderer2D::DrawQuad({  0.0f,  0.0f, -0.1f }, { 20.0f, 20.0f }, m_CheckerboardTexture, 10);
 	Engine::Renderer2D::DrawQuad({ -1.0f,  0.0f }, { 0.8f,  0.8f }, { 0.8f, 0.2f, 0.3f, 1.0f });
 	Engine::Renderer2D::DrawRotatedQuad({  0.5f, -0.5f }, { 0.5f,  0.75f }, rotation, m_SquareColor);
@@ -62,14 +62,8 @@ void GameLayer1::OnUpdate(float ts)
 	if (Engine::Input::IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 	{
 		auto [x, y] = Engine::Input::GetMousePosition();
-		auto width = Engine::Application::Get().GetWindow().GetWidth();
-		auto height = Engine::Application::Get().GetWindow().GetHeight();
-
-		auto bounds = m_CameraController.GetBounds();
-		auto pos = m_CameraController.GetCamera().GetPosition();
-		x = (x / width) * bounds.GetWidth() - bounds.GetWidth() * 0.5f;
-		y = bounds.GetHeight() * 0.5f - (y / height) * bounds.GetHeight();
-		m_Particle.Position = { x + pos.x, y + pos.y };
+		
+		m_Particle.Position = { x + m_CameraPosition.x, y + m_CameraPosition.y };
 		for (int i = 0; i < 5; i++)
 			m_ParticleSystem.Emit(m_Particle);
 	}
@@ -103,5 +97,5 @@ void GameLayer1::OnImGuiRender()
 
 void GameLayer1::OnEvent(Engine::Event& e)
 {
-	m_CameraController.OnEvent(e);
+
 }
