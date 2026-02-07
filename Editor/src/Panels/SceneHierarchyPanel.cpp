@@ -505,6 +505,24 @@ namespace Engine {
 			{
 				ImGui::InputTextMultiline("Text String", &component.TextString);
 				ImGui::ColorEdit4("Color", glm::value_ptr(component.Color));
+
+				std::string fontname = "Default";
+				if (!component.FontAsset->GetFilePath().empty())
+					fontname = component.FontAsset->GetFilePath().filename().string();
+				ImGui::Button(fontname.c_str(), ImVec2(-1.0f, 0.0f));
+
+				if (ImGui::BeginDragDropTarget())
+				{
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM_FONT"))
+					{
+						const wchar_t* path = (const wchar_t*)payload->Data;
+						std::filesystem::path fontPath = Project::GetAssetFileSystemPath(path);
+						component.FontAsset = Font::Create(fontPath);
+						// TODO: Trigger a reload here!
+					}
+					ImGui::EndDragDropTarget();
+				}
+
 				ImGui::DragFloat("Kerning", &component.Kerning, 0.025f);
 				ImGui::DragFloat("Line Spacing", &component.LineSpacing, 0.025f);
 			});

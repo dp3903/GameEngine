@@ -1,5 +1,9 @@
 {
-    "Scene": "Untitled Scene",
+    "Scene": "ball bounce",
+    "Gravity": [
+        0.0,
+        -9.800000190734863
+    ],
     "Entities": [
         {
             "Entity": 16296255079116542862,
@@ -48,7 +52,8 @@
                 "Friction": 0.5,
                 "Restitution": 0.0,
                 "RestitutionThreshold": 0.5
-            }
+            },
+            "Children": []
         },
         {
             "Entity": 17517384851036913914,
@@ -100,7 +105,8 @@
             },
             "ScriptComponent": {
                 "ScriptFile": "scripts\\test.lua"
-            }
+            },
+            "Children": []
         },
         {
             "Entity": 11673205564115809967,
@@ -139,7 +145,8 @@
             },
             "ScriptComponent": {
                 "ScriptFile": "scripts\\CameraFolloer.lua"
-            }
+            },
+            "Children": []
         },
         {
             "Entity": 6749246572254377597,
@@ -187,7 +194,8 @@
                 "Friction": 0.5,
                 "Restitution": 0.8399999737739563,
                 "RestitutionThreshold": 0.5
-            }
+            },
+            "Children": []
         }
     ]
 }

@@ -34,15 +34,23 @@ namespace Engine {
 		return texture;
 	}
 
-	Font::Font(const std::filesystem::path& filepath)
-		: m_Data(new MSDFData())
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	/// Font ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	std::shared_ptr<Font> Font::Create(const std::filesystem::path& filepath)
 	{
-		if (Texture2D::TextureRegistry.find(filepath.string()) != Texture2D::TextureRegistry.end())
+		if (FontCache.find(filepath.string()) == FontCache.end())
 		{
-			m_AtlasTexture = Texture2D::TextureRegistry.at(filepath.string());
-			return;
+			FontCache[filepath.string()] = std::shared_ptr<Font>(new Font(filepath));
 		}
 
+		return FontCache.at(filepath.string());
+	}
+
+	Font::Font(const std::filesystem::path& filepath)
+		: m_Data(new MSDFData()), m_Filepath(filepath)
+	{
 		msdfgen::FreetypeHandle* ft = msdfgen::initializeFreetype();
 		
 		ASSERT(ft, "Unable to initialize freetype handler.");
@@ -54,6 +62,7 @@ namespace Engine {
 		if (!font)
 		{
 			ENGINE_LOG_ERROR("Failed to load font: {}", fileString);
+			ASSERT(false, "Failed to load font: {}", fileString);
 			return;
 		}
 
@@ -121,7 +130,6 @@ namespace Engine {
 		}
 
 		m_AtlasTexture = CreateAndCacheAtlas<uint8_t, float, 3, msdf_atlas::msdfGenerator>("Test", (float)emSize, m_Data->Glyphs, m_Data->FontGeometry, width, height);
-		Texture2D::TextureRegistry[filepath.string()] = m_AtlasTexture;
 
 #if 0
 		msdfgen::Shape shape;
@@ -145,14 +153,5 @@ namespace Engine {
 	Font::~Font()
 	{
 		delete m_Data;
-	}
-
-	std::shared_ptr<Font> Font::GetDefault()
-	{
-		static std::shared_ptr<Font> DefaultFont;
-		if (!DefaultFont)
-			DefaultFont = std::make_shared<Font>("assets/fonts/opensans/OpenSans-Regular.ttf");
-
-		return DefaultFont;
 	}
 }

@@ -47,6 +47,9 @@ namespace Engine {
 			return m_Registry.view<Components...>();
 		}
 
+		std::string m_SceneName = "Untitled Scene";
+		glm::vec2 m_Acc = { 0.0f, -9.8f };
+
 	private:
 		template<typename T>
 		void OnComponentAdded(Entity entity, T& component);

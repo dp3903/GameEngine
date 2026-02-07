@@ -1,5 +1,9 @@
 {
     "Scene": "Untitled Scene",
+    "Gravity": [
+        0.0,
+        -9.800000190734863
+    ],
     "Entities": [
         {
             "Entity": 159156900446284462,
@@ -32,7 +36,8 @@
                     1.0
                 ],
                 "Kerning": 0.0,
-                "LineSpacing": 0.0
+                "LineSpacing": 0.0,
+                "FontFile": "fonts\\opensans\\OpenSans-BoldItalic.ttf"
             },
             "Children": []
         },
@@ -67,7 +72,8 @@
                     1.0
                 ],
                 "Kerning": -0.02500000037252903,
-                "LineSpacing": -0.375
+                "LineSpacing": -0.375,
+                "FontFile": "fonts\\opensans\\OpenSans_Condensed-Light.ttf"
             },
             "Children": []
         }

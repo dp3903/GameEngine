@@ -1,5 +1,9 @@
 {
-    "Scene": "Untitled Scene",
+    "Scene": "2 squares",
+    "Gravity": [
+        0.0,
+        -5.099999904632568
+    ],
     "Entities": [
         {
             "Entity": 4058731408829473873,
@@ -30,7 +34,8 @@
                     0.0,
                     1.0
                 ]
-            }
+            },
+            "Children": []
         },
         {
             "Entity": 15109318409621681185,
@@ -64,7 +69,8 @@
             },
             "ScriptComponent": {
                 "ScriptFile": "scripts\\test.lua"
-            }
+            },
+            "Children": []
         },
         {
             "Entity": 11298571966101297162,
@@ -100,7 +106,8 @@
                 },
                 "Primary": true,
                 "FixedAspectRatio": false
-            }
+            },
+            "Children": []
         }
     ]
 }

@@ -200,7 +200,7 @@ namespace Engine {
 	struct TextComponent
 	{
 		std::string TextString;
-		std::shared_ptr<Font> FontAsset = Font::GetDefault();
+		std::shared_ptr<Font> FontAsset = Font::Create();
 		glm::vec4 Color{ 1.0f };
 		float Kerning = 0.0f;
 		float LineSpacing = 0.0f;

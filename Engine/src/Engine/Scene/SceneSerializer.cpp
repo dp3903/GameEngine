@@ -194,6 +194,9 @@ namespace Engine {
                 { "Kerning",                tc.Kerning},
                 { "LineSpacing",            tc.LineSpacing}
             };
+            if (tc.FontAsset != Font::Create())
+                entityJson["TextComponent"]["FontFile"] = std::filesystem::relative(tc.FontAsset->GetFilePath(), Project::GetAssetDirectory());
+              
         }
 
         // Serialize Script
@@ -338,6 +341,8 @@ namespace Engine {
 
             tc.TextString = tJson["TextString"];
             tc.Color = loadVec4(tJson["Color"]);
+            if(tJson.contains("FontFile"))
+                tc.FontAsset = Font::Create(Project::GetAssetFileSystemPath(tJson["FontFile"]));
             tc.Kerning = tJson["Kerning"];
             tc.LineSpacing = tJson["LineSpacing"];
         }
@@ -388,7 +393,8 @@ namespace Engine {
         APP_LOG_INFO("Serializing scene to file: {0} START", std::filesystem::absolute(filepath).string());
 
         json sceneData;
-        sceneData["Scene"] = "Untitled Scene";
+        sceneData["Scene"] = m_Scene->m_SceneName;
+        sceneData["Gravity"] = { m_Scene->m_Acc.x, m_Scene->m_Acc.y };
         sceneData["Entities"] = json::array(); // Create an empty array
       
         Entity sceneRoot = Entity(m_Scene->m_SceneRoot, m_Scene.get());
@@ -431,6 +437,8 @@ namespace Engine {
             return false;
         }
 
+        m_Scene->m_SceneName = sceneData["Scene"];
+        m_Scene->m_Acc = loadVec2(sceneData["Gravity"]);
         auto entities = sceneData["Entities"];
         if (entities.is_array())
         {

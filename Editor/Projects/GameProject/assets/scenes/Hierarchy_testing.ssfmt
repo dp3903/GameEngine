@@ -1,5 +1,9 @@
 {
     "Scene": "Untitled Scene",
+    "Gravity": [
+        0.0,
+        -9.8
+    ],
     "Entities": [
         {
             "Entity": 6613223927987356968,

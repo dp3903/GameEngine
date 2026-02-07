@@ -110,7 +110,7 @@ namespace Engine {
 		glm::vec3 Position;
 		glm::vec4 Color;
 		glm::vec2 TexCoord;
-
+		float TexIndex;
 		// TODO: bg color for outline/bg
 
 		// Editor-only
@@ -165,7 +165,8 @@ namespace Engine {
 		std::array<std::shared_ptr<Texture2D>, MaxTextureSlots> TextureSlots;
 		uint32_t TextureSlotIndex = 1; // 0 = white texture
 
-		std::shared_ptr<Texture2D> FontAtlasTexture;
+		std::array<std::shared_ptr<Texture2D>, MaxTextureSlots> FontAtlasTextures;
+		uint32_t FontAtlasTextureIndex = 0;
 
 		glm::vec4 QuadVertexPositions[4];
 
@@ -254,6 +255,7 @@ namespace Engine {
 			{ ShaderDataType::Float3, "a_Position"     },
 			{ ShaderDataType::Float4, "a_Color"        },
 			{ ShaderDataType::Float2, "a_TexCoord"     },
+			{ ShaderDataType::Float,  "a_TexIndex"     },
 			{ ShaderDataType::Int,    "a_EntityID"     }
 			});
 		s_Data.TextVertexArray->AddVertexBuffer(s_Data.TextVertexBuffer);
@@ -264,9 +266,6 @@ namespace Engine {
 		uint32_t whiteTextureData = 0xffffffff;
 		s_Data.WhiteTexture->SetData(&whiteTextureData, sizeof(uint32_t));
 
-		int32_t samplers[s_Data.MaxTextureSlots];
-		for (uint32_t i = 0; i < s_Data.MaxTextureSlots; i++)
-			samplers[i] = i;
 
 		s_Data.QuadShader = Shader::Create("assets/shaders/Renderer2D_Quad.glsl");
 		s_Data.CircleShader = Shader::Create("assets/shaders/Renderer2D_Circle.glsl");
@@ -345,6 +344,8 @@ namespace Engine {
 	{
 		s_Data.TextIndexCount = 0;
 		s_Data.TextVertexBufferPtr = s_Data.TextVertexBufferBase;
+
+		s_Data.FontAtlasTextureIndex = 0;
 	}
 
 	void Renderer2D::FlushQuads()
@@ -398,8 +399,8 @@ namespace Engine {
 			uint32_t dataSize = (uint32_t)((uint8_t*)s_Data.TextVertexBufferPtr - (uint8_t*)s_Data.TextVertexBufferBase);
 			s_Data.TextVertexBuffer->SetData(s_Data.TextVertexBufferBase, dataSize);
 
-			auto buf = s_Data.TextVertexBufferBase;
-			s_Data.FontAtlasTexture->Bind(0);
+			for(uint32_t i = 0 ; i < s_Data.FontAtlasTextureIndex ; i++)
+				s_Data.FontAtlasTextures[i]->Bind(i);
 
 			s_Data.TextShader->Bind();
 			RenderCommand::DrawIndexed(s_Data.TextVertexArray, s_Data.TextIndexCount);
@@ -666,7 +667,28 @@ namespace Engine {
 		const auto& metrics = fontGeometry.getMetrics();
 		std::shared_ptr<Texture2D> fontAtlas = font->GetAtlasTexture();
 
-		s_Data.FontAtlasTexture = fontAtlas;
+		if (s_Data.TextIndexCount >= Renderer2DData::MaxIndices)
+			NextTextBatch();
+
+		float textureIndex = -1.0f;
+		for (uint32_t i = 0; i < s_Data.FontAtlasTextureIndex; i++)
+		{
+			if (*s_Data.FontAtlasTextures[i].get() == *fontAtlas.get())
+			{
+				textureIndex = (float)i;
+				break;
+			}
+		}
+
+		if (textureIndex == -1.0f)
+		{
+			if (s_Data.FontAtlasTextureIndex >= Renderer2DData::MaxTextureSlots)
+				NextTextBatch();
+
+			textureIndex = (float)s_Data.FontAtlasTextureIndex;
+			s_Data.FontAtlasTextures[s_Data.FontAtlasTextureIndex] = fontAtlas;
+			s_Data.FontAtlasTextureIndex++;
+		}
 
 		double x = 0.0;
 		double fsScale = 1.0 / (metrics.ascenderY - metrics.descenderY);
@@ -739,24 +761,28 @@ namespace Engine {
 			s_Data.TextVertexBufferPtr->Position = transform * glm::vec4(quadMin, 0.0f, 1.0f);
 			s_Data.TextVertexBufferPtr->Color = textParams.Color;
 			s_Data.TextVertexBufferPtr->TexCoord = texCoordMin;
+			s_Data.TextVertexBufferPtr->TexIndex = textureIndex;
 			s_Data.TextVertexBufferPtr->EntityID = entityID;
 			s_Data.TextVertexBufferPtr++;
 
 			s_Data.TextVertexBufferPtr->Position = transform * glm::vec4(quadMin.x, quadMax.y, 0.0f, 1.0f);
 			s_Data.TextVertexBufferPtr->Color = textParams.Color;
 			s_Data.TextVertexBufferPtr->TexCoord = { texCoordMin.x, texCoordMax.y };
+			s_Data.TextVertexBufferPtr->TexIndex = textureIndex;
 			s_Data.TextVertexBufferPtr->EntityID = entityID;
 			s_Data.TextVertexBufferPtr++;
 
 			s_Data.TextVertexBufferPtr->Position = transform * glm::vec4(quadMax, 0.0f, 1.0f);
 			s_Data.TextVertexBufferPtr->Color = textParams.Color;
 			s_Data.TextVertexBufferPtr->TexCoord = texCoordMax;
+			s_Data.TextVertexBufferPtr->TexIndex = textureIndex;
 			s_Data.TextVertexBufferPtr->EntityID = entityID;
 			s_Data.TextVertexBufferPtr++;
 
 			s_Data.TextVertexBufferPtr->Position = transform * glm::vec4(quadMax.x, quadMin.y, 0.0f, 1.0f);
 			s_Data.TextVertexBufferPtr->Color = textParams.Color;
 			s_Data.TextVertexBufferPtr->TexCoord = { texCoordMax.x, texCoordMin.y };
+			s_Data.TextVertexBufferPtr->TexIndex = textureIndex;
 			s_Data.TextVertexBufferPtr->EntityID = entityID;
 			s_Data.TextVertexBufferPtr++;
 
