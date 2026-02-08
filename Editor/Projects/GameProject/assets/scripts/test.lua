@@ -31,6 +31,13 @@ function Player:OnUpdate(ts)
     if Input.IsKeyPressed(Key.F) then
         CallFunction("Greeting", "Alice", 25)
     end
+    if Input.IsKeyPressed(Key.W) then
+        Physics.ApplyLinearImpulse(GetEntityByTag("Ball"), Vec2.new(0.0, 0.5), Vec2.new(0.0, 0.0), true)
+    end
+end
+
+function Player:OnCollisionBegin(other)
+    print("Player collided with entity:", other:GetName())
 end
 
 function Player:OnDestroy()

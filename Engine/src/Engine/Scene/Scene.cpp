@@ -1,25 +1,13 @@
 #include "egpch.h"
 #include "Scene.h"
 
-#include "Components.h"
-#include "Entity.h"
+#include "ScriptGlue.h"
 
-#include "SceneRuntimeData.h"
-
-#include "Engine/Utils/Random.h"
 #include "Engine/Utils/Math.h"
-#include "Engine/Window/Input.h"
 #include "Engine/Renderer/Renderer.h"
 #include "Engine/Project/Project.h"
 
 #include <glm/glm.hpp>
-
-// Box2D
-#include "box2d/b2_world.h"
-#include "box2d/b2_body.h"
-#include "box2d/b2_fixture.h"
-#include "box2d/b2_polygon_shape.h"
-#include "box2d/b2_circle_shape.h"
 
 namespace Engine {
 
@@ -561,6 +549,8 @@ namespace Engine {
 	void Scene::OnPhysics2DStart()
 	{
 		m_PhysicsWorld = new b2World({ m_Acc.x, m_Acc.y });
+		m_ContactListener = new PhysicsContactListener(this);
+		m_PhysicsWorld->SetContactListener(m_ContactListener);
 
 		auto view = m_Registry.view<Rigidbody2DComponent>();
 		for (auto e : view)
@@ -581,6 +571,7 @@ namespace Engine {
 			bodyDef.type = Rigidbody2DTypeToBox2DBody(rb2d.Type);
 			bodyDef.position.Set(translation.x, translation.y);
 			bodyDef.angle = rotation.z;
+			bodyDef.userData.pointer = (uintptr_t)e;
 
 			b2Body* body = m_PhysicsWorld->CreateBody(&bodyDef);
 			body->SetFixedRotation(rb2d.FixedRotation);
@@ -594,6 +585,9 @@ namespace Engine {
 	{
 		delete m_PhysicsWorld;
 		m_PhysicsWorld = nullptr;
+
+		delete m_ContactListener;
+		m_ContactListener = nullptr;
 	}
 
 	void Scene::OnUpdatePhysics2D(float ts)
@@ -620,285 +614,6 @@ namespace Engine {
 		
 	}
 
-	void Scene::BindLuaTypes()
-	{
-		// Bind Key Codes
-		// 1. Create the Table
-		auto keys = m_Lua->create_named_table("Key");
-
-		// 2. Define a macro to save typing (and sanity)
-#define BIND_KEY(name) keys[#name] = KeyCode::name
-
-// 3. Bind all keys individually (No limit!)
-		BIND_KEY(Space);
-		BIND_KEY(Apostrophe);
-		BIND_KEY(Comma);
-		BIND_KEY(Minus);
-		BIND_KEY(Period);
-		BIND_KEY(Slash);
-
-		BIND_KEY(D0);
-		BIND_KEY(D1);
-		BIND_KEY(D2);
-		BIND_KEY(D3);
-		BIND_KEY(D4);
-		BIND_KEY(D5);
-		BIND_KEY(D6);
-		BIND_KEY(D7);
-		BIND_KEY(D8);
-		BIND_KEY(D9);
-
-		BIND_KEY(Semicolon);
-		BIND_KEY(Equal);
-
-		BIND_KEY(A);
-		BIND_KEY(B);
-		BIND_KEY(C);
-		BIND_KEY(D);
-		BIND_KEY(E);
-		BIND_KEY(F);
-		BIND_KEY(G);
-		BIND_KEY(H);
-		BIND_KEY(I);
-		BIND_KEY(J);
-		BIND_KEY(K);
-		BIND_KEY(L);
-		BIND_KEY(M);
-		BIND_KEY(N);
-		BIND_KEY(O);
-		BIND_KEY(P);
-		BIND_KEY(Q);
-		BIND_KEY(R);
-		BIND_KEY(S);
-		BIND_KEY(T);
-		BIND_KEY(U);
-		BIND_KEY(V);
-		BIND_KEY(W);
-		BIND_KEY(X);
-		BIND_KEY(Y);
-		BIND_KEY(Z);
-
-		BIND_KEY(LeftBracket);
-		BIND_KEY(Backslash);
-		BIND_KEY(RightBracket);
-		BIND_KEY(GraveAccent);
-
-		BIND_KEY(World1);
-		BIND_KEY(World2);
-
-		/* Function keys */
-		BIND_KEY(Escape);
-		BIND_KEY(Enter);
-		BIND_KEY(Tab);
-		BIND_KEY(Backspace);
-		BIND_KEY(Insert);
-		BIND_KEY(Delete);
-		BIND_KEY(Right);
-		BIND_KEY(Left);
-		BIND_KEY(Down);
-		BIND_KEY(Up);
-		BIND_KEY(PageUp);
-		BIND_KEY(PageDown);
-		BIND_KEY(Home);
-		BIND_KEY(End);
-		BIND_KEY(CapsLock);
-		BIND_KEY(ScrollLock);
-		BIND_KEY(NumLock);
-		BIND_KEY(PrintScreen);
-		BIND_KEY(Pause);
-
-		BIND_KEY(F1);
-		BIND_KEY(F2);
-		BIND_KEY(F3);
-		BIND_KEY(F4);
-		BIND_KEY(F5);
-		BIND_KEY(F6);
-		BIND_KEY(F7);
-		BIND_KEY(F8);
-		BIND_KEY(F9);
-		BIND_KEY(F10);
-		BIND_KEY(F11);
-		BIND_KEY(F12);
-		BIND_KEY(F13);
-		BIND_KEY(F14);
-		BIND_KEY(F15);
-		BIND_KEY(F16);
-		BIND_KEY(F17);
-		BIND_KEY(F18);
-		BIND_KEY(F19);
-		BIND_KEY(F20);
-		BIND_KEY(F21);
-		BIND_KEY(F22);
-		BIND_KEY(F23);
-		BIND_KEY(F24);
-		BIND_KEY(F25);
-
-		/* Keypad */
-		BIND_KEY(KP0);
-		BIND_KEY(KP1);
-		BIND_KEY(KP2);
-		BIND_KEY(KP3);
-		BIND_KEY(KP4);
-		BIND_KEY(KP5);
-		BIND_KEY(KP6);
-		BIND_KEY(KP7);
-		BIND_KEY(KP8);
-		BIND_KEY(KP9);
-		BIND_KEY(KPDecimal);
-		BIND_KEY(KPDivide);
-		BIND_KEY(KPMultiply);
-		BIND_KEY(KPSubtract);
-		BIND_KEY(KPAdd);
-		BIND_KEY(KPEnter);
-		BIND_KEY(KPEqual);
-
-		BIND_KEY(LeftShift);
-		BIND_KEY(LeftControl);
-		BIND_KEY(LeftAlt);
-		BIND_KEY(LeftSuper);
-		BIND_KEY(RightShift);
-		BIND_KEY(RightControl);
-		BIND_KEY(RightAlt);
-		BIND_KEY(RightSuper);
-		BIND_KEY(Menu);
-
-		// 4. Undefine the macro so it doesn't leak
-#undef BIND_KEY
-
-// --- REPEAT FOR MOUSE ---
-
-		auto mouse = m_Lua->create_named_table("Mouse");
-#define BIND_MOUSE(name) mouse[#name] = MouseCode::name
-
-		BIND_MOUSE(Button0);
-		BIND_MOUSE(Button1);
-		BIND_MOUSE(Button2);
-		BIND_MOUSE(Button3);
-		BIND_MOUSE(Button4);
-		BIND_MOUSE(Button5);
-		BIND_MOUSE(Button6);
-		BIND_MOUSE(Button7);
-		BIND_MOUSE(ButtonLast);
-		BIND_MOUSE(ButtonLeft);
-		BIND_MOUSE(ButtonRight);
-		BIND_MOUSE(ButtonMiddle);
-
-#undef BIND_MOUSE
-		
-		// Bind types
-		m_Lua->new_usertype<glm::vec2>("Vec2",
-			sol::constructors<glm::vec2(), glm::vec2(float, float), glm::vec2(float)>(),
-			"x", &glm::vec2::x,
-			"y", &glm::vec2::y
-		);
-		m_Lua->new_usertype<glm::vec3>("Vec3",
-			sol::constructors<glm::vec3(), glm::vec3(float, float, float), glm::vec3(float)>(),
-			"x", &glm::vec3::x,
-			"y", &glm::vec3::y,
-			"z", &glm::vec3::z,
-			"r", &glm::vec3::r,
-			"g", &glm::vec3::g,
-			"b", &glm::vec3::b
-		);
-		m_Lua->new_usertype<glm::vec4>("Vec4",
-			sol::constructors<glm::vec4(), glm::vec4(float, float, float, float), glm::vec4(float)>(),
-			"x", &glm::vec4::x,
-			"y", &glm::vec4::y,
-			"z", &glm::vec4::z,
-			"w", &glm::vec4::w,
-			"r", &glm::vec4::r,
-			"g", &glm::vec4::g,
-			"b", &glm::vec4::b,
-			"a", &glm::vec4::a
-		);
-		m_Lua->new_usertype<TransformComponent>("Transform",
-			"Translation", &TransformComponent::Translation,
-			"Rotation", &TransformComponent::Rotation,
-			"Scale", &TransformComponent::Scale
-		);
-		m_Lua->new_usertype<SpriteRendererComponent>("SpriteRenderer",
-			"Color", &SpriteRendererComponent::Color
-		);
-		m_Lua->new_usertype<Entity>("Entity",
-			"GetUUID", &Entity::GetUUID,
-			"GetName", &Entity::GetName,
-			"Transform", sol::property([this](Entity& entity) -> TransformComponent& {
-				if (!entity)
-				{
-					// This throws a soft Lua error: "runtime error: Entity is destroyed"
-					// The C++ engine continues running, only the script stops.
-					throw std::runtime_error("Attempted to access Transform on a destroyed entity!");
-				}
-
-				// Return REFERENCE (std::ref is automatic here because of return type &)
-				return entity.GetComponent<TransformComponent>();
-			}),
-			"SpriteRenderer", sol::property([](Entity& entity) -> SpriteRendererComponent* {
-				if (!entity)
-				{
-					// This throws a soft Lua error: "runtime error: Entity is destroyed"
-					// The C++ engine continues running, only the script stops.
-					throw std::runtime_error("Attempted to access Transform on a destroyed entity!");
-				}
-
-				if (entity.HasComponent<SpriteRendererComponent>())
-				{
-					return &entity.GetComponent<SpriteRendererComponent>();
-				}
-
-				// If missing, return nullptr. Sol2 converts this to Lua 'nil'
-				return nullptr;
-			})
-		);
-
-		// Bind functions
-		m_Lua->set_function("GetEntityByTag", [&](std::string tag) -> sol::object {
-
-			auto& view = m_Registry.view<TagComponent>();
-			for (auto& e : view)
-			{
-				if (view.get<TagComponent>(e).Tag == tag)
-					return sol::make_object(*m_Lua, Entity{ e, this });
-			}
-			return sol::make_object(*m_Lua, sol::nil); // Returns Lua 'nil'
-		});
-		// Group into tables for cleaner Lua code (eg: Input.IsKeyPressed)
-		auto randomTable = m_Lua->create_named_table("Random");
-		randomTable.set_function("Float", &Random::Float);
-		auto inputTable = m_Lua->create_named_table("Input");
-		inputTable.set_function("IsKeyPressed", &Input::IsKeyPressed);
-		inputTable.set_function("GetMouseX", &Input::GetMouseX);
-		inputTable.set_function("GetMouseY", &Input::GetMouseY);
-		inputTable.set_function("GetMousePosition", &Input::GetMousePosition);
-
-		// Global Data
-		m_Lua->set_function("GetGlobal", [&](std::string key) -> sol::object {
-			// Helper to unwrap variant to Lua
-			if (RuntimeData::HasData(key)) {
-				return std::visit([&](auto&& val) -> sol::object {
-					return sol::make_object(*m_Lua, val);
-				}, RuntimeData::GetData(key));
-			}
-			return sol::nil;
-		});
-		// We register multiple C++ functions to the SAME Lua name "Set"
-		m_Lua->set_function("SetGlobal", sol::overload(
-			&RuntimeData::SetData<int>,
-			&RuntimeData::SetData<float>,
-			&RuntimeData::SetData<bool>,
-			&RuntimeData::SetData<std::string>,
-			&RuntimeData::SetData<glm::vec2>,
-			&RuntimeData::SetData<glm::vec3>,
-			&RuntimeData::SetData<glm::vec4>
-		));
-		m_Lua->set_function("RegisterFunction", &RuntimeData::RegisterFunction);
-		m_Lua->set_function("HasFunction", &RuntimeData::HasFunction);
-		m_Lua->set_function("CallFunction", &RuntimeData::CallFunction);
-
-		// Scene change request handler
-		m_Lua->set_function("RequestSceneChange", &RuntimeData::RequestSceneChange);
-	}
-
 	void Scene::OnScriptingStart()
 	{
 		m_Lua = new sol::state();
@@ -907,7 +622,7 @@ namespace Engine {
 		m_Lua->open_libraries(sol::lib::base, sol::lib::math);
 
 		// bind lua types and functions
-		BindLuaTypes();
+		BindLuaTypesAndFunctions(m_Lua, this);
 
 		// Create a cache to store file's returned class
 		std::unordered_map<std::filesystem::path, sol::table> script_cache;

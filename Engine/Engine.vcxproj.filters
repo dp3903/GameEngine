@@ -138,6 +138,9 @@
     <ClInclude Include="src\Engine\Scene\SceneSerializer.h">
       <Filter>src\Engine\Scene</Filter>
     </ClInclude>
+    <ClInclude Include="src\Engine\Scene\ScriptGlue.h">
+      <Filter>src\Engine\Scene</Filter>
+    </ClInclude>
     <ClInclude Include="src\Engine\Utils\FileDialogs.h">
       <Filter>src\Engine\Utils</Filter>
     </ClInclude>

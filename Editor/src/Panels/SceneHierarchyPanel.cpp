@@ -522,7 +522,8 @@ namespace Engine {
 					}
 					ImGui::EndDragDropTarget();
 				}
-
+				ImGui::DragFloat("Scale", &component.Scale, 0.025f);
+				ImGui::DragFloat2("Allign", glm::value_ptr(component.Allign), 0.025f);
 				ImGui::DragFloat("Kerning", &component.Kerning, 0.025f);
 				ImGui::DragFloat("Line Spacing", &component.LineSpacing, 0.025f);
 			});

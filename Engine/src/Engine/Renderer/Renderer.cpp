@@ -658,7 +658,7 @@ namespace Engine {
 
 	void Renderer2D::DrawString(const std::string& string, const glm::mat4& transform, const TextComponent& component, int entityID)
 	{
-		DrawString(string, component.FontAsset, transform, { component.Color, component.Kerning, component.LineSpacing }, entityID);
+		DrawString(string, component.FontAsset, transform, { component.Color, component.Kerning, component.LineSpacing, component.Scale, component.Allign }, entityID);
 	}
 
 	void Renderer2D::DrawString(const std::string& string, std::shared_ptr<Font> font, const glm::mat4& transform, const TextParams& textParams, int entityID)
@@ -690,9 +690,11 @@ namespace Engine {
 			s_Data.FontAtlasTextureIndex++;
 		}
 
-		double x = 0.0;
-		double fsScale = 1.0 / (metrics.ascenderY - metrics.descenderY);
-		double y = 0.0;
+		double XStart = textParams.Allign.x;
+		double YStart = textParams.Allign.y;
+		double x = XStart;
+		double y = YStart;
+		double fsScale = 1.0 / (metrics.ascenderY - metrics.descenderY) * textParams.Scale;
 		
 		const float spaceGlyphAdvance = fontGeometry.getGlyph(' ')->getAdvance();
 
@@ -704,8 +706,8 @@ namespace Engine {
 
 			if (character == '\n')
 			{
-				x = 0;
-				y -= fsScale * metrics.lineHeight + textParams.LineSpacing;
+				x = XStart;
+				y -= fsScale * metrics.lineHeight + (textParams.LineSpacing * textParams.Scale);
 				continue;
 			}
 
@@ -720,14 +722,13 @@ namespace Engine {
 					advance = (float)dAdvance;
 				}
 
-				x += fsScale * advance + textParams.Kerning;
+				x += fsScale * advance + (textParams.Kerning * textParams.Scale);
 				continue;
 			}
 
 			if (character == '\t')
 			{
-				// NOTE(Yan): is this right?
-				x += 4.0f * (fsScale * spaceGlyphAdvance + textParams.Kerning);
+				x += 4.0f * (fsScale * spaceGlyphAdvance + (textParams.Kerning * textParams.Scale));
 				continue;
 			}
 
@@ -758,28 +759,28 @@ namespace Engine {
 			texCoordMax *= glm::vec2(texelWidth, texelHeight);
 
 			// render here
-			s_Data.TextVertexBufferPtr->Position = transform * glm::vec4(quadMin, 0.0f, 1.0f);
+			s_Data.TextVertexBufferPtr->Position = transform * glm::vec4(quadMin, 0.001f, 1.0f);
 			s_Data.TextVertexBufferPtr->Color = textParams.Color;
 			s_Data.TextVertexBufferPtr->TexCoord = texCoordMin;
 			s_Data.TextVertexBufferPtr->TexIndex = textureIndex;
 			s_Data.TextVertexBufferPtr->EntityID = entityID;
 			s_Data.TextVertexBufferPtr++;
 
-			s_Data.TextVertexBufferPtr->Position = transform * glm::vec4(quadMin.x, quadMax.y, 0.0f, 1.0f);
+			s_Data.TextVertexBufferPtr->Position = transform * glm::vec4(quadMin.x, quadMax.y, 0.001f, 1.0f);
 			s_Data.TextVertexBufferPtr->Color = textParams.Color;
 			s_Data.TextVertexBufferPtr->TexCoord = { texCoordMin.x, texCoordMax.y };
 			s_Data.TextVertexBufferPtr->TexIndex = textureIndex;
 			s_Data.TextVertexBufferPtr->EntityID = entityID;
 			s_Data.TextVertexBufferPtr++;
 
-			s_Data.TextVertexBufferPtr->Position = transform * glm::vec4(quadMax, 0.0f, 1.0f);
+			s_Data.TextVertexBufferPtr->Position = transform * glm::vec4(quadMax, 0.001f, 1.0f);
 			s_Data.TextVertexBufferPtr->Color = textParams.Color;
 			s_Data.TextVertexBufferPtr->TexCoord = texCoordMax;
 			s_Data.TextVertexBufferPtr->TexIndex = textureIndex;
 			s_Data.TextVertexBufferPtr->EntityID = entityID;
 			s_Data.TextVertexBufferPtr++;
 
-			s_Data.TextVertexBufferPtr->Position = transform * glm::vec4(quadMax.x, quadMin.y, 0.0f, 1.0f);
+			s_Data.TextVertexBufferPtr->Position = transform * glm::vec4(quadMax.x, quadMin.y, 0.001f, 1.0f);
 			s_Data.TextVertexBufferPtr->Color = textParams.Color;
 			s_Data.TextVertexBufferPtr->TexCoord = { texCoordMax.x, texCoordMin.y };
 			s_Data.TextVertexBufferPtr->TexIndex = textureIndex;
@@ -796,7 +797,7 @@ namespace Engine {
 				fontGeometry.getAdvance(advance, character, nextCharacter);
 
 				float kerningOffset = 0.0f;
-				x += fsScale * advance + textParams.Kerning;
+				x += fsScale * advance + (textParams.Kerning * textParams.Scale);
 			}
 		}
 	}

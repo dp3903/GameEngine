@@ -11,6 +11,7 @@ namespace Engine {
 
 	// Forward declaration. do not import actual Entity class as it will cause circular dependency loop.
 	class Entity;
+	class PhysicsContactListener;
 
 	class Scene
 	{
@@ -62,7 +63,6 @@ namespace Engine {
 		void OnPhysics2DStop();
 		void OnUpdatePhysics2D(float ts);
 
-		void BindLuaTypes();
 		void OnScriptingStart();
 		void OnScriptingStop();
 		void RunScripts(float ts);
@@ -75,11 +75,13 @@ namespace Engine {
 		uint32_t m_ViewportWidth = 0, m_ViewportHeight = 0;
 		
 		b2World* m_PhysicsWorld = nullptr;
+		PhysicsContactListener* m_ContactListener = nullptr;
 		sol::state* m_Lua = nullptr;
 
 	friend class Entity;
 	friend class SceneHierarchyPanel;
 	friend class SceneSerializer;
+	friend void BindLuaTypesAndFunctions(sol::state* m_Lua, Scene* scene);
 	};
 
 }

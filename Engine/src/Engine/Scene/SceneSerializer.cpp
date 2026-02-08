@@ -191,6 +191,8 @@ namespace Engine {
             entityJson["TextComponent"] = {
                 { "TextString",             tc.TextString },
                 { "Color",                  { tc.Color.r, tc.Color.g, tc.Color.b, tc.Color.a } },
+                { "Scale",                  tc.Scale },
+                { "Allign",                 { tc.Allign.x, tc.Allign.y } },
                 { "Kerning",                tc.Kerning},
                 { "LineSpacing",            tc.LineSpacing}
             };
@@ -343,6 +345,8 @@ namespace Engine {
             tc.Color = loadVec4(tJson["Color"]);
             if(tJson.contains("FontFile"))
                 tc.FontAsset = Font::Create(Project::GetAssetFileSystemPath(tJson["FontFile"]));
+            tc.Scale = tJson["Scale"];
+            tc.Allign = loadVec2(tJson["Allign"]);
             tc.Kerning = tJson["Kerning"];
             tc.LineSpacing = tJson["LineSpacing"];
         }
