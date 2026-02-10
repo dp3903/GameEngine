@@ -8,7 +8,7 @@
 	#include "Logger.h"
 	#define ASSERT(x, ...) { if(!(x)) { ENGINE_LOG_ERROR("Assertion Failed: {0}", __VA_ARGS__); __debugbreak(); } }
 #else
-	#define ASSERT(x, ...)
+	#define ASSERT(x, ...) { if(!(x)) { ENGINE_LOG_ERROR("Assertion Failed: {0}", __VA_ARGS__); std::abort(); } }
 #endif
 
 

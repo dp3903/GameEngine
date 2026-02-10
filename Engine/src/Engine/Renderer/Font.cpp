@@ -61,7 +61,6 @@ namespace Engine {
 		msdfgen::FontHandle* font = msdfgen::loadFont(ft, fileString.c_str());
 		if (!font)
 		{
-			ENGINE_LOG_ERROR("Failed to load font: {}", fileString);
 			ASSERT(false, "Failed to load font: {}", fileString);
 			return;
 		}

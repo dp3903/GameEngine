@@ -1,0 +1,224 @@
+{
+    "Scene": "Untitled Scene",
+    "Gravity": [
+        0.0,
+        -9.800000190734863
+    ],
+    "Entities": [
+        {
+            "Entity": 5211096368850274846,
+            "TagComponent": {
+                "Tag": "Environment"
+            },
+            "TransformComponent": {
+                "Translation": [
+                    3.185393810272217,
+                    0.6054058074951172,
+                    -0.10000023990869522
+                ],
+                "Rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "Scale": [
+                    11.158342361450195,
+                    4.658819198608398,
+                    1.0
+                ]
+            },
+            "Children": [
+                {
+                    "Entity": 3970987660540739155,
+                    "TagComponent": {
+                        "Tag": "ground"
+                    },
+                    "TransformComponent": {
+                        "Translation": [
+                            0.0,
+                            0.07000000029802322,
+                            0.20000000298023224
+                        ],
+                        "Rotation": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "Scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "SpriteRendererComponent": {
+                        "Color": [
+                            1.0,
+                            1.0,
+                            1.0,
+                            1.0
+                        ],
+                        "Texture": {
+                            "TexturePath": "textures\\ground.png",
+                            "TilingFactor": 1.0
+                        }
+                    },
+                    "Rigidbody2DComponent": {
+                        "BodyType": "Static",
+                        "FixedRotation": false
+                    },
+                    "BoxCollider2DComponent": {
+                        "Offset": [
+                            0.0,
+                            -0.4000000059604645
+                        ],
+                        "Size": [
+                            0.5,
+                            0.10000000149011612
+                        ],
+                        "Density": 1.0,
+                        "Friction": 0.5,
+                        "Restitution": 0.0,
+                        "RestitutionThreshold": 0.5
+                    },
+                    "Children": []
+                },
+                {
+                    "Entity": 9561868108462235439,
+                    "TagComponent": {
+                        "Tag": "Background"
+                    },
+                    "TransformComponent": {
+                        "Translation": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "Rotation": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "Scale": [
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    "SpriteRendererComponent": {
+                        "Color": [
+                            1.0,
+                            1.0,
+                            1.0,
+                            1.0
+                        ],
+                        "Texture": {
+                            "TexturePath": "textures\\origbig.png",
+                            "TilingFactor": 1.0
+                        }
+                    },
+                    "Children": []
+                }
+            ]
+        },
+        {
+            "Entity": 7437588202587785360,
+            "TagComponent": {
+                "Tag": "camera"
+            },
+            "TransformComponent": {
+                "Translation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "Rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "Scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            },
+            "CameraComponent": {
+                "Camera": {
+                    "ProjectionType": 1,
+                    "PerspectiveFOV": 0.7853981852531433,
+                    "PerspectiveNear": 0.009999999776482582,
+                    "PerspectiveFar": 1000.0,
+                    "OrthographicSize": 10.0,
+                    "OrthographicNear": -1.0,
+                    "OrthographicFar": 1.0
+                },
+                "Primary": true,
+                "FixedAspectRatio": false
+            },
+            "Children": []
+        },
+        {
+            "Entity": 16541403374543230344,
+            "TagComponent": {
+                "Tag": "Player"
+            },
+            "TransformComponent": {
+                "Translation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "Rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "Scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            },
+            "SpriteRendererComponent": {
+                "Color": [
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0
+                ],
+                "Texture": {
+                    "TexturePath": "textures\\pink-monster-sprite.png",
+                    "TilingFactor": 1.0,
+                    "SubTexture": {
+                        "SpriteWidth": 32,
+                        "SpriteHeight": 32,
+                        "XSpriteIndex": 0,
+                        "YSpriteIndex": 0
+                    }
+                }
+            },
+            "Rigidbody2DComponent": {
+                "BodyType": "Dynamic",
+                "FixedRotation": true
+            },
+            "BoxCollider2DComponent": {
+                "Offset": [
+                    0.0,
+                    0.0
+                ],
+                "Size": [
+                    0.30000001192092896,
+                    0.5
+                ],
+                "Density": 1.0,
+                "Friction": 0.5,
+                "Restitution": 0.0,
+                "RestitutionThreshold": 0.5
+            },
+            "ScriptComponent": {
+                "ScriptFile": "scripts\\Charactermovement.lua"
+            },
+            "Children": []
+        }
+    ]
+}

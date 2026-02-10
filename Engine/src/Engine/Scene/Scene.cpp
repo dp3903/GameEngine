@@ -154,7 +154,7 @@ namespace Engine {
 			fixtureDef.restitution = bc2d.Restitution;
 			fixtureDef.restitutionThreshold = bc2d.RestitutionThreshold;
 
-			bc2d.RuntimeFixture = body->CreateFixture(&fixtureDef);
+			body->CreateFixture(&fixtureDef);
 		}
 
 		// 5. Attach Circle Collider
@@ -188,7 +188,7 @@ namespace Engine {
 			fixtureDef.restitution = cc2d.Restitution;
 			fixtureDef.restitutionThreshold = cc2d.RestitutionThreshold;
 
-			cc2d.RuntimeFixture = body->CreateFixture(&fixtureDef);
+			body->CreateFixture(&fixtureDef);
 		}
 
 		// 6. Recursion
@@ -456,6 +456,7 @@ namespace Engine {
 		UpdateGlobalTransforms();
 		OnPhysics2DStart();
 		OnScriptingStart();
+		UpdateGlobalTransforms();
 	}
 
 	void Scene::OnRuntimeStop()
@@ -466,6 +467,7 @@ namespace Engine {
 
 	void Scene::OnSimulationStart()
 	{
+		UpdateGlobalTransforms();
 		OnPhysics2DStart();
 	}
 
@@ -521,10 +523,10 @@ namespace Engine {
 	{
 		// Physics
 		OnUpdatePhysics2D(ts);
-
+		
 		// Update global transforms
 		UpdateGlobalTransforms();
-
+		
 		// Render
 		Renderer2D::BeginScene(camera);
 
@@ -563,7 +565,7 @@ namespace Engine {
 			if (!Math::DecomposeTransform(transform.GlobalTransform, translation, rotation, scale))
 			{
 				ASSERT(false, "Could not decompose transform.");
-				return;
+				continue;
 			}
 			auto& rb2d = entity.GetComponent<Rigidbody2DComponent>();
 
@@ -602,14 +604,31 @@ namespace Engine {
 		for (auto e : view)
 		{
 			Entity entity = { e, this };
-			auto& transform = entity.GetComponent<TransformComponent>();
 			auto& rb2d = entity.GetComponent<Rigidbody2DComponent>();
+			
+			if (rb2d.Type == Rigidbody2DComponent::BodyType::Static)
+				continue;	// skip calculations for static body for optimization
+
+			auto& transform = entity.GetComponent<TransformComponent>();
+			auto& parentTransform = Entity(entity.GetComponent<RelationshipComponent>().Parent, this).GetComponent<TransformComponent>();
 
 			b2Body* body = (b2Body*)rb2d.RuntimeBody;
 			const auto& position = body->GetPosition();
-			transform.Translation.x = position.x;
-			transform.Translation.y = position.y;
-			transform.Rotation.z = body->GetAngle();
+
+			glm::mat4 inverseParent = glm::inverse(parentTransform.GlobalTransform);
+
+			// Apply Inverse to the Box2D World Position. This subtracts the parent's position, rotation, and scale mathematically
+			glm::vec4 localPos = inverseParent * glm::vec4(glm::vec3{position.x, position.y, transform.Translation.z}, 1.0f);
+
+			transform.Translation.x = localPos.x;
+			transform.Translation.y = localPos.y;
+
+			// We don't care about Position/Scale here, just Rotation.
+			glm::vec3 pPos, pRot, pScale;
+			Math::DecomposeTransform(parentTransform.GlobalTransform, pPos, pRot, pScale);
+
+			// New Local = Child World - Parent World
+			transform.Rotation.z = body->GetAngle() - pRot.z;
 		}
 		
 	}
@@ -619,7 +638,11 @@ namespace Engine {
 		m_Lua = new sol::state();
 
 		// Load standard libraries
-		m_Lua->open_libraries(sol::lib::base, sol::lib::math);
+		m_Lua->open_libraries(sol::lib::base, sol::lib::math, sol::lib::package);
+
+		// Just add the root scripts folder
+		std::string scriptPath = Project::GetAssetDirectory().string() + "/?.lua;";
+		(*m_Lua)["package"]["path"] = scriptPath + (*m_Lua)["package"]["path"].get_or<std::string>("");
 
 		// bind lua types and functions
 		BindLuaTypesAndFunctions(m_Lua, this);
@@ -656,7 +679,23 @@ namespace Engine {
 			{
 
 				// Load the file (Get the "Class" table)
-				sol::protected_function_result result = m_Lua->safe_script_file(scriptPath.string());
+				// 1. LOAD the file (This checks for Syntax Errors)
+// Unlike safe_script_file, this does NOT run the script yet.
+				sol::load_result loadResult = m_Lua->load_file(scriptPath.string());
+
+				// 2. CHECK if loading succeeded
+				if (!loadResult.valid())
+				{
+					sol::error err = loadResult;
+					ENGINE_LOG_ERROR("Syntax Error in script '{0}'", scriptPath.string());
+					ENGINE_LOG_ERROR("Details: {0}", err.what());
+					continue; // Skip this entity safely
+				}
+
+				// 3. EXECUTE the script (This runs the code to return the table)
+				// Now we convert the loaded script into a protected function and run it.
+				sol::protected_function scriptFunc = loadResult;
+				sol::protected_function_result result = scriptFunc();
 
 				if (!result.valid())
 				{
@@ -687,8 +726,17 @@ namespace Engine {
 			sc.Instance["Entity"] = entity;
 
 			// Call OnCreate
-			if (sc.Instance["OnCreate"].valid())
-				sc.Instance["OnCreate"](sc.Instance);
+			sol::protected_function onCreate = sc.Instance["OnCreate"];
+			sol::protected_function_result result = onCreate(sc.Instance);
+
+			if (!result.valid())
+			{
+				sol::error err = result;
+				std::string errorMsg = err.what();
+
+				// 1. Log to Terminal (Standard)
+				ENGINE_LOG_ERROR("Script Runtime Error: {0}", errorMsg);
+			}
 		}
 	}
 

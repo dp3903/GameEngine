@@ -30,7 +30,6 @@ namespace Engine {
 
 	void SceneCamera::SetViewportSize(uint32_t width, uint32_t height)
 	{
-		//ASSERT(width > 0 && height > 0, "Width or height must be >0.");
 		width = std::max((uint32_t)1, width);
 		height = std::max((uint32_t)1, height);
 		m_AspectRatio = (float)width / (float)height;

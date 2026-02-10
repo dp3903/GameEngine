@@ -51,8 +51,6 @@ namespace Engine
 
 		void OnDuplicateEntity();
 
-		void OnChangeSceneAtRuntime();
-
 		// UI Panels
 		void UI_Toolbar();
 		void UI_Stats();

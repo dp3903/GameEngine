@@ -13,10 +13,6 @@
 
 #include "ImGuizmo.h"
 #include <Engine/Renderer/Font.h>
-// Temporary includes
-#include "sol/sol.hpp"
-#include "lua.hpp" // If this fails, your include paths are wrong
-
 
 #include "box2d/include/box2d/b2_world.h"
 #include "box2d/include/box2d/b2_body.h"
@@ -59,7 +55,7 @@ namespace Engine
 		{
 			//OpenProject();
 			// TODO remove temporary while not debugging
-			OpenProject("Projects/GameProject/GameProject.gmproj");
+			OpenProject("Projects/FirstGame/Untitled.gmproj");
 		}
 
 		m_ContentBrowserPanel = std::make_unique<ContentBrowserPanel>();
@@ -377,70 +373,68 @@ namespace Engine
 
 		if (m_ShowPhysicsColliders)
 		{
-			// 1. Draw Box Colliders
+			// Specific Z-offset to ensure colliders draw ON TOP of sprites
+			constexpr float zIndex = 0.001f;
+
+			// Draw Box Colliders
 			{
-				auto view = m_ActiveScene->GetAllEntitiesWith<BoxCollider2DComponent>();
-				for (auto e : view)
+				auto view = m_ActiveScene->GetAllEntitiesWith<TransformComponent, BoxCollider2DComponent>();
+
+				for (auto entity : view)
 				{
-					auto& bc2d = view.get<BoxCollider2DComponent>(e);
+					auto [tc, bc2d] = view.get<TransformComponent, BoxCollider2DComponent>(entity);
 
-					// Only draw if physics is running and fixture exists
-					if (bc2d.RuntimeFixture)
-					{
-						b2Fixture* fixture = (b2Fixture*)bc2d.RuntimeFixture;
-						b2Body* body = fixture->GetBody();
-						const b2PolygonShape* shape = (const b2PolygonShape*)fixture->GetShape();
+					glm::vec3 globalPos, globalRot, globalScale;
+					Math::DecomposeTransform(tc.GlobalTransform, globalPos, globalRot, globalScale);
 
-						// Box2D Polygon Shapes store 4 vertices in Local Space.
-						// We use the Body's transform to convert them to World Space.
+					glm::mat4 transform = glm::translate(glm::mat4(1.0f), globalPos);
 
-						int vertexCount = shape->m_count; // Usually 4 for a box
-						std::vector<glm::vec3> worldVertices;
+					transform = glm::rotate(transform, globalRot.z, glm::vec3(0.0f, 0.0f, 1.0f));
 
-						for (int i = 0; i < vertexCount; i++)
-						{
-							// "GetWorldPoint" handles Rotation + Position + Offset automatically
-							b2Vec2 p = body->GetWorldPoint(shape->m_vertices[i]);
-							worldVertices.push_back({ p.x, p.y, 0.0f });
-						}
+					transform = glm::translate(transform, glm::vec3(
+						bc2d.Offset.x * std::abs(globalScale.x),
+						bc2d.Offset.y * std::abs(globalScale.y),
+						zIndex
+					));
 
-						// Draw lines between vertices (0-1, 1-2, 2-3, 3-0)
-						for (int i = 0; i < vertexCount; i++)
-						{
-							glm::vec3 p1 = worldVertices[i];
-							glm::vec3 p2 = worldVertices[(i + 1) % vertexCount];
-							Renderer2D::DrawLine(p1, p2, m_PhysicsCollidersColor); // Green Box
-						}
-					}
+					transform = glm::scale(transform, glm::vec3(
+						bc2d.Size.x * std::abs(globalScale.x) * 2.0f, // *2 because Box2D is half-extents
+						bc2d.Size.y * std::abs(globalScale.y) * 2.0f,
+						1.0f
+					));
+
+					Renderer2D::DrawRect(transform, glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
 				}
 			}
 
-			// 2. Draw Circle Colliders
+			// Draw Circle Colliders
 			{
-				auto view = m_ActiveScene->GetAllEntitiesWith<CircleCollider2DComponent>();
-				for (auto e : view)
+				auto view = m_ActiveScene->GetAllEntitiesWith<TransformComponent, CircleCollider2DComponent>();
+
+				for (auto entity : view)
 				{
-					auto& cc2d = view.get<CircleCollider2DComponent>(e);
+					auto [tc, cc2d] = view.get<TransformComponent, CircleCollider2DComponent>(entity);
 
-					if (cc2d.RuntimeFixture)
-					{
-						b2Fixture* fixture = (b2Fixture*)cc2d.RuntimeFixture;
-						b2Body* body = fixture->GetBody();
-						const b2CircleShape* shape = (const b2CircleShape*)fixture->GetShape();
+					glm::vec3 globalPos, globalRot, globalScale;
+					Math::DecomposeTransform(tc.GlobalTransform, globalPos, globalRot, globalScale);
 
-						// Calculate World Center
-						// b2CircleShape::m_p is the local offset relative to the body center
-						b2Vec2 worldCenter = body->GetWorldPoint(shape->m_p);
+					glm::mat4 transform = glm::translate(glm::mat4(1.0f), globalPos);
 
-						// Radius is stored directly in the shape (already scaled during creation)
-						float radius = shape->m_radius;
+					transform = glm::rotate(transform, globalRot.z, glm::vec3(0.0f, 0.0f, 1.0f));
 
-						// Draw
-						glm::mat4 transform = glm::translate(glm::mat4(1.0f), { worldCenter.x, worldCenter.y, 0.0f })
-							* glm::scale(glm::mat4(1.0f), { radius * 2.0f, radius * 2.0f, 1.0f });
+					transform = glm::translate(transform, glm::vec3(
+						cc2d.Offset.x * std::abs(globalScale.x),
+						cc2d.Offset.y * std::abs(globalScale.y),
+						zIndex
+					));
 
-						Renderer2D::DrawCircle(transform, m_PhysicsCollidersColor, 0.1f);
-					}
+					float maxScale = std::max(std::abs(globalScale.x), std::abs(globalScale.y));
+
+					float diameter = (cc2d.Radius * maxScale) * 2.0f;
+
+					transform = glm::scale(transform, glm::vec3(diameter, diameter, 1.0f));
+
+					Renderer2D::DrawCircle(transform, glm::vec4(0.0f, 1.0f, 0.0f, 1.0f), 0.05f);
 				}
 			}
 		}
@@ -459,6 +453,8 @@ namespace Engine
 	{
 		Project::New(projectDir);
 		NewScene();
+
+		m_ContentBrowserPanel = std::make_unique<ContentBrowserPanel>();
 	}
 
 	void EditorLayer::OpenProject()
@@ -496,8 +492,7 @@ namespace Engine
 	{
 		if (path.extension().string() != ".gmproj")
 		{
-			ENGINE_LOG_ERROR("Invalid game project file: {0}", path.string());
-			ASSERT(false);
+			ASSERT(false, "Invalid game project file: {0}", path.string());
 		}
 		if (Project::Load(path))
 		{

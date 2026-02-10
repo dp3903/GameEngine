@@ -1,0 +1,7 @@
+{
+    "Project": {
+        "Name": "First Game",
+        "StartScene": "scenes/Level1.ssfmt",
+        "AssetDirectory": "assets"
+    }
+}

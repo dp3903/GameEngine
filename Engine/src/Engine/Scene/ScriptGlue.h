@@ -220,7 +220,13 @@ namespace Engine
 			"Scale", &TransformComponent::Scale
 		);
 		m_Lua->new_usertype<SpriteRendererComponent>("SpriteRenderer",
-			"Color", &SpriteRendererComponent::Color
+			"Color", &SpriteRendererComponent::Color,
+			"TilingFactor", &SpriteRendererComponent::TilingFactor,
+			"IsSubTexture", &SpriteRendererComponent::IsSubTexture,
+			"SpriteHeight", &SpriteRendererComponent::SpriteHeight,
+			"SpriteWidth", &SpriteRendererComponent::SpriteWidth,
+			"XSpriteIndex", &SpriteRendererComponent::XSpriteIndex,
+			"YSpriteIndex", &SpriteRendererComponent::YSpriteIndex
 		);
 		m_Lua->new_usertype<Entity>("Entity",
 			"GetUUID", &Entity::GetUUID,
@@ -308,6 +314,7 @@ namespace Engine
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		auto inputTable = m_Lua->create_named_table("Input");
 		inputTable.set_function("IsKeyPressed", &Input::IsKeyPressed);
+		inputTable.set_function("IsMouseButtonPressed", &Input::IsMouseButtonPressed);
 		inputTable.set_function("GetMouseX", &Input::GetMouseX);
 		inputTable.set_function("GetMouseY", &Input::GetMouseY);
 		inputTable.set_function("GetMousePosition", &Input::GetMousePosition);
