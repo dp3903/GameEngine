@@ -77,7 +77,7 @@ function PlayerAnimationStatus:OnUpdate(ts, playerEntity)
     end
     if self.CurrentState == "Walk" then
         if self.FrameIndex % 2 == 0 then
-            Physics.SetLinearVelocity(playerEntity, Vec2.new(0.5 * self.FacingDirection, 0.0))
+            Physics.SetLinearVelocity(playerEntity, Vec2.new(0.75 * self.FacingDirection, 0.0))
         end
     end
 end

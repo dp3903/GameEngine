@@ -167,7 +167,7 @@ namespace Engine {
 	}
 
 	template<typename T, typename UIFunction>
-	static void DrawComponent(const std::string& name, Entity entity, UIFunction uiFunction)
+	static void DrawComponent(const std::string& name, Entity entity, UIFunction uiFunction, bool removable = true)
 	{
 		const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowOverlap | ImGuiTreeNodeFlags_FramePadding;
 		if (entity.HasComponent<T>())
@@ -188,7 +188,7 @@ namespace Engine {
 			}
 
 			bool removeComponent = false;
-			if (ImGui::BeginPopup("ComponentSettings"))
+			if (removable && ImGui::BeginPopup("ComponentSettings"))
 			{
 				if (ImGui::MenuItem("Remove component"))
 					removeComponent = true;
@@ -264,15 +264,74 @@ namespace Engine {
 				DrawVec3Control("Rotation", rotation);
 				component.Rotation = glm::radians(rotation);
 				DrawVec3Control("Scale", component.Scale, 1.0f);
-			});
+			},
+			false);
 
 		DrawComponent<RelationshipComponent>("Hierarchy relationship", entity, [&](RelationshipComponent& component)
 			{
 				Entity parent = Entity(component.Parent, m_Context.get());
 				ImGui::Text("Parent: ");
 				ImGui::SameLine();
-				ImGui::Text(parent.GetComponent<TagComponent>().Tag.c_str());
-			});
+				//ImGui::Text(parent.GetComponent<TagComponent>().Tag.c_str());
+
+				// 1. Create a buffer for the search text
+				static char searchBuffer[128] = "";
+
+				// 2. Setup the Preview (what shows when closed)
+				const char* preview_value = parent.GetName().c_str();
+				Entity newParent = parent;
+
+				// 3. Begin the Combo
+				if (ImGui::BeginCombo("##EntitySearchCombo", preview_value))
+				{
+					// Display the Search Box (InputText)
+					if (ImGui::IsWindowAppearing())
+						ImGui::SetKeyboardFocusHere(); // Quality of Life: Auto-focus typing
+					ImGui::InputText("##Search", searchBuffer, sizeof(searchBuffer));
+
+					// 5. Filter and Display Items
+					// Note: For huge lists, use ImGuiListClipper here
+					auto view = m_Context->GetAllEntitiesWith<TagComponent>();
+					for (auto& e : view)
+					{
+						Entity candidate = { e, m_Context.get() };
+						// Don't show ourselves
+						if (candidate == entity)
+							continue;
+
+						// Don't show our own children (Circular Dependency)
+						if (m_Context->IsDescendant(entity, candidate))
+							continue;
+
+						const char* item_text = candidate.GetName().c_str();
+
+						// Simple substring search (case-sensitive here, but you can make it case-insensitive)
+						if (searchBuffer[0] != '\0' && strstr(item_text, searchBuffer) == nullptr)
+							continue; // Skip items that don't match
+
+						const bool is_selected = (parent == candidate);
+						if (ImGui::Selectable(item_text, is_selected))
+						{
+							// set newparent for selected
+							newParent = candidate;
+
+							// Clear search buffer after selection? Optional.
+							searchBuffer[0] = '\0'; 
+						}
+
+						// Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+						if (is_selected)
+							ImGui::SetItemDefaultFocus();
+					}
+
+					ImGui::EndCombo();
+				}
+				if (newParent != parent)
+				{
+					m_Context->UpdateParent(entity, newParent, true);
+				}
+			},
+			false);
 
 		DrawComponent<SpriteRendererComponent>("Sprite Renderer", entity, [](SpriteRendererComponent& component)
 			{
@@ -488,7 +547,7 @@ namespace Engine {
 				ImGui::DragFloat("Density", &component.Density, 0.01f, 0.0f, 1.0f);
 				ImGui::DragFloat("Friction", &component.Friction, 0.01f, 0.0f, 1.0f);
 				ImGui::DragFloat("Restitution", &component.Restitution, 0.01f, 0.0f, 1.0f);
-				ImGui::DragFloat("Restitution Threshold", &component.RestitutionThreshold, 0.01f, 0.0f);
+				ImGui::DragFloat("Restitution Threshold", &component.RestitutionThreshold, 0.01f, 0.0f);  
 			});
 
 		DrawComponent<CircleCollider2DComponent>("Circle Collider 2D", entity, [](CircleCollider2DComponent& component)

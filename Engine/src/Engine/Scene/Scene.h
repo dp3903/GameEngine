@@ -25,6 +25,9 @@ namespace Engine {
 		void DestroyEntity(Entity entity);
 
 		static std::shared_ptr<Scene> Copy(std::shared_ptr<Scene> other);
+
+		bool IsDescendant(Entity potentialAncestor, Entity potentialDescendant);
+		void UpdateParent(Entity& child, Entity& newParent, bool keepWorldTransform=false);
 		
 		void OnRuntimeStart();
 		void OnRuntimeStop();

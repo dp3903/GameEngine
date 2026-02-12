@@ -154,7 +154,8 @@ namespace Engine {
 			fixtureDef.restitution = bc2d.Restitution;
 			fixtureDef.restitutionThreshold = bc2d.RestitutionThreshold;
 
-			body->CreateFixture(&fixtureDef);
+			bc2d.RuntimeFixture = body->CreateFixture(&fixtureDef);
+			bc2d.ClosestRigidbodyParent = rootEntity;
 		}
 
 		// 5. Attach Circle Collider
@@ -188,7 +189,8 @@ namespace Engine {
 			fixtureDef.restitution = cc2d.Restitution;
 			fixtureDef.restitutionThreshold = cc2d.RestitutionThreshold;
 
-			body->CreateFixture(&fixtureDef);
+			cc2d.RuntimeFixture = body->CreateFixture(&fixtureDef);
+			cc2d.ClosestRigidbodyParent = rootEntity;
 		}
 
 		// 6. Recursion
@@ -204,6 +206,53 @@ namespace Engine {
 				{
 					AttachColliders(body, rootEntity, child, scene);
 				}
+				childHandle = child.GetComponent<RelationshipComponent>().NextSibling;
+			}
+		}
+	}
+
+	static void DestroyUnlinkedFixtureRecursive(Entity& entity, Scene* scene)
+	{
+		// if entity is a rigidbody, children are gauranteed to be linked to it
+		if (entity.HasComponent<Rigidbody2DComponent>())
+			return;
+
+		// destroy box collider
+		if (entity.HasComponent<BoxCollider2DComponent>())
+		{
+			auto& bc2d = entity.GetComponent<BoxCollider2DComponent>();
+			if (bc2d.ClosestRigidbodyParent != entt::null)
+			{
+				Entity oldRigidbodyParent = { bc2d.ClosestRigidbodyParent, scene };
+				b2Body* body = (b2Body*)oldRigidbodyParent.GetComponent<Rigidbody2DComponent>().RuntimeBody;
+				body->DestroyFixture((b2Fixture*)bc2d.RuntimeFixture);
+				bc2d.RuntimeFixture = nullptr;
+			}
+		}
+
+		// destroy circle collider
+		if (entity.HasComponent<CircleCollider2DComponent>())
+		{
+			auto& cc2d = entity.GetComponent<CircleCollider2DComponent>();
+			if (cc2d.ClosestRigidbodyParent != entt::null)
+			{
+				Entity oldRigidbodyParent = { cc2d.ClosestRigidbodyParent, scene };
+				b2Body* body = (b2Body*)oldRigidbodyParent.GetComponent<Rigidbody2DComponent>().RuntimeBody;
+				body->DestroyFixture((b2Fixture*)cc2d.RuntimeFixture);
+				cc2d.RuntimeFixture = nullptr;
+			}
+		}
+
+		// recursion
+		if (entity.HasComponent<RelationshipComponent>())
+		{
+			auto& rel = entity.GetComponent<RelationshipComponent>();
+			entt::entity childHandle = rel.FirstChild;
+
+			while (childHandle != entt::null)
+			{
+				Entity child = { childHandle, scene };
+				DestroyUnlinkedFixtureRecursive(child, scene);	
 				childHandle = child.GetComponent<RelationshipComponent>().NextSibling;
 			}
 		}
@@ -421,6 +470,101 @@ namespace Engine {
 		}
 
 		m_Registry.destroy(entity);
+	}
+
+	bool Scene::IsDescendant(Entity potentialAncestor, Entity potentialDescendant)
+	{
+		// Walk up the tree from 'potentialDescendant'
+		// If we hit 'potentialAncestor', then it IS a descendant (bad!)
+		if (!potentialDescendant.HasComponent<RelationshipComponent>()) return false;
+
+		auto& rel = potentialDescendant.GetComponent<RelationshipComponent>();
+		Entity parent = { rel.Parent, this }; // or m_Context
+
+		while (parent)
+		{
+			if (parent == potentialAncestor)
+				return true; // Found a loop!
+
+			if (!parent.HasComponent<RelationshipComponent>()) break;
+			parent = { parent.GetComponent<RelationshipComponent>().Parent, this };
+		}
+		return false;
+	}
+
+	void Scene::UpdateParent(Entity& child, Entity& newParent, bool keepWorldTransform)
+	{
+		auto& childRelation = child.GetComponent<RelationshipComponent>();
+		auto& newParentRelation = newParent.GetComponent<RelationshipComponent>();
+		Entity oldParent = { childRelation.Parent, this };
+		auto& oldParentRelation = oldParent.GetComponent<RelationshipComponent>();
+
+		// Update relationship components
+		{
+			Entity oldPrevSibling = { childRelation.PrevSibling, this };
+			Entity oldNextSibling = { childRelation.NextSibling, this };
+			if (oldNextSibling)
+				oldNextSibling.GetComponent<RelationshipComponent>().PrevSibling = oldPrevSibling;
+			if (oldPrevSibling)
+			{
+				// child was not the first child of previous parent
+				oldPrevSibling.GetComponent<RelationshipComponent>().NextSibling = oldNextSibling;
+			}
+			else
+			{
+				// child was the first child of previous parent
+				oldParentRelation.FirstChild = childRelation.NextSibling;
+			}
+
+			Entity newParentFirstChild = { newParentRelation.FirstChild, this };
+			if (newParentFirstChild)
+				newParentFirstChild.GetComponent<RelationshipComponent>().PrevSibling = child;
+			newParentRelation.FirstChild = child;
+			childRelation.NextSibling = newParentFirstChild;
+			childRelation.PrevSibling = entt::null;
+			childRelation.Parent = newParent;
+		}
+
+		// update local transform if world transform is to be kept same
+		if (keepWorldTransform)
+		{
+			// We calculate what Local Position is needed to maintain the current World Position
+			// NewLocal = Inverse(NewParentWorld) * OldWorld
+			auto& childTransform = child.GetComponent<TransformComponent>();
+			auto& newParentTransform = newParent.GetComponent<TransformComponent>();
+
+			glm::mat4 parentInverse = glm::inverse(newParentTransform.GlobalTransform);
+			glm::mat4 newLocal = parentInverse * childTransform.GlobalTransform;
+
+			Math::DecomposeTransform(newLocal, childTransform.Translation, childTransform.Rotation, childTransform.Scale);
+		}
+
+		// Update Global transforms recursively for all children
+		UpdateTransformRecursive(child, newParent.GetComponent<TransformComponent>().GlobalTransform);
+
+		// if physics world is not nullptr, it means we are already in simulation/play mode and this was likely called from a script.
+		// so we need to update the runtime fixtures and bodies
+		if (m_PhysicsWorld)
+		{
+			// update fixtures only if child does not have rigidbody, otherwise everything already is relative to this child or it's children
+			if (!child.HasComponent<Rigidbody2DComponent>())
+			{
+				// first we destroy fixtures from parent bodies
+				DestroyUnlinkedFixtureRecursive(child, this);
+
+				// find closes parent with rigidbody
+				Entity e = child;
+				while (e && !e.HasComponent<Rigidbody2DComponent>())
+					e = { e.GetComponent<RelationshipComponent>().Parent, this };
+			
+				if (e)
+				{
+					AttachColliders((b2Body*)e.GetComponent<Rigidbody2DComponent>().RuntimeBody, e, child, this);
+				}
+			}
+		}
+
+		ENGINE_LOG_INFO("Parent of '{0}' changed from '{1}' to '{2}'", child.GetName(), oldParent.GetName(), newParent.GetName());
 	}
 
 	void Scene::UpdateGlobalTransforms()

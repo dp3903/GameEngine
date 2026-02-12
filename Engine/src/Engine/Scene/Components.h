@@ -164,6 +164,10 @@ namespace Engine {
 		float Restitution = 0.0f;
 		float RestitutionThreshold = 0.5f;
 
+		// storage for runtime
+		void* RuntimeFixture = nullptr;
+		entt::entity ClosestRigidbodyParent = entt::null;
+
 		BoxCollider2DComponent() = default;
 		BoxCollider2DComponent(const BoxCollider2DComponent&) = default;
 	};
@@ -182,6 +186,10 @@ namespace Engine {
 		float Friction = 0.5f;
 		float Restitution = 0.0f;
 		float RestitutionThreshold = 0.5f;
+
+		// storage for runtime
+		void* RuntimeFixture = nullptr;
+		entt::entity ClosestRigidbodyParent = entt::null;
 
 		CircleCollider2DComponent() = default;
 		CircleCollider2DComponent(const CircleCollider2DComponent&) = default;
