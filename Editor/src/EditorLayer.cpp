@@ -398,12 +398,41 @@ namespace Engine
 					));
 
 					transform = glm::scale(transform, glm::vec3(
-						bc2d.Size.x * std::abs(globalScale.x) * 2.0f, // *2 because Box2D is half-extents
-						bc2d.Size.y * std::abs(globalScale.y) * 2.0f,
+						bc2d.Size.x * std::abs(globalScale.x),
+						bc2d.Size.y * std::abs(globalScale.y),
 						1.0f
 					));
 
-					Renderer2D::DrawRect(transform, glm::vec4(0.0f, 1.0f, 0.0f, 1.0f));
+					Renderer2D::DrawRect(transform, m_PhysicsCollidersColor);
+
+					// Only draw if physics is running and fixture exists
+					//if (bc2d.RuntimeFixture)
+					//{
+					//	b2Fixture* fixture = (b2Fixture*)bc2d.RuntimeFixture;
+					//	b2Body* body = fixture->GetBody();
+					//	const b2PolygonShape* shape = (const b2PolygonShape*)fixture->GetShape();
+
+					//	// Box2D Polygon Shapes store 4 vertices in Local Space.
+					//	// We use the Body's transform to convert them to World Space.
+
+					//	int vertexCount = shape->m_count; // Usually 4 for a box
+					//	std::vector<glm::vec3> worldVertices;
+
+					//	for (int i = 0; i < vertexCount; i++)
+					//	{
+					//		// "GetWorldPoint" handles Rotation + Position + Offset automatically
+					//		b2Vec2 p = body->GetWorldPoint(shape->m_vertices[i]);
+					//		worldVertices.push_back({ p.x, p.y, globalPos.z + 0.01f });
+					//	}
+
+					//	// Draw lines between vertices (0-1, 1-2, 2-3, 3-0)
+					//	for (int i = 0; i < vertexCount; i++)
+					//	{
+					//		glm::vec3 p1 = worldVertices[i];
+					//		glm::vec3 p2 = worldVertices[(i + 1) % vertexCount];
+					//		Renderer2D::DrawLine(p1, p2, glm::vec4(1.0f, 0.0f, 1.0f, 1.0f));
+					//	}
+					//}
 				}
 			}
 
@@ -434,7 +463,28 @@ namespace Engine
 
 					transform = glm::scale(transform, glm::vec3(diameter, diameter, 1.0f));
 
-					Renderer2D::DrawCircle(transform, glm::vec4(0.0f, 1.0f, 0.0f, 1.0f), 0.05f);
+					Renderer2D::DrawCircle(transform, m_PhysicsCollidersColor, 0.05f);
+
+					// only draw if runtime is on
+					//if (cc2d.RuntimeFixture)
+					//{
+					//	b2Fixture* fixture = (b2Fixture*)cc2d.RuntimeFixture;
+					//	b2Body* body = fixture->GetBody();
+					//	const b2CircleShape* shape = (const b2CircleShape*)fixture->GetShape();
+
+					//	// Calculate World Center
+					//	// b2CircleShape::m_p is the local offset relative to the body center
+					//	b2Vec2 worldCenter = body->GetWorldPoint(shape->m_p);
+
+					//	// Radius is stored directly in the shape (already scaled during creation)
+					//	float radius = shape->m_radius;
+
+					//	// Draw
+					//	glm::mat4 transform = glm::translate(glm::mat4(1.0f), { worldCenter.x, worldCenter.y, globalPos.z + 0.01f })
+					//		* glm::scale(glm::mat4(1.0f), { radius * 2.0f, radius * 2.0f, 1.0f });
+
+					//	Renderer2D::DrawCircle(transform, glm::vec4(1.0f, 0.0f, 1.0f, 1.0f), 0.1f);
+					//}
 				}
 			}
 		}

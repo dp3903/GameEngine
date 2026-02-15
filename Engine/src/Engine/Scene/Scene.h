@@ -61,6 +61,7 @@ namespace Engine {
 		Entity DuplicateEntityRecursive(Entity entity);
 		void UpdateGlobalTransforms();
 		void UpdateTransformRecursive(entt::entity entity, const glm::mat4& parentTransform);
+		void SyncPhysicsToTransform(Entity entity);
 
 		void OnPhysics2DStart();
 		void OnPhysics2DStop();

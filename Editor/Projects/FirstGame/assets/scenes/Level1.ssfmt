@@ -27,6 +27,13 @@
                     1.0
                 ]
             },
+            "Rigidbody2DComponent": {
+                "BodyType": "Static",
+                "FixedRotation": false
+            },
+            "ScriptComponent": {
+                "ScriptFile": "scripts\\Environment.lua"
+            },
             "Children": [
                 {
                     "Entity": 3970987660540739155,
@@ -62,18 +69,14 @@
                             "TilingFactor": 1.0
                         }
                     },
-                    "Rigidbody2DComponent": {
-                        "BodyType": "Static",
-                        "FixedRotation": false
-                    },
                     "BoxCollider2DComponent": {
                         "Offset": [
                             0.0,
                             0.0
                         ],
                         "Size": [
-                            0.5,
-                            0.20000000298023224
+                            1.0,
+                            0.4000000059604645
                         ],
                         "Density": 1.0,
                         "Friction": 0.5,
@@ -207,8 +210,8 @@
                     0.0
                 ],
                 "Size": [
-                    0.30000001192092896,
-                    0.5
+                    0.6000000238418579,
+                    1.0
                 ],
                 "Density": 1.0,
                 "Friction": 0.5,

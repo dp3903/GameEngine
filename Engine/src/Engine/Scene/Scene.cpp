@@ -8,6 +8,8 @@
 #include "Engine/Project/Project.h"
 
 #include <glm/glm.hpp>
+#include <glm/gtx/string_cast.hpp>
+
 
 namespace Engine {
 
@@ -90,36 +92,27 @@ namespace Engine {
 	// Helper to transform child data into parent's local space
 	static void AttachColliders(b2Body* body, Entity rootEntity, Entity currentEntity, Scene* scene)
 	{
-		// 1. Get Global Transforms for BOTH
-		// We need to compare Child vs Root to find the relative difference
-		glm::vec3 rootPos, rootRot, rootScale;
-		Math::DecomposeTransform(rootEntity.GetComponent<TransformComponent>().GlobalTransform, rootPos, rootRot, rootScale);
+		// Calculate Relative Transform
+		glm::mat4 parentTransform = rootEntity.GetComponent<TransformComponent>().GlobalTransform;
+		glm::mat4 childTransform = currentEntity.GetComponent<TransformComponent>().GlobalTransform;
 
-		glm::vec3 childPos, childRot, childScale;
-		Math::DecomposeTransform(currentEntity.GetComponent<TransformComponent>().GlobalTransform, childPos, childRot, childScale);
+		// Extract the Parent's pure Position and Rotation
+		glm::vec3 pPos, pRot, pScale;
+		Math::DecomposeTransform(parentTransform, pPos, pRot, pScale);
 
-		// 2. Prepare Box2D Parameters
-		// Box2D Shape Dimensions should match the VISUAL Global Scale
-		// (We use abs because physics shapes can't be negative)
-		float finalScaleX = std::abs(childScale.x);
-		float finalScaleY = std::abs(childScale.y);
+		// Rebuild the Parent Transform WITHOUT scale
+		// Box2D bodies act as the anchor, and they only understand position and rotation.
+		glm::mat4 unscaledParentTransform = glm::translate(glm::mat4(1.0f), pPos) *
+			glm::rotate(glm::mat4(1.0f), pRot.x, glm::vec3(1.0f, 0.0f, 0.0f)) *
+			glm::rotate(glm::mat4(1.0f), pRot.y, glm::vec3(0.0f, 1.0f, 0.0f)) *
+			glm::rotate(glm::mat4(1.0f), pRot.z, glm::vec3(0.0f, 0.0f, 1.0f));
 
-		// Box2D Fixture Angle is RELATIVE to the Body
-		float relativeRotation = childRot.z - rootRot.z;
+		// Calculate relative matrix against the UNSCALED parent body
+		glm::mat4 relativeMatrix = glm::inverse(unscaledParentTransform) * childTransform;
 
-		// 3. Calculate Relative Position (The Tricky Part)
-		// We need the Child's position in the Root's LOCAL space.
-		// Step A: Get distance vector in World Space
-		glm::vec2 worldOffset = { childPos.x - rootPos.x, childPos.y - rootPos.y };
-
-		// Step B: Rotate this vector "backwards" by the Root's rotation 
-		// to align it with the Root's local axes.
-		float c = cos(-rootRot.z);
-		float s = sin(-rootRot.z);
-		glm::vec2 localOffset = {
-			worldOffset.x * c - worldOffset.y * s,
-			worldOffset.x * s + worldOffset.y * c
-		};
+		// Decompose to get the correct absolute scale and offset
+		glm::vec3 relativePos, relativeRot, relativeScale;
+		Math::DecomposeTransform(relativeMatrix, relativePos, relativeRot, relativeScale);
 
 		// 4. Attach Box Collider
 		if (currentEntity.HasComponent<BoxCollider2DComponent>())
@@ -127,32 +120,28 @@ namespace Engine {
 			auto& bc2d = currentEntity.GetComponent<BoxCollider2DComponent>();
 			b2PolygonShape boxShape;
 
-			// Calculate the center of the box relative to the Body
-			// This includes the Entity's offset from parent + The Collider's offset from Entity
-			// Note: Collider Offset must be rotated by the RELATIVE rotation
-			float offX = bc2d.Offset.x * finalScaleX;
-			float offY = bc2d.Offset.y * finalScaleY;
+			// Size matches the component settings * the entity's scale
+			float width = bc2d.Size.x * relativeScale.x;
+			float height = bc2d.Size.y * relativeScale.y;
 
-			float relC = cos(relativeRotation);
-			float relS = sin(relativeRotation);
-
-			// Rotate collider offset and add to entity offset
-			float finalOffsetX = localOffset.x + (offX * relC - offY * relS);
-			float finalOffsetY = localOffset.y + (offX * relS + offY * relC);
-
+			// SetAsBox takes "Half Width/Height", "Center Position", "Angle"
 			boxShape.SetAsBox(
-				bc2d.Size.x * finalScaleX,
-				bc2d.Size.y * finalScaleY,
-				b2Vec2(finalOffsetX, finalOffsetY),
-				relativeRotation
-			);
+				width / 2.0f,
+				height / 2.0f,
+				b2Vec2(
+					relativePos.x + bc2d.Offset.x * relativeScale.x,
+					relativePos.y + bc2d.Offset.y * relativeScale.y
+				),
+				relativeRot.z);
 
+			// Define Fixture
 			b2FixtureDef fixtureDef;
 			fixtureDef.shape = &boxShape;
 			fixtureDef.density = bc2d.Density;
 			fixtureDef.friction = bc2d.Friction;
 			fixtureDef.restitution = bc2d.Restitution;
 			fixtureDef.restitutionThreshold = bc2d.RestitutionThreshold;
+			fixtureDef.userData.pointer = (uintptr_t)(uint32_t)currentEntity;
 
 			bc2d.RuntimeFixture = body->CreateFixture(&fixtureDef);
 			bc2d.ClosestRigidbodyParent = rootEntity;
@@ -164,21 +153,12 @@ namespace Engine {
 			auto& cc2d = currentEntity.GetComponent<CircleCollider2DComponent>();
 			b2CircleShape circleShape;
 
-			float maxScale = std::max(finalScaleX, finalScaleY);
-
-			// Same offset logic as box
-			float offX = cc2d.Offset.x * finalScaleX; // Circle offset is usually pre-scaling, but let's stick to standard
-			float offY = cc2d.Offset.y * finalScaleY; // (Wait, circle scale should be uniform usually)
+			float maxScale = std::max(relativeScale.x, relativeScale.y);
 
 			// For circles, we just set Position (m_p)
-			// We still need to rotate the offset if the circle is not centered on the entity
-			// (Though rotating a circle around its center does nothing, rotating it around the entity pivot does)
-			float relC = cos(relativeRotation);
-			float relS = sin(relativeRotation);
-
 			circleShape.m_p.Set(
-				localOffset.x + (offX * relC - offY * relS),
-				localOffset.y + (offX * relS + offY * relC)
+				relativePos.x + cc2d.Offset.x * relativeScale.x,
+				relativePos.y + cc2d.Offset.y * relativeScale.y
 			);
 			circleShape.m_radius = cc2d.Radius * maxScale;
 
@@ -188,6 +168,7 @@ namespace Engine {
 			fixtureDef.friction = cc2d.Friction;
 			fixtureDef.restitution = cc2d.Restitution;
 			fixtureDef.restitutionThreshold = cc2d.RestitutionThreshold;
+			fixtureDef.userData.pointer = (uintptr_t)(uint32_t)currentEntity;
 
 			cc2d.RuntimeFixture = body->CreateFixture(&fixtureDef);
 			cc2d.ClosestRigidbodyParent = rootEntity;
@@ -593,6 +574,170 @@ namespace Engine {
 			// Next Sibling
 			child = m_Registry.get<RelationshipComponent>(child).NextSibling;
 		}
+	}
+
+	void Scene::SyncPhysicsToTransform(Entity entity)
+	{
+		// Safety: Only works if physics is running
+		if (!m_PhysicsWorld) return;
+
+		// Handle Rigidbodies (Update Position/Rotation)
+		// If the entity has a body, we can just teleport it to the new position.
+		if (entity.HasComponent<Rigidbody2DComponent>())
+		{
+			auto& rb2d = entity.GetComponent<Rigidbody2DComponent>();
+			if (rb2d.RuntimeBody)
+			{
+				b2Body* body = (b2Body*)rb2d.RuntimeBody;
+				
+				b2Fixture* fixture = body->GetFixtureList();
+
+				while (fixture)
+				{
+					b2Fixture* nextFixture = fixture->GetNext();
+
+					body->DestroyFixture(fixture);
+
+					fixture = nextFixture;
+				}
+
+				glm::vec3 scale;
+				glm::vec3 rotation;
+				glm::vec3 translation;
+				if (!Math::DecomposeTransform(entity.GetComponent<TransformComponent>().GlobalTransform, translation, rotation, scale))
+				{
+					ASSERT(false, "Could not decompose transform.");
+					return;
+				}
+				body->SetTransform(b2Vec2(translation.x, translation.y), rotation.z);
+				body->SetAwake(true);
+
+				AttachColliders(body, entity, entity, this);
+			}
+			return;
+		}
+
+		// 4. Attach Box Collider
+		if (entity.HasComponent<BoxCollider2DComponent>())
+		{
+			auto& bc2d = entity.GetComponent<BoxCollider2DComponent>();
+
+			// Calculate Relative Transform
+			Entity parentEntity = Entity{ bc2d.ClosestRigidbodyParent, this };
+			if (!parentEntity)
+			{
+				ENGINE_LOG_ERROR("No parent rigid body found for '{0}.'", entity.GetName());
+				return;
+			}
+			glm::mat4 parentTransform = parentEntity.GetComponent<TransformComponent>().GlobalTransform;
+			glm::mat4 childTransform = entity.GetComponent<TransformComponent>().GlobalTransform;
+
+			// Extract the Parent's pure Position and Rotation
+			glm::vec3 pPos, pRot, pScale;
+			Math::DecomposeTransform(parentTransform, pPos, pRot, pScale);
+
+			// Rebuild the Parent Transform WITHOUT scale
+			// Box2D bodies act as the anchor, and they only understand position and rotation.
+			glm::mat4 unscaledParentTransform = glm::translate(glm::mat4(1.0f), pPos) *
+				glm::rotate(glm::mat4(1.0f), pRot.x, glm::vec3(1.0f, 0.0f, 0.0f)) *
+				glm::rotate(glm::mat4(1.0f), pRot.y, glm::vec3(0.0f, 1.0f, 0.0f)) *
+				glm::rotate(glm::mat4(1.0f), pRot.z, glm::vec3(0.0f, 0.0f, 1.0f));
+
+			// Calculate relative matrix against the UNSCALED parent body
+			glm::mat4 relativeMatrix = glm::inverse(unscaledParentTransform) * childTransform;
+
+			// Decompose to get relative position and scale
+			glm::vec3 relativePos, relativeRot, relativeScale;
+			Math::DecomposeTransform(relativeMatrix, relativePos, relativeRot, relativeScale);
+
+			b2PolygonShape boxShape;
+
+			// Size matches the component settings * the entity's scale
+			float width = bc2d.Size.x * relativeScale.x;
+			float height = bc2d.Size.y * relativeScale.y;
+
+			// SetAsBox takes "Half Width/Height", "Center Position", "Angle"
+			boxShape.SetAsBox(
+				width / 2.0f,
+				height / 2.0f,
+				b2Vec2(
+					relativePos.x + bc2d.Offset.x * relativeScale.x,
+					relativePos.y + bc2d.Offset.y * relativeScale.y),
+				relativeRot.z);
+
+			// Define Fixture
+			b2FixtureDef fixtureDef;
+			fixtureDef.shape = &boxShape;
+			fixtureDef.density = bc2d.Density;
+			fixtureDef.friction = bc2d.Friction;
+			fixtureDef.restitution = bc2d.Restitution;
+			fixtureDef.restitutionThreshold = bc2d.RestitutionThreshold;
+			fixtureDef.userData.pointer = (uintptr_t)(uint32_t)entity;
+
+			b2Body* body = (b2Body*)(parentEntity.GetComponent<Rigidbody2DComponent>().RuntimeBody);
+			if(bc2d.RuntimeFixture)
+				body->DestroyFixture((b2Fixture*)bc2d.RuntimeFixture);
+			bc2d.RuntimeFixture = body->CreateFixture(&fixtureDef);
+		}
+
+		// 5. Attach Circle Collider
+		if (entity.HasComponent<CircleCollider2DComponent>())
+		{
+			auto& cc2d = entity.GetComponent<CircleCollider2DComponent>();
+
+			// Calculate Relative Transform
+			Entity parentEntity = Entity{ cc2d.ClosestRigidbodyParent, this };
+			if (!parentEntity)
+			{
+				ENGINE_LOG_ERROR("No parent rigid body found for '{0}.'", entity.GetName());
+				return;
+			}
+			glm::mat4 parentTransform = parentEntity.GetComponent<TransformComponent>().GlobalTransform;
+			glm::mat4 childTransform = entity.GetComponent<TransformComponent>().GlobalTransform;
+
+			// Extract the Parent's pure Position and Rotation
+			glm::vec3 pPos, pRot, pScale;
+			Math::DecomposeTransform(parentTransform, pPos, pRot, pScale);
+
+			// Rebuild the Parent Transform WITHOUT scale
+			// Box2D bodies act as the anchor, and they only understand position and rotation.
+			glm::mat4 unscaledParentTransform = glm::translate(glm::mat4(1.0f), pPos) *
+				glm::rotate(glm::mat4(1.0f), pRot.x, glm::vec3(1.0f, 0.0f, 0.0f)) *
+				glm::rotate(glm::mat4(1.0f), pRot.y, glm::vec3(0.0f, 1.0f, 0.0f)) *
+				glm::rotate(glm::mat4(1.0f), pRot.z, glm::vec3(0.0f, 0.0f, 1.0f));
+
+			// Calculate relative matrix against the UNSCALED parent body
+			glm::mat4 relativeMatrix = glm::inverse(unscaledParentTransform) * childTransform;
+
+			// Decompose to get relative position and scale
+			glm::vec3 relativePos, relativeRot, relativeScale;
+			Math::DecomposeTransform(relativeMatrix, relativePos, relativeRot, relativeScale);
+
+			b2CircleShape circleShape;
+
+			float maxScale = std::max(relativeScale.x, relativeScale.y);
+
+			// For circles, we just set Position (m_p)
+			circleShape.m_p.Set(
+				relativePos.x + cc2d.Offset.x * relativeScale.x,
+				relativePos.y + cc2d.Offset.y * relativeScale.y
+			);
+			circleShape.m_radius = cc2d.Radius * maxScale;
+
+			b2FixtureDef fixtureDef;
+			fixtureDef.shape = &circleShape;
+			fixtureDef.density = cc2d.Density;
+			fixtureDef.friction = cc2d.Friction;
+			fixtureDef.restitution = cc2d.Restitution;
+			fixtureDef.restitutionThreshold = cc2d.RestitutionThreshold;
+			fixtureDef.userData.pointer = (uintptr_t)(uint32_t)entity;
+
+			b2Body* body = (b2Body*)(parentEntity.GetComponent<Rigidbody2DComponent>().RuntimeBody);
+			if(cc2d.RuntimeFixture)
+				body->DestroyFixture((b2Fixture*)cc2d.RuntimeFixture);
+			cc2d.RuntimeFixture = body->CreateFixture(&fixtureDef);
+		}
+		
 	}
 
 	void Scene::OnRuntimeStart()

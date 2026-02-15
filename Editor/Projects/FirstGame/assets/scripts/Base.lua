@@ -7,42 +7,67 @@ local AnimationConfig = {
 }
 
 local PlayerAnimationStatus = {
-    CurrentState = "Idle",
+    CurrentStates = {
+        ["Idle"] = true,
+        ["Walk"] = false,
+        ["Jump"] = false,
+        ["Attack1"] = false,
+        ["Attack2"] = false
+    },
     FrameIndex = 0,
     TimeElapsed = 0.0,
+    MovementSpeed = 2.0,
+    Jumpforce = 1.5,
+    OnGround = true,
     
     FacingDirection = 1
 }
 
 function PlayerAnimationStatus:OnUpdate(ts, playerEntity)
+    -- print(self.OnGround)
     
-    local requestedState = "Idle"
+    local requestedStates = {}
+    for k, v in pairs(self.CurrentStates) do
+        requestedStates[k] = v
+    end
     
-    if self.CurrentState == "Idle" then
-        if Input.IsKeyPressed(Key.Space) then
-            requestedState = "Jump"
-            
-        elseif Input.IsKeyPressed(Key.A) then
-            requestedState = "Walk"
+    -- if self.CurrentState == "Idle" then
+        if Input.IsKeyPressed(Key.Space) and self.OnGround then
+            self.CurrentStates["Jump"] = true
+        else
+            self.CurrentStates["Jump"] = false
+        end
+        if Input.IsKeyPressed(Key.A) then
             self.FacingDirection = -1
-            
+            self.CurrentStates["Walk"] = true
         elseif Input.IsKeyPressed(Key.D) then
-            requestedState = "Walk"
             self.FacingDirection = 1
-        elseif Input.IsMouseButtonPressed(Mouse.ButtonLeft) then
-            requestedState = "Attack1"
+            self.CurrentStates["Walk"] = true
+        else
+            self.CurrentStates["Walk"] = false
+        end
+        if Input.IsMouseButtonPressed(Mouse.ButtonLeft) then
+            self.CurrentStates["Attack1"] = true
         elseif Input.IsMouseButtonPressed(Mouse.ButtonRight) then
-            requestedState = "Attack2"
+            self.CurrentStates["Attack2"] = true
+        else
+            self.CurrentStates["Attack1"] = false
+            self.CurrentStates["Attack2"] = false
+        end
+    -- end
+
+    local state = "Idle"
+    -- print("--------------------------------------------")
+    for k, v in pairs(requestedStates) do
+        -- print(k .. ": " .. tostring(v))
+        if v == false and self.CurrentStates[k] == true then
+            state = k
+            break
         end
     end
+    -- print("--------------------------------------------", state)
 
-    if self.CurrentState == "Idle" and requestedState ~= self.CurrentState then
-        self.CurrentState = requestedState
-        self.FrameIndex = 0
-        self.TimeElapsed = 0.0
-    end
-
-    local animData = AnimationConfig[self.CurrentState]
+    local animData = AnimationConfig[state]
     
     -- Accumulate time
     self.TimeElapsed = self.TimeElapsed + ts
@@ -56,7 +81,7 @@ function PlayerAnimationStatus:OnUpdate(ts, playerEntity)
         self.FrameIndex = self.FrameIndex % animData.Count
         if self.FrameIndex == 0 then
             self.TimeElapsed = 0.0
-            self.CurrentState = "Idle"  -- Optional: Return to Idle after a Jump finishes
+            -- self.CurrentState = "Idle"  -- Optional: Return to Idle after a Jump finishes
         end
     end
 
@@ -70,15 +95,27 @@ function PlayerAnimationStatus:OnUpdate(ts, playerEntity)
     playerEntity.Transform.Scale.x = math.abs(playerEntity.Transform.Scale.x) * self.FacingDirection
 
     -- Frame based logic (e.g. apply damage on specific attack frames)
-    if self.CurrentState == "Jump" then
-        if self.FrameIndex == 3 then
-            Physics.ApplyLinearImpulse(playerEntity, Vec2.new(0.0, 0.25), Vec2.new(0.0, 0.0), true)
-        end
+    if self.CurrentStates["Jump"] == true and self.OnGround then
+        Physics.ApplyLinearImpulse(playerEntity, Vec2.new(0.0, self.Jumpforce), Vec2.new(0.0, 0.0), true)
     end
-    if self.CurrentState == "Walk" then
-        if self.FrameIndex % 2 == 0 then
-            Physics.SetLinearVelocity(playerEntity, Vec2.new(0.75 * self.FacingDirection, 0.0))
-        end
+    if self.CurrentStates["Walk"] == true then
+        Physics.SetLinearVelocity(playerEntity, Vec2.new(self.MovementSpeed * self.FacingDirection, Physics.GetLinearVelocity(playerEntity).y))    
+    end
+end
+
+function PlayerAnimationStatus:OnCollisionBegin(playerEntity, otherEntity)
+    -- print("Collision with: " .. otherEntity:GetName())
+    if otherEntity:GetName() == "ground" then
+        -- print("Player is on the ground")
+        self.OnGround = true
+    end
+end
+
+function PlayerAnimationStatus:OnCollisionEnd(playerEntity, otherEntity)
+    -- print("Collision ended with: " .. otherEntity:GetName())
+    if otherEntity:GetName() == "ground" then
+        -- print("Player left the ground")
+        self.OnGround = false
     end
 end
 

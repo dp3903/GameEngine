@@ -214,6 +214,42 @@ namespace Engine
 			"b", &glm::vec4::b,
 			"a", &glm::vec4::a
 		);
+		m_Lua->new_usertype<glm::mat4>("Mat4",
+			sol::constructors<glm::mat4(float), glm::mat4()>(),
+
+			// Operator Overloads
+			sol::meta_function::multiplication, sol::overload(
+				// Mat4 * Mat4
+				[](const glm::mat4& a, const glm::mat4& b) { return a * b; },
+				// Mat4 * Vec4 (Transforming a vector)
+				[](const glm::mat4& m, const glm::vec4& v) { return m * v; },
+				// Mat4 * float (Scaling all elements)
+				[](const glm::mat4& m, float f) { return m * f; }
+			),
+			sol::meta_function::addition, [](const glm::mat4& a, const glm::mat4& b) { return a + b; },
+			sol::meta_function::subtraction, [](const glm::mat4& a, const glm::mat4& b) { return a - b; },
+
+			// Transformation Helper Functions
+			// Usage: local newMat = currentMat:Translate(vec3)
+			"Translate", [](const glm::mat4& m, const glm::vec3& v) {
+				return glm::translate(m, v);
+			},
+
+			"Rotate", [](const glm::mat4& m, float angleRad, const glm::vec3& axis) {
+				return glm::rotate(m, angleRad, axis);
+			},
+
+			"Scale", [](const glm::mat4& m, const glm::vec3& v) {
+				return glm::scale(m, v);
+			},
+
+			"Inverse", [](const glm::mat4& m) {
+				return glm::inverse(m);
+			},
+
+			// Helper to Create Identity easily: Mat4.Identity()
+			"Identity", []() { return glm::mat4(1.0f); }
+		);
 		m_Lua->new_usertype<TransformComponent>("Transform",
 			"Translation", &TransformComponent::Translation,
 			"Rotation", &TransformComponent::Rotation,
@@ -227,6 +263,42 @@ namespace Engine
 			"SpriteWidth", &SpriteRendererComponent::SpriteWidth,
 			"XSpriteIndex", &SpriteRendererComponent::XSpriteIndex,
 			"YSpriteIndex", &SpriteRendererComponent::YSpriteIndex
+		);
+		m_Lua->new_usertype<Camera>("Camera",
+			// Constructors (Optional: usually you don't instantiate raw Cameras in Lua)
+			sol::constructors<Camera(), Camera(const glm::mat4&)>(),
+
+			// Methods
+			"GetProjection", &Camera::GetProjection
+		);
+		m_Lua->new_enum("ProjectionType",
+			"Perspective", SceneCamera::ProjectionType::Perspective,
+			"Orthographic", SceneCamera::ProjectionType::Orthographic
+		);
+		m_Lua->new_usertype<SceneCamera>("SceneCamera",
+			// Constructors
+			sol::constructors<SceneCamera()>(),
+
+			// Base Classes (Optional: Include if you have bound the 'Camera' class and want polymorphism)
+			 sol::base_classes, sol::bases<Camera>(),
+
+			// Methods
+			"SetOrthographic", &SceneCamera::SetOrthographic,
+			"SetPerspective", &SceneCamera::SetPerspective,
+			"SetViewportSize", &SceneCamera::SetViewportSize,
+
+			// Properties (Getters & Setters)
+			// This converts GetPerspectiveVerticalFOV() / SetPerspectiveVerticalFOV() into a variable property
+			"PerspectiveVerticalFOV", sol::property(&SceneCamera::GetPerspectiveVerticalFOV, &SceneCamera::SetPerspectiveVerticalFOV),
+			"PerspectiveNearClip", sol::property(&SceneCamera::GetPerspectiveNearClip, &SceneCamera::SetPerspectiveNearClip),
+			"PerspectiveFarClip", sol::property(&SceneCamera::GetPerspectiveFarClip, &SceneCamera::SetPerspectiveFarClip),
+
+			"OrthographicSize", sol::property(&SceneCamera::GetOrthographicSize, &SceneCamera::SetOrthographicSize),
+			"OrthographicNearClip", sol::property(&SceneCamera::GetOrthographicNearClip, &SceneCamera::SetOrthographicNearClip),
+			"OrthographicFarClip", sol::property(&SceneCamera::GetOrthographicFarClip, &SceneCamera::SetOrthographicFarClip),
+
+			"ProjectionType", sol::property(&SceneCamera::GetProjectionType, &SceneCamera::SetProjectionType),
+			"AspectRatio", sol::property(&SceneCamera::GetAspectRatio)
 		);
 		m_Lua->new_usertype<Entity>("Entity",
 			"GetUUID", &Entity::GetUUID,
@@ -257,8 +329,22 @@ namespace Engine
 
 				// If missing, return nullptr. Sol2 converts this to Lua 'nil'
 				return nullptr;
-				})
-			
+			}),
+			"SetScale", [scene](Entity entity, glm::vec3 scale) {
+				entity.GetComponent<TransformComponent>().Scale = scale;
+				scene->UpdateGlobalTransforms();
+				scene->SyncPhysicsToTransform(entity);
+			},
+			"SetPosition", [scene](Entity entity, glm::vec3 pos) {
+				entity.GetComponent<TransformComponent>().Translation = pos;
+				scene->UpdateGlobalTransforms();
+				scene->SyncPhysicsToTransform(entity);
+			},
+			"SetRotation", [scene](Entity entity, glm::vec3 rot) {
+				entity.GetComponent<TransformComponent>().Rotation = rot;
+				scene->UpdateGlobalTransforms();
+				scene->SyncPhysicsToTransform(entity);
+			}
 		);
 
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -277,7 +363,7 @@ namespace Engine
 			});
 
 		// Global Data
-		m_Lua->set_function("GetGlobal", [&](std::string key) -> sol::object {
+		m_Lua->set_function("GetGlobal", [m_Lua](std::string key) -> sol::object {
 			// Helper to unwrap variant to Lua
 			if (RuntimeData::HasData(key)) {
 				return std::visit([&](auto&& val) -> sol::object {
@@ -299,9 +385,31 @@ namespace Engine
 		m_Lua->set_function("RegisterFunction", &RuntimeData::RegisterFunction);
 		m_Lua->set_function("HasFunction", &RuntimeData::HasFunction);
 		m_Lua->set_function("CallFunction", &RuntimeData::CallFunction);
-
 		// Scene change request handler
 		m_Lua->set_function("RequestSceneChange", &RuntimeData::RequestSceneChange);
+		// get primary scene camera
+		m_Lua->set_function("GetPrimaryCamera", [scene, m_Lua]() -> sol::object { // Return sol::object to allow returning nil
+
+			// Safety Check: Does a primary camera exist?
+			Entity primaryCam = scene->GetPrimaryCameraEntity();
+			if (!primaryCam)
+			{
+				return sol::make_object(*m_Lua, sol::nil);
+			}
+
+			// 3. Return by REFERENCE?
+			// Be careful here. If you return 'SceneCamera', you return a COPY.
+			// Modifying the copy in Lua won't update the actual game engine camera.
+			// Usually, you want to return a reference: -> SceneCamera&
+			return sol::make_object(*m_Lua, std::ref(primaryCam.GetComponent<CameraComponent>().Camera));
+		});
+		// get viewport dimensions
+		m_Lua->set_function("GetViewportWidth", [scene, m_Lua]() -> float {
+			return scene->m_ViewportWidth;
+		});
+		m_Lua->set_function("GetViewportHeight", [scene, m_Lua]() -> float {
+			return scene->m_ViewportHeight;
+		});
 
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		// Bind random function to 'Random'table
@@ -355,7 +463,7 @@ namespace Engine
 			};
 
 		physicsTable["ApplyAngularImpulse"] = [ExecuteOnPhysicsBody](Entity& entity, float impulse, bool wake) {
-			ExecuteOnPhysicsBody(entity, [=](b2Body* body) {
+			ExecuteOnPhysicsBody(entity, [&](b2Body* body) {
 				body->ApplyAngularImpulse(impulse, wake);
 				return true;
 				});
@@ -376,87 +484,87 @@ namespace Engine
 			};
 
 		physicsTable["ApplyTorque"] = [ExecuteOnPhysicsBody](Entity& entity, float torque, bool wake) {
-			ExecuteOnPhysicsBody(entity, [=](b2Body* body) {
+			ExecuteOnPhysicsBody(entity, [&](b2Body* body) {
 				body->ApplyTorque(torque, wake);
 				return true;
 				});
 			};
 
 		physicsTable["SetAngularDamping"] = [ExecuteOnPhysicsBody](Entity& entity, float damp) {
-			ExecuteOnPhysicsBody(entity, [=](b2Body* body) {
+			ExecuteOnPhysicsBody(entity, [&](b2Body* body) {
 				body->SetAngularDamping(damp);
 				return true;
 				});
 			};
 
 		physicsTable["SetAngularVelocity"] = [ExecuteOnPhysicsBody](Entity& entity, float vel) {
-			ExecuteOnPhysicsBody(entity, [=](b2Body* body) {
+			ExecuteOnPhysicsBody(entity, [&](b2Body* body) {
 				body->SetAngularVelocity(vel);
 				return true;
 				});
 			};
 
 		physicsTable["SetLinearDamping"] = [ExecuteOnPhysicsBody](Entity& entity, float damp) {
-			ExecuteOnPhysicsBody(entity, [=](b2Body* body) {
+			ExecuteOnPhysicsBody(entity, [&](b2Body* body) {
 				body->SetLinearDamping(damp);
 				return true;
 				});
 			};
 
 		physicsTable["SetLinearVelocity"] = [ExecuteOnPhysicsBody](Entity& entity, glm::vec2 vel) {
-			ExecuteOnPhysicsBody(entity, [=](b2Body* body) {
+			ExecuteOnPhysicsBody(entity, [&](b2Body* body) {
 				body->SetLinearVelocity(b2Vec2(vel.x, vel.y));
 				return true;
 				});
 			};
 
 		physicsTable["SetAwake"] = [ExecuteOnPhysicsBody](Entity& entity, bool wake) {
-			ExecuteOnPhysicsBody(entity, [=](b2Body* body) {
+			ExecuteOnPhysicsBody(entity, [&](b2Body* body) {
 				body->SetAwake(wake);
 				return true;
 				});
 			};
 
 		physicsTable["SetEnabled"] = [ExecuteOnPhysicsBody](Entity& entity, bool wake) {
-			ExecuteOnPhysicsBody(entity, [=](b2Body* body) {
+			ExecuteOnPhysicsBody(entity, [&](b2Body* body) {
 				body->SetEnabled(wake);
 				return true;
 				});
 			};
 
 		physicsTable["GetAngularDamping"] = [ExecuteOnPhysicsBody](Entity& entity) {
-			ExecuteOnPhysicsBody(entity, [=](b2Body* body) {
+			return ExecuteOnPhysicsBody(entity, [&](b2Body* body) {
 				return body->GetAngularDamping();
 				});
 			};
 
 		physicsTable["GetAngularVelocity"] = [ExecuteOnPhysicsBody](Entity& entity) {
-			ExecuteOnPhysicsBody(entity, [=](b2Body* body) {
+			return ExecuteOnPhysicsBody(entity, [&](b2Body* body) {
 				return body->GetAngularVelocity();
 				});
 			};
 
 		physicsTable["GetLinearDamping"] = [ExecuteOnPhysicsBody](Entity& entity) {
-			ExecuteOnPhysicsBody(entity, [=](b2Body* body) {
+			return ExecuteOnPhysicsBody(entity, [&](b2Body* body) {
 				return body->GetLinearDamping();
 				});
 			};
 
 		physicsTable["GetLinearVelocity"] = [ExecuteOnPhysicsBody](Entity& entity) {
-			ExecuteOnPhysicsBody(entity, [=](b2Body* body) {
+			return ExecuteOnPhysicsBody(entity, [&](b2Body* body) {
 				b2Vec2 vel =  body->GetLinearVelocity();
 				return glm::vec2(vel.x, vel.y);
 				});
 			};
 
 		physicsTable["IsAwake"] = [ExecuteOnPhysicsBody](Entity& entity) {
-			ExecuteOnPhysicsBody(entity, [=](b2Body* body) {
+			return ExecuteOnPhysicsBody(entity, [&](b2Body* body) {
 				return body->IsAwake();
 				});
 			};
 
 		physicsTable["IsEnabled"] = [ExecuteOnPhysicsBody](Entity& entity) {
-			ExecuteOnPhysicsBody(entity, [=](b2Body* body) {
+			return ExecuteOnPhysicsBody(entity, [&](b2Body* body) {
 				return body->IsEnabled();
 				});
 			};
@@ -477,13 +585,9 @@ namespace Engine
 			b2Fixture* fixtureA = contact->GetFixtureA();
 			b2Fixture* fixtureB = contact->GetFixtureB();
 
-			// Get the bodies
-			b2Body* bodyA = fixtureA->GetBody();
-			b2Body* bodyB = fixtureB->GetBody();
-
 			// Get the Entities from UserData
-			uintptr_t userDataA = bodyA->GetUserData().pointer;
-			uintptr_t userDataB = bodyB->GetUserData().pointer;
+			uintptr_t userDataA = fixtureA->GetUserData().pointer;
+			uintptr_t userDataB = fixtureB->GetUserData().pointer;
 
 			// Convert back to Entity
 			Entity entityA = { (entt::entity)userDataA, m_Scene };
@@ -503,13 +607,9 @@ namespace Engine
 			b2Fixture* fixtureA = contact->GetFixtureA();
 			b2Fixture* fixtureB = contact->GetFixtureB();
 
-			// Get the bodies
-			b2Body* bodyA = fixtureA->GetBody();
-			b2Body* bodyB = fixtureB->GetBody();
-
 			// Get the Entities from UserData
-			uintptr_t userDataA = bodyA->GetUserData().pointer;
-			uintptr_t userDataB = bodyB->GetUserData().pointer;
+			uintptr_t userDataA = fixtureA->GetUserData().pointer;
+			uintptr_t userDataB = fixtureB->GetUserData().pointer;
 
 			// Convert back to Entity
 			Entity entityA = { (entt::entity)userDataA, m_Scene };
