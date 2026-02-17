@@ -572,8 +572,8 @@ namespace Engine {
 			glm::vec2 uv1 = { 1.0f, 1.0f };
 			if (src.IsSubTexture)
 			{
-				uv0 = { (float)(src.XSpriteIndex + 0) * src.SpriteWidth / (float)src.Texture->GetWidth(), (float)(src.YSpriteIndex + 0) * src.SpriteHeight / (float)src.Texture->GetHeight() };
-				uv1 = { (float)(src.XSpriteIndex + 1) * src.SpriteWidth / (float)src.Texture->GetWidth(), (float)(src.YSpriteIndex + 1) * src.SpriteHeight / (float)src.Texture->GetHeight() };
+				uv0 = { (float)(src.XSpriteIndex + 0) / src.SpriteWidth, (float)(src.YSpriteIndex + 0) / src.SpriteHeight };
+				uv1 = { (float)(src.XSpriteIndex + 1) / src.SpriteWidth, (float)(src.YSpriteIndex + 1) / src.SpriteHeight };
 			}
 			DrawQuad(transform, src.Texture, src.TilingFactor, src.Color, uv0, uv1, entityID);
 		}

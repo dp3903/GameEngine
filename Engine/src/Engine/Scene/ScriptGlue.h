@@ -6,6 +6,7 @@
 #include "Engine/Window/KeyCodes.h"
 #include "Engine/Window/MouseCodes.h"
 #include "Engine/Utils/Random.h"
+#include "Engine/Project/Project.h"
 
 // Box2D
 #include "box2d/b2_world.h"
@@ -262,7 +263,21 @@ namespace Engine
 			"SpriteHeight", &SpriteRendererComponent::SpriteHeight,
 			"SpriteWidth", &SpriteRendererComponent::SpriteWidth,
 			"XSpriteIndex", &SpriteRendererComponent::XSpriteIndex,
-			"YSpriteIndex", &SpriteRendererComponent::YSpriteIndex
+			"YSpriteIndex", &SpriteRendererComponent::YSpriteIndex,
+			"Texture", sol::property(
+				// GETTER: What happens when Lua reads 'sprite.Texture'
+				[](SpriteRendererComponent& src) {
+					return src.Texture->GetPath();
+				},
+
+				// SETTER: What happens when Lua writes 'sprite.Texture = "filepath.png"'
+				[](SpriteRendererComponent& src, const std::string& filepath) {
+					if (!filepath.empty())
+						src.Texture = Texture2D::Create(Project::GetAssetFileSystemPath(filepath).string());
+					else
+						src.Texture = nullptr;
+				}
+			)
 		);
 		m_Lua->new_usertype<Camera>("Camera",
 			// Constructors (Optional: usually you don't instantiate raw Cameras in Lua)
@@ -330,6 +345,9 @@ namespace Engine
 				// If missing, return nullptr. Sol2 converts this to Lua 'nil'
 				return nullptr;
 			}),
+			"AddSpriteRenderer", [](Entity entity) -> SpriteRendererComponent& {
+				return entity.AddComponent<SpriteRendererComponent>();
+			},
 			"SetScale", [scene](Entity entity, glm::vec3 scale) {
 				entity.GetComponent<TransformComponent>().Scale = scale;
 				scene->UpdateGlobalTransforms();
@@ -387,8 +405,32 @@ namespace Engine
 		m_Lua->set_function("CallFunction", &RuntimeData::CallFunction);
 		// Scene change request handler
 		m_Lua->set_function("RequestSceneChange", &RuntimeData::RequestSceneChange);
+
+		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		// Bind scene function to 'Scene'table
+		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		
+		auto sceneTable = m_Lua->create_named_table("Scene");
+		sceneTable.set_function("CreateEntity", [scene](std::string name, sol::optional<Entity> parentEntity) -> Entity {
+			Entity actualParent = parentEntity ? parentEntity.value() : Entity{ scene->m_SceneRoot, scene };
+			Entity newEntity = scene->CreateNewChildEntity(actualParent);
+			newEntity.GetComponent<TagComponent>().Tag = name;
+			return newEntity;
+		});
+		sceneTable.set_function("DestroyEntity", [scene](Entity entity) {
+			scene->DestroyEntity(entity);
+		});
+		sceneTable.set_function("UpdateParent", [scene](Entity childEntity, Entity parentEntity, sol::optional<bool> keepWorldTransform) {
+			scene->UpdateParent(childEntity, parentEntity, keepWorldTransform ? keepWorldTransform.value() : false);
+		});
+		sceneTable.set_function("DuplicateEntity", [scene](Entity entity) {
+			scene->DuplicateEntity(entity);
+		});
+		sceneTable.set_function("IsDescendant", [scene](Entity potentialAncestor, Entity potentialDescendant) -> bool {
+			return scene->IsDescendant(potentialAncestor, potentialDescendant);
+		});
 		// get primary scene camera
-		m_Lua->set_function("GetPrimaryCamera", [scene, m_Lua]() -> sol::object { // Return sol::object to allow returning nil
+		sceneTable.set_function("GetPrimaryCamera", [scene, m_Lua]() -> sol::object { // Return sol::object to allow returning nil
 
 			// Safety Check: Does a primary camera exist?
 			Entity primaryCam = scene->GetPrimaryCameraEntity();
@@ -397,17 +439,14 @@ namespace Engine
 				return sol::make_object(*m_Lua, sol::nil);
 			}
 
-			// 3. Return by REFERENCE?
-			// Be careful here. If you return 'SceneCamera', you return a COPY.
-			// Modifying the copy in Lua won't update the actual game engine camera.
-			// Usually, you want to return a reference: -> SceneCamera&
+			// Return by REFERENCE
 			return sol::make_object(*m_Lua, std::ref(primaryCam.GetComponent<CameraComponent>().Camera));
 		});
 		// get viewport dimensions
-		m_Lua->set_function("GetViewportWidth", [scene, m_Lua]() -> float {
+		sceneTable.set_function("GetViewportWidth", [scene]() -> float {
 			return scene->m_ViewportWidth;
 		});
-		m_Lua->set_function("GetViewportHeight", [scene, m_Lua]() -> float {
+		sceneTable.set_function("GetViewportHeight", [scene]() -> float {
 			return scene->m_ViewportHeight;
 		});
 

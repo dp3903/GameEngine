@@ -2,7 +2,7 @@
     "Scene": "Untitled Scene",
     "Gravity": [
         0.0,
-        -9.8
+        -9.800000190734863
     ],
     "Entities": [
         {
@@ -70,9 +70,9 @@
                     "TexturePath": "textures\\testSprite.jpg",
                     "TilingFactor": 1.0,
                     "SubTexture": {
-                        "SpriteWidth": 1344,
-                        "SpriteHeight": 1792,
-                        "XSpriteIndex": 2,
+                        "SpriteWidth": 4,
+                        "SpriteHeight": 2,
+                        "XSpriteIndex": 0,
                         "YSpriteIndex": 0
                     }
                 }

@@ -193,8 +193,8 @@
                     "TexturePath": "textures\\pink-monster-sprite.png",
                     "TilingFactor": 1.0,
                     "SubTexture": {
-                        "SpriteWidth": 32,
-                        "SpriteHeight": 32,
+                        "SpriteWidth": 8,
+                        "SpriteHeight": 13,
                         "XSpriteIndex": 0,
                         "YSpriteIndex": 0
                     }

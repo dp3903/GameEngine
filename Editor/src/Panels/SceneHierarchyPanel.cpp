@@ -419,8 +419,8 @@ namespace Engine {
 					if (component.IsSubTexture)
 					{
 						
-						ImVec2 uv0 = ImVec2((float)(component.XSpriteIndex + 0) * component.SpriteWidth / (float)component.Texture->GetWidth(), (float)(component.YSpriteIndex + 1) * component.SpriteHeight / (float)component.Texture->GetHeight());
-						ImVec2 uv1 = ImVec2((float)(component.XSpriteIndex + 1) * component.SpriteWidth / (float)component.Texture->GetWidth(), (float)(component.YSpriteIndex + 0) * component.SpriteHeight / (float)component.Texture->GetHeight());
+						ImVec2 uv0 = ImVec2((float)(component.XSpriteIndex + 0) / component.SpriteWidth, (float)(component.YSpriteIndex + 1) / component.SpriteHeight );
+						ImVec2 uv1 = ImVec2((float)(component.XSpriteIndex + 1) / component.SpriteWidth, (float)(component.YSpriteIndex + 0) / component.SpriteHeight );
 						ImGui::Image(component.Texture->GetRendererID(), ImVec2(thumbnailSize / 2, thumbnailSize / 2), uv0, uv1);
 						ImGui::SameLine();
 						
@@ -429,8 +429,8 @@ namespace Engine {
 						ImGui::DragInt("Sprite Width", (int*)&component.SpriteWidth, 1, 1, component.Texture->GetWidth());
 						ImGui::DragInt("Sprite Height", (int*)&component.SpriteHeight, 1, 1, component.Texture->GetHeight());
 
-						ImGui::DragInt("Sprite Index X", (int*)&component.XSpriteIndex, 1, 0, component.Texture->GetWidth() / component.SpriteWidth - 1);
-						ImGui::DragInt("Sprite Index Y", (int*)&component.YSpriteIndex, 1, 0, component.Texture->GetHeight() / component.SpriteHeight - 1);
+						ImGui::DragInt("Sprite Index X", (int*)&component.XSpriteIndex, 1, 0, component.SpriteWidth - 1);
+						ImGui::DragInt("Sprite Index Y", (int*)&component.YSpriteIndex, 1, 0, component.SpriteHeight - 1);
 						
 						ImGui::EndGroup();
 					}

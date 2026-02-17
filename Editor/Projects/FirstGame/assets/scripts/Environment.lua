@@ -5,7 +5,7 @@ function Environment:OnCreate()
 
     if cameraEntity ~= nil then
         -- Get the Camera
-        local camera = GetPrimaryCamera()
+        local camera = Scene:GetPrimaryCamera()
 
         if camera then
             -- Calculate World Dimensions

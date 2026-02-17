@@ -927,7 +927,14 @@ namespace Engine {
 		m_Lua = new sol::state();
 
 		// Load standard libraries
-		m_Lua->open_libraries(sol::lib::base, sol::lib::math, sol::lib::package);
+		m_Lua->open_libraries(
+			sol::lib::base,
+			sol::lib::package,
+			sol::lib::table,   // For table manipulation
+			sol::lib::math,    // Needed for math.sin, math.cos, math.pi
+			sol::lib::string,  // Needed for string manipulation
+			sol::lib::os       // Optional: Needed if you want os.time() for random seeds
+		);
 
 		// Just add the root scripts folder
 		std::string scriptPath = Project::GetAssetDirectory().string() + "/?.lua;";

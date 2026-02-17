@@ -1,3 +1,5 @@
+local AttackEffects = require("scripts.Attack")
+
 local AnimationConfig = {
     Idle    = { Row = 6, Count = 4, Speed = 0.20 },  
     Walk    = { Row = 1, Count = 6, Speed = 0.15 },  
@@ -25,6 +27,7 @@ local PlayerAnimationStatus = {
 
 function PlayerAnimationStatus:OnUpdate(ts, playerEntity)
     -- print(self.OnGround)
+    AttackEffects:OnUpdate(ts) -- Update projectiles
     
     local requestedStates = {}
     for k, v in pairs(self.CurrentStates) do
@@ -57,16 +60,15 @@ function PlayerAnimationStatus:OnUpdate(ts, playerEntity)
     -- end
 
     local state = "Idle"
-    -- print("--------------------------------------------")
-    for k, v in pairs(requestedStates) do
-        -- print(k .. ": " .. tostring(v))
-        if v == false and self.CurrentStates[k] == true then
-            state = k
-            break
-        end
+    if self.CurrentStates["Jump"] then
+        state = "Jump"
+    elseif self.CurrentStates["Walk"] then
+        state = "Walk"
+    elseif self.CurrentStates["Attack1"] then
+        state = "Attack1"
+    elseif self.CurrentStates["Attack2"] then
+        state = "Attack2"
     end
-    -- print("--------------------------------------------", state)
-
     local animData = AnimationConfig[state]
     
     -- Accumulate time
@@ -100,6 +102,11 @@ function PlayerAnimationStatus:OnUpdate(ts, playerEntity)
     end
     if self.CurrentStates["Walk"] == true then
         Physics.SetLinearVelocity(playerEntity, Vec2.new(self.MovementSpeed * self.FacingDirection, Physics.GetLinearVelocity(playerEntity).y))    
+    end
+    if self.CurrentStates["Attack1"] == true then
+        local playerPos = playerEntity.Transform.Translation
+        local direction = Vec2.new(self.FacingDirection, 0.0)
+        AttackEffects:Emit(Vec3.new(playerPos.x + (self.FacingDirection * 0.5), playerPos.y, playerPos.z), direction, 5.0, 2.0)
     end
 end
 
