@@ -187,6 +187,20 @@ namespace Engine
 #undef BIND_MOUSE
 
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		// Bind enums
+		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		m_Lua->new_enum("ProjectionType",
+			"Perspective", SceneCamera::ProjectionType::Perspective,
+			"Orthographic", SceneCamera::ProjectionType::Orthographic
+		);
+		m_Lua->new_enum("BodyType",
+			"Static", Rigidbody2DComponent::BodyType::Static,
+			"Dynamic", Rigidbody2DComponent::BodyType::Dynamic,
+			"Kinematic", Rigidbody2DComponent::BodyType::Kinematic
+		);
+
+		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		// Bind types
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -279,16 +293,73 @@ namespace Engine
 				}
 			)
 		);
+		m_Lua->new_usertype<CircleRendererComponent>("CircleRenderer",
+			"Color", &CircleRendererComponent::Color,
+			"Thickness", &CircleRendererComponent::Thickness,
+			"Fade", &CircleRendererComponent::Fade
+		);
+		m_Lua->new_usertype<Rigidbody2DComponent>("Rigidbody", 
+			"Type", &Rigidbody2DComponent::Type,
+			"FixedRotation", &Rigidbody2DComponent::FixedRotation
+		);
+		m_Lua->new_usertype<BoxCollider2DComponent>("BoxCollider",
+			"Offset", &BoxCollider2DComponent::Offset,
+			"Size", &BoxCollider2DComponent::Size,
+			"Density", &BoxCollider2DComponent::Density,
+			"Friction", &BoxCollider2DComponent::Friction,
+			"Restitution", &BoxCollider2DComponent::Restitution,
+			"RestitutionThreshold", &BoxCollider2DComponent::RestitutionThreshold,
+			"RigidBodyParent", sol::property(
+				[m_Lua, scene](BoxCollider2DComponent& src) -> sol::object {
+					if (src.ClosestRigidbodyParent == entt::null)
+						return sol::nil;
+					return sol::make_object(*m_Lua, Entity{ src.ClosestRigidbodyParent, scene });
+				}
+			)
+		);
+		m_Lua->new_usertype<CircleCollider2DComponent>("CircleCollider",
+			"Offset", &CircleCollider2DComponent::Offset,
+			"Radius", &CircleCollider2DComponent::Radius,
+			"Density", &CircleCollider2DComponent::Density,
+			"Friction", &CircleCollider2DComponent::Friction,
+			"Restitution", &CircleCollider2DComponent::Restitution,
+			"RestitutionThreshold", &CircleCollider2DComponent::RestitutionThreshold,
+			"RigidBodyParent", sol::property(
+				[m_Lua, scene](CircleCollider2DComponent& src) -> sol::object {
+					if (src.ClosestRigidbodyParent == entt::null)
+						return sol::nil;
+					return sol::make_object(*m_Lua, Entity{ src.ClosestRigidbodyParent, scene });
+				}
+			)
+		);
+		m_Lua->new_usertype<TextComponent>("Text", 
+			"TextString", &TextComponent::TextString,
+			"Color", &TextComponent::Color,
+			"Scale", &TextComponent::Scale,
+			"Allign", &TextComponent::Allign,
+			"Kerning", &TextComponent::Kerning,
+			"LineSpacing", &TextComponent::LineSpacing,
+			"Font", sol::property(
+				// GETTER
+				[](TextComponent& src) {
+					return src.FontAsset->GetFilePath().string();
+				},
+
+				// SETTER
+				[](TextComponent& src, const std::string& filepath) {
+					if (!filepath.empty())
+						src.FontAsset = Font::Create(Project::GetAssetFileSystemPath(filepath).string());
+					else
+						src.FontAsset = Font::Create();
+				}
+			)
+		);
 		m_Lua->new_usertype<Camera>("Camera",
 			// Constructors (Optional: usually you don't instantiate raw Cameras in Lua)
 			sol::constructors<Camera(), Camera(const glm::mat4&)>(),
 
 			// Methods
 			"GetProjection", &Camera::GetProjection
-		);
-		m_Lua->new_enum("ProjectionType",
-			"Perspective", SceneCamera::ProjectionType::Perspective,
-			"Orthographic", SceneCamera::ProjectionType::Orthographic
 		);
 		m_Lua->new_usertype<SceneCamera>("SceneCamera",
 			// Constructors
@@ -318,36 +389,35 @@ namespace Engine
 		m_Lua->new_usertype<Entity>("Entity",
 			"GetUUID", &Entity::GetUUID,
 			"GetName", &Entity::GetName,
-			"Transform", sol::property([scene](Entity& entity) -> TransformComponent& {
-				if (!entity)
-				{
-					// This throws a soft Lua error: "runtime error: Entity is destroyed"
-					// The C++ engine continues running, only the script stops.
-					throw std::runtime_error("Attempted to access Transform on a destroyed entity!");
-				}
+#define BIND_COMPONENT_PROPERTY(name, component) name, sol::property([](Entity& entity) -> component* {\
+				if (!entity)\
+					throw std::runtime_error("Attempted to access " name " on a destroyed entity!");\
+				if (entity.HasComponent<component>())\
+					return &entity.GetComponent<component>();\
+				/* If missing, return nullptr. Sol2 converts this to Lua 'nil' */\
+				return nullptr;\
+	})\
 
-				// Return REFERENCE (std::ref is automatic here because of return type &)
-				return entity.GetComponent<TransformComponent>();
-				}),
-			"SpriteRenderer", sol::property([](Entity& entity) -> SpriteRendererComponent* {
-				if (!entity)
-				{
-					// This throws a soft Lua error: "runtime error: Entity is destroyed"
-					// The C++ engine continues running, only the script stops.
-					throw std::runtime_error("Attempted to access Transform on a destroyed entity!");
-				}
+			BIND_COMPONENT_PROPERTY("Transform", TransformComponent),
+			BIND_COMPONENT_PROPERTY("SpriteRenderer", SpriteRendererComponent),
+			BIND_COMPONENT_PROPERTY("CircleRenderer", CircleRendererComponent),
+			BIND_COMPONENT_PROPERTY("Rigidbody", Rigidbody2DComponent),
+			BIND_COMPONENT_PROPERTY("BoxCollider", BoxCollider2DComponent),
+			BIND_COMPONENT_PROPERTY("CircleCollider", CircleCollider2DComponent),
+			BIND_COMPONENT_PROPERTY("Text", TextComponent),
 
-				if (entity.HasComponent<SpriteRendererComponent>())
-				{
-					return &entity.GetComponent<SpriteRendererComponent>();
-				}
+#undef BIND_COMPONENT_PROPERTY
+			
 
-				// If missing, return nullptr. Sol2 converts this to Lua 'nil'
-				return nullptr;
-			}),
-			"AddSpriteRenderer", [](Entity entity) -> SpriteRendererComponent& {
-				return entity.AddComponent<SpriteRendererComponent>();
-			},
+#define BIND_ADD_COMPONENT_FUNCTION(name,component) name,[](Entity entity) -> component& { return entity.AddComponent<component>(); }
+			BIND_ADD_COMPONENT_FUNCTION("AddSpriteRenderer", SpriteRendererComponent),
+			BIND_ADD_COMPONENT_FUNCTION("AddCircleRenderer", CircleRendererComponent),
+			BIND_ADD_COMPONENT_FUNCTION("AddRigidbody", Rigidbody2DComponent),
+			BIND_ADD_COMPONENT_FUNCTION("AddBoxCollider", BoxCollider2DComponent),
+			BIND_ADD_COMPONENT_FUNCTION("AddCircleCollider", CircleCollider2DComponent),
+			BIND_ADD_COMPONENT_FUNCTION("AddText", TextComponent),
+#undef BIND_ADD_COMPONENT_FUNCTION
+
 			"SetScale", [scene](Entity entity, glm::vec3 scale) {
 				entity.GetComponent<TransformComponent>().Scale = scale;
 				scene->UpdateGlobalTransforms();
