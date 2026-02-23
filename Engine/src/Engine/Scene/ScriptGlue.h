@@ -293,6 +293,18 @@ namespace Engine
 					else
 						src.Texture = nullptr;
 				}
+			),
+			"TextureHeight", sol::property(
+				// GETTER
+				[](SpriteRendererComponent& src) {
+					return src.Texture->GetHeight();
+				}
+			),
+			"TextureWidth", sol::property(
+				// GETTER
+				[](SpriteRendererComponent& src) {
+					return src.Texture->GetWidth();
+				}
 			)
 		);
 		m_Lua->new_usertype<CircleRendererComponent>("CircleRenderer",
@@ -519,10 +531,10 @@ namespace Engine
 			return sol::make_object(*m_Lua, std::ref(primaryCam.GetComponent<CameraComponent>().Camera));
 		});
 		// get viewport dimensions
-		sceneTable.set_function("GetViewportWidth", [scene]() -> float {
+		sceneTable.set_function("GetViewportWidth", [scene]() -> uint32_t {
 			return scene->m_ViewportWidth;
 		});
-		sceneTable.set_function("GetViewportHeight", [scene]() -> float {
+		sceneTable.set_function("GetViewportHeight", [scene]() -> uint32_t {
 			return scene->m_ViewportHeight;
 		});
 

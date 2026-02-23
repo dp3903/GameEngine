@@ -3,6 +3,7 @@ local PlayerAnimationStatus = require("scripts.Base")
 local player = {}
 
 function player:OnCreate()
+    PlayerAnimationStatus:OnCreate()
     print("Player initialized with Animation System")
 end
 

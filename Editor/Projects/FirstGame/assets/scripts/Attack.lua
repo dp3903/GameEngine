@@ -5,7 +5,26 @@ local AttackEffects = {
     TimeSinceLastAttack = 0.0
 }
 
+local AttackMetaData = {
+    Parent = nil,
+    Entities = {},
+    NextEntityIndex = 0,
+    EntityCount = 10
+}
+
 function AttackEffects:OnCreate()
+    AttackMetaData.Parent = Scene.CreateEntity("Attack1Parent")
+    for i = 0, AttackMetaData.EntityCount-1 do
+        AttackMetaData.Entities[i] = Scene.CreateEntity("Fireball-"..i, AttackMetaData.Parent)
+        AttackMetaData.Entities[i]:AddSpriteRenderer()
+        AttackMetaData.Entities[i].SpriteRenderer.Texture = "textures/Fire-Spell.png" -- Assuming you have a fireball sprite
+        AttackMetaData.Entities[i].SpriteRenderer.IsSubTexture = true
+        AttackMetaData.Entities[i].SpriteRenderer.SpriteHeight = 1
+        AttackMetaData.Entities[i].SpriteRenderer.SpriteWidth = 8
+        AttackMetaData.Entities[i].SpriteRenderer.XSpriteIndex = 0
+        AttackMetaData.Entities[i].SpriteRenderer.YSpriteIndex = 0
+        AttackMetaData.Entities[i]:SetEnabled(false)
+    end
     print("Projectile Manager Initialized")
 end
 
@@ -15,25 +34,16 @@ function AttackEffects:Emit(startPos, direction, speed, lifetime)
         return -- Still in cooldown, ignore this attack
     end
     self.TimeSinceLastAttack = 0.0 -- Reset cooldown timer
-    -- 1. Ask the C++ engine to create a new entity (Assuming you have this binding)
-    local projEntity = Scene.CreateEntity("Fireball")
     
-    -- 2. Set initial position
+    local projEntity = AttackMetaData.Entities[AttackMetaData.NextEntityIndex]
+    AttackMetaData.NextEntityIndex = (AttackMetaData.NextEntityIndex + 1) % AttackMetaData.EntityCount
+    
+    projEntity:SetEnabled(true)
     projEntity:SetPosition(startPos)
-    
-    -- 3. Set up visual scale/sprite (assuming you have a way to add/set components)
-    projEntity:SetScale(Vec3.new(-0.5 * direction.x, 0.5, 1.0)) -- Flip based on direction
+    local AspectRatio = (projEntity.SpriteRenderer.TextureWidth / 8) / projEntity.SpriteRenderer.TextureHeight
+    projEntity:SetScale(Vec3.new(-0.5 * direction.x * AspectRatio, 0.5, 1.0)) -- Flip based on direction
 
-    projEntity:AddSpriteRenderer() -- Assuming this function exists
-    -- projEntity.SpriteRenderer.Color = Vec4.new(1.0, 0.5, 0.0, 1.0) -- Orange color for visibility
-    projEntity.SpriteRenderer.Texture = "textures/Fire-Spell.png" -- Assuming you have a fireball sprite
-    projEntity.SpriteRenderer.IsSubTexture = true
-    projEntity.SpriteRenderer.SpriteHeight = 1
-    projEntity.SpriteRenderer.SpriteWidth = 8
-    projEntity.SpriteRenderer.XSpriteIndex = 0
-    projEntity.SpriteRenderer.YSpriteIndex = 0
-
-    -- 4. Store it in our tracking table
+    -- Store it in our tracking table
     table.insert(self.ActiveProjectiles, {
         Entity = projEntity,
         TimeLeft = lifetime,
@@ -53,7 +63,7 @@ function AttackEffects:OnUpdate(ts)
         
         if projectile.TimeLeft <= 0.0 then
             -- 1. Tell C++ to safely destroy the entity at the end of the frame
-            Scene.DestroyEntity(projectile.Entity)
+            projectile.Entity:SetEnabled(false)
             
             -- 2. Remove it from our Lua tracking table
             table.remove(self.ActiveProjectiles, i)

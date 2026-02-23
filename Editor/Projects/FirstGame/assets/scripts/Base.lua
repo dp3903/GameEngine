@@ -26,6 +26,10 @@ local PlayerAnimationStatus = {
     FacingDirection = 1
 }
 
+function PlayerAnimationStatus:OnCreate()
+    AttackEffects:OnCreate()
+end
+
 function PlayerAnimationStatus:OnUpdate(ts, playerEntity)
     -- print(self.OnGround)
     AttackEffects:OnUpdate(ts) -- Update projectiles
