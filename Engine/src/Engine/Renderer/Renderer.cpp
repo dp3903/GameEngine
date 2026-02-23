@@ -575,6 +575,10 @@ namespace Engine {
 				uv0 = { (float)(src.XSpriteIndex + 0) / src.SpriteWidth, (float)(src.YSpriteIndex + 0) / src.SpriteHeight };
 				uv1 = { (float)(src.XSpriteIndex + 1) / src.SpriteWidth, (float)(src.YSpriteIndex + 1) / src.SpriteHeight };
 			}
+			if (src.FlipX)
+				std::swap(uv0.x, uv1.x);
+			if (src.FlipY)
+				std::swap(uv0.y, uv1.y);
 			DrawQuad(transform, src.Texture, src.TilingFactor, src.Color, uv0, uv1, entityID);
 		}
 		else

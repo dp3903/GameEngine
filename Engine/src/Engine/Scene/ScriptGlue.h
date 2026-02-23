@@ -273,6 +273,8 @@ namespace Engine
 		m_Lua->new_usertype<SpriteRendererComponent>("SpriteRenderer",
 			"Color", &SpriteRendererComponent::Color,
 			"TilingFactor", &SpriteRendererComponent::TilingFactor,
+			"FlipX", &SpriteRendererComponent::FlipX,
+			"FlipY", &SpriteRendererComponent::FlipY,
 			"IsSubTexture", &SpriteRendererComponent::IsSubTexture,
 			"SpriteHeight", &SpriteRendererComponent::SpriteHeight,
 			"SpriteWidth", &SpriteRendererComponent::SpriteWidth,
@@ -398,7 +400,6 @@ namespace Engine
 				return nullptr;\
 	})\
 
-			BIND_COMPONENT_PROPERTY("Transform", TransformComponent),
 			BIND_COMPONENT_PROPERTY("SpriteRenderer", SpriteRendererComponent),
 			BIND_COMPONENT_PROPERTY("CircleRenderer", CircleRendererComponent),
 			BIND_COMPONENT_PROPERTY("Rigidbody", Rigidbody2DComponent),
@@ -418,21 +419,26 @@ namespace Engine
 			BIND_ADD_COMPONENT_FUNCTION("AddText", TextComponent),
 #undef BIND_ADD_COMPONENT_FUNCTION
 
+			"GetScale", [](Entity entity) -> glm::vec3 { return entity.GetComponent<TransformComponent>().Scale; },
 			"SetScale", [scene](Entity entity, glm::vec3 scale) {
 				entity.GetComponent<TransformComponent>().Scale = scale;
 				scene->UpdateGlobalTransforms();
 				scene->SyncPhysicsToTransform(entity);
 			},
+			"GetPosition", [](Entity entity) -> glm::vec3 { return entity.GetComponent<TransformComponent>().Translation; },
 			"SetPosition", [scene](Entity entity, glm::vec3 pos) {
 				entity.GetComponent<TransformComponent>().Translation = pos;
 				scene->UpdateGlobalTransforms();
 				scene->SyncPhysicsToTransform(entity);
 			},
+			"GetRotation", [](Entity entity) -> glm::vec3 { return entity.GetComponent<TransformComponent>().Rotation; },
 			"SetRotation", [scene](Entity entity, glm::vec3 rot) {
 				entity.GetComponent<TransformComponent>().Rotation = rot;
 				scene->UpdateGlobalTransforms();
 				scene->SyncPhysicsToTransform(entity);
-			}
+			},
+			"IsEnabled", [](Entity entity) -> bool {return entity.isEnabled(); },
+			"SetEnabled", [](Entity entity, bool enable) { entity.setEnabled(enable); }
 		);
 
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -59,7 +59,7 @@ function AttackEffects:OnUpdate(ts)
             table.remove(self.ActiveProjectiles, i)
         else
             -- If using OPTION A (Manual Movement), update position here:
-            local currentPos = projectile.Entity.Transform.Translation
+            local currentPos = projectile.Entity:GetPosition()
             local newPos = Vec3.new(currentPos.x + (projectile.Velocity.x * ts), currentPos.y + (projectile.Velocity.y * ts), currentPos.z)
             projectile.Entity:SetPosition(newPos)
 

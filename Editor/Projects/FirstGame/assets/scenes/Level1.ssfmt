@@ -66,7 +66,9 @@
                         ],
                         "Texture": {
                             "TexturePath": "textures\\ground.png",
-                            "TilingFactor": 1.0
+                            "TilingFactor": 1.0,
+                            "FlipX": false,
+                            "FlipY": false
                         }
                     },
                     "BoxCollider2DComponent": {
@@ -116,7 +118,9 @@
                         ],
                         "Texture": {
                             "TexturePath": "textures\\origbig.png",
-                            "TilingFactor": 1.0
+                            "TilingFactor": 1.0,
+                            "FlipX": false,
+                            "FlipY": false
                         }
                     },
                     "Children": []
@@ -192,6 +196,8 @@
                 "Texture": {
                     "TexturePath": "textures\\pink-monster-sprite.png",
                     "TilingFactor": 1.0,
+                    "FlipX": false,
+                    "FlipY": false,
                     "SubTexture": {
                         "SpriteWidth": 8,
                         "SpriteHeight": 13,

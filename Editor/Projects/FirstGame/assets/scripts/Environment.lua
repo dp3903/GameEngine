@@ -22,7 +22,8 @@ function Environment:OnCreate()
 
             -- 6. (Optional) Lock Position to Camera Center
             -- If you want the background to always be behind the camera, even if camera moves
-            self.Entity:SetPosition(Vec3.new(cameraEntity.Transform.Translation.x, cameraEntity.Transform.Translation.y, self.Entity.Transform.Translation.z))
+            local cameraPos = cameraEntity:GetPosition()
+            self.Entity:SetPosition(Vec3.new(cameraPos.x, cameraPos.y, self.Entity:GetPosition().z))
         end
     else
         print("Error: Could not find 'MainCamera' entity!")

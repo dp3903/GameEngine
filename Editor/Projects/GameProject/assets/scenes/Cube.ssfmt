@@ -69,6 +69,8 @@
                 "Texture": {
                     "TexturePath": "textures\\testSprite.jpg",
                     "TilingFactor": 1.0,
+                    "FlipX": false,
+                    "FlipY": false,
                     "SubTexture": {
                         "SpriteWidth": 4,
                         "SpriteHeight": 2,

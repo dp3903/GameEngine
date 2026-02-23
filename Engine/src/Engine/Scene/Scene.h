@@ -45,10 +45,10 @@ namespace Engine {
 		const entt::entity& GetSceneRoot() { return m_SceneRoot; }
 		Entity GetPrimaryCameraEntity();
 
-		template<typename... Components>
-		auto GetAllEntitiesWith()
+		template<typename... Components, typename... Args>
+		auto GetAllEntitiesWith(Args&&... args)
 		{
-			return m_Registry.view<Components...>();
+			return m_Registry.view<Components...>(std::forward<Args>(args)...);
 		}
 
 		std::string m_SceneName = "Untitled Scene";

@@ -88,7 +88,9 @@ namespace Engine {
             {
                 entityJson["SpriteRendererComponent"]["Texture"] = {
                     { "TexturePath", std::filesystem::relative(sc.Texture->GetPath(), Project::GetAssetDirectory()) },
-                    { "TilingFactor", sc.TilingFactor }
+                    { "TilingFactor", sc.TilingFactor },
+                    { "FlipX", sc.FlipX },
+                    { "FlipY", sc.FlipY }
                 };
 
                 if (sc.IsSubTexture)
@@ -211,6 +213,12 @@ namespace Engine {
             };
         }
 
+        // Serialize Disabled
+        if (entity.HasComponent<DisabledComponent>())
+        {
+            entityJson["Disabled"] = true;
+        }
+
         // Serialize Children
         if (entity.HasComponent<RelationshipComponent>())
         {
@@ -275,6 +283,8 @@ namespace Engine {
             {
                 sc.Texture = Texture2D::Create(Project::GetAssetFileSystemPath(sJson["Texture"]["TexturePath"]).string());
                 sc.TilingFactor = sJson["Texture"]["TilingFactor"];
+                sc.FlipX = sJson["Texture"]["FlipX"];
+                sc.FlipY = sJson["Texture"]["FlipY"];
                 if (sJson["Texture"].contains("SubTexture"))
                 {
                     sc.IsSubTexture = true;
@@ -358,6 +368,12 @@ namespace Engine {
             auto& sJson = entityJson["ScriptComponent"];
 
             sc.ScriptPath = sJson["ScriptFile"];
+        }
+
+        // Load Disabled
+        if (entityJson.contains("Disabled"))
+        {
+            deserializedEntity.AddComponent<DisabledComponent>();
         }
 
         // Load Relationship

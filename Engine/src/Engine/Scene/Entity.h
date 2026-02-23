@@ -73,6 +73,12 @@ namespace Engine {
 			return !(*this == other);
 		}
 
+		Entity ClosestRigidbodyParent();
+		bool isEnabled() { return !this->HasComponent<DisabledComponent>(); }
+		void setEnabled(bool enable);
+		void AttachFixturesToRigidbodyParent();
+		void DetachFixturesFromRigidbodyParent();
+
 	private:
 		entt::entity m_EntityHandle{ entt::null };
 		Scene* m_Scene = nullptr;

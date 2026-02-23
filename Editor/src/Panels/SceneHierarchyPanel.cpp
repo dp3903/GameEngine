@@ -65,10 +65,19 @@ namespace Engine {
 	void SceneHierarchyPanel::DrawEntityNode(Entity entity)
 	{
 		auto& tag = entity.GetComponent<TagComponent>().Tag;
+		bool isEnabled = entity.isEnabled(); // Store state
 
 		ImGuiTreeNodeFlags flags = ((m_SelectionContext == entity) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
 		flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
+		if (m_SelectionContext && m_Context->IsDescendant(entity, m_SelectionContext))
+			flags |= ImGuiTreeNodeFlags_DefaultOpen;
+		// Visually dim the text if the entity is disabled
+		if (!isEnabled)
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
 		bool opened = ImGui::TreeNodeEx((void*)(uint64_t)(uint32_t)entity, flags, tag.c_str());
+		if (!isEnabled)
+			ImGui::PopStyleColor();
+
 		if (ImGui::IsItemClicked())
 		{
 			m_SelectionContext = entity;
@@ -79,6 +88,16 @@ namespace Engine {
 		{
 			if (ImGui::MenuItem("Create Child Entity"))
 				m_Context->CreateNewChildEntity(entity);
+			if (isEnabled)
+			{
+				if (ImGui::MenuItem("Disable Entity"))
+					entity.setEnabled(false);
+			}
+			else
+			{
+				if (ImGui::MenuItem("Enable Entity"))
+					entity.setEnabled(true);
+			}
 			if (ImGui::MenuItem("Delete Entity"))
 				entityDeleted = true;
 
@@ -398,6 +417,10 @@ namespace Engine {
 					ImGui::Text("Texture Width: %d", component.Texture->GetWidth());
 					ImGui::Text("Texture Height: %d", component.Texture->GetHeight());
 
+					ImGui::Checkbox("FlipX", &component.FlipX);
+					ImGui::SameLine();
+					ImGui::Checkbox("FlipY", &component.FlipY);
+
 					ImGui::Checkbox("Use Sub-Texture", &component.IsSubTexture);
 					
 
@@ -421,6 +444,10 @@ namespace Engine {
 						
 						ImVec2 uv0 = ImVec2((float)(component.XSpriteIndex + 0) / component.SpriteWidth, (float)(component.YSpriteIndex + 1) / component.SpriteHeight );
 						ImVec2 uv1 = ImVec2((float)(component.XSpriteIndex + 1) / component.SpriteWidth, (float)(component.YSpriteIndex + 0) / component.SpriteHeight );
+						if (component.FlipX)
+							std::swap(uv0.x, uv1.x);
+						if (component.FlipY)
+							std::swap(uv0.y, uv1.y);
 						ImGui::Image(component.Texture->GetRendererID(), ImVec2(thumbnailSize / 2, thumbnailSize / 2), uv0, uv1);
 						ImGui::SameLine();
 						

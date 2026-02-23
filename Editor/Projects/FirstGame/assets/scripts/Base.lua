@@ -41,10 +41,16 @@ function PlayerAnimationStatus:OnUpdate(ts, playerEntity)
             Physics.ApplyLinearImpulse(playerEntity, Vec2.new(0.0, self.Jumpforce), Vec2.new(0.0, 0.0), true)   
         end
         if Input.IsKeyPressed(Key.A) then
+            if self.FacingDirection == 1 then
+                playerEntity.SpriteRenderer.FlipX = true;
+            end
             self.FacingDirection = -1
             self.CurrentStates["Walk"] = true
             Physics.SetLinearVelocity(playerEntity, Vec2.new(self.MovementSpeed * self.FacingDirection, Physics.GetLinearVelocity(playerEntity).y))    
         elseif Input.IsKeyPressed(Key.D) then
+            if self.FacingDirection == -1 then
+                playerEntity.SpriteRenderer.FlipX = false;
+            end
             self.FacingDirection = 1
             self.CurrentStates["Walk"] = true
             Physics.SetLinearVelocity(playerEntity, Vec2.new(self.MovementSpeed * self.FacingDirection, Physics.GetLinearVelocity(playerEntity).y))    
@@ -98,12 +104,9 @@ function PlayerAnimationStatus:OnUpdate(ts, playerEntity)
     -- Y Index = Which Action (Row)
     playerEntity.SpriteRenderer.YSpriteIndex = animData.Row
 
-    -- Optional: FLIP CHARACTER
-    playerEntity.Transform.Scale.x = math.abs(playerEntity.Transform.Scale.x) * self.FacingDirection
-
     -- Frame based logic (e.g. apply damage on specific attack frames)
     if self.CurrentStates["Attack1"] == true and self.FrameIndex == 2 then
-        local playerPos = playerEntity.Transform.Translation
+        local playerPos = playerEntity:GetPosition()
         local direction = Vec2.new(self.FacingDirection, 0.0)
         AttackEffects:Emit(Vec3.new(playerPos.x + (self.FacingDirection * 0.5), playerPos.y, playerPos.z), direction, 5.0, 2.0)
     end
