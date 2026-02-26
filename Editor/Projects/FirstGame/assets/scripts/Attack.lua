@@ -15,7 +15,7 @@ local AttackMetaData = {
 function AttackEffects:OnCreate()
     AttackMetaData.Parent = Scene.CreateEntity("Attack1Parent")
     for i = 0, AttackMetaData.EntityCount-1 do
-        AttackMetaData.Entities[i] = Scene.CreateEntity("Fireball-"..i, AttackMetaData.Parent)
+        AttackMetaData.Entities[i] = Scene.CreateEntity("Fireball", AttackMetaData.Parent)
         AttackMetaData.Entities[i]:AddSpriteRenderer()
         AttackMetaData.Entities[i].SpriteRenderer.Texture = "textures/Fire-Spell.png" -- Assuming you have a fireball sprite
         AttackMetaData.Entities[i].SpriteRenderer.IsSubTexture = true
@@ -23,6 +23,11 @@ function AttackEffects:OnCreate()
         AttackMetaData.Entities[i].SpriteRenderer.SpriteWidth = 8
         AttackMetaData.Entities[i].SpriteRenderer.XSpriteIndex = 0
         AttackMetaData.Entities[i].SpriteRenderer.YSpriteIndex = 0
+        local body = AttackMetaData.Entities[i]:AddRigidbody()
+        body.Type = BodyType.Kinematic
+        body.FixedRotation = true
+        local collider = AttackMetaData.Entities[i]:AddBoxCollider()
+        collider.Size = Vec2.new(1.0, 0.5)
         AttackMetaData.Entities[i]:SetEnabled(false)
     end
     print("Projectile Manager Initialized")
@@ -41,8 +46,13 @@ function AttackEffects:Emit(startPos, direction, speed, lifetime)
     projEntity:SetEnabled(true)
     projEntity:SetPosition(startPos)
     local AspectRatio = (projEntity.SpriteRenderer.TextureWidth / 8) / projEntity.SpriteRenderer.TextureHeight
-    projEntity:SetScale(Vec3.new(-0.5 * direction.x * AspectRatio, 0.5, 1.0)) -- Flip based on direction
-
+    projEntity:SetScale(Vec3.new(0.5 * AspectRatio, 0.5, 1.0))
+    if direction.x == 1 then
+        projEntity.SpriteRenderer.FlipX = true  -- Flip based on direction
+    else
+        projEntity.SpriteRenderer.FlipX = false -- Flip based on direction
+    end
+    Physics.SetLinearVelocity(projEntity, Vec2.new(direction.x * speed, direction.y * speed))
     -- Store it in our tracking table
     table.insert(self.ActiveProjectiles, {
         Entity = projEntity,
@@ -69,9 +79,9 @@ function AttackEffects:OnUpdate(ts)
             table.remove(self.ActiveProjectiles, i)
         else
             -- If using OPTION A (Manual Movement), update position here:
-            local currentPos = projectile.Entity:GetPosition()
-            local newPos = Vec3.new(currentPos.x + (projectile.Velocity.x * ts), currentPos.y + (projectile.Velocity.y * ts), currentPos.z)
-            projectile.Entity:SetPosition(newPos)
+            -- local currentPos = projectile.Entity:GetPosition()
+            -- local newPos = Vec3.new(currentPos.x + (projectile.Velocity.x * ts), currentPos.y + (projectile.Velocity.y * ts), currentPos.z)
+            -- projectile.Entity:SetPosition(newPos)
 
             projectile.Entity.SpriteRenderer.XSpriteIndex = math.floor((projectile.TimeLeft * 10) % projectile.Entity.SpriteRenderer.SpriteWidth) -- Simple animation logic
         end

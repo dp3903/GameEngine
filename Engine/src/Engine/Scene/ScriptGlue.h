@@ -19,6 +19,19 @@
 
 namespace Engine
 {
+	b2BodyType Rigidbody2DTypeToBox2DBody(Rigidbody2DComponent::BodyType bodyType)
+	{
+		switch (bodyType)
+		{
+		case Rigidbody2DComponent::BodyType::Static:    return b2_staticBody;
+		case Rigidbody2DComponent::BodyType::Dynamic:   return b2_dynamicBody;
+		case Rigidbody2DComponent::BodyType::Kinematic: return b2_kinematicBody;
+		}
+
+		ASSERT(false, "Unknown body type");
+		return b2_staticBody;
+	}
+
 	static void BindLuaTypesAndFunctions(sol::state* m_Lua, Scene* scene)
 	{
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -313,8 +326,32 @@ namespace Engine
 			"Fade", &CircleRendererComponent::Fade
 		);
 		m_Lua->new_usertype<Rigidbody2DComponent>("Rigidbody", 
-			"Type", &Rigidbody2DComponent::Type,
-			"FixedRotation", &Rigidbody2DComponent::FixedRotation
+			"Type", sol::property(
+				[](Rigidbody2DComponent& rb) { return rb.Type; },
+				[](Rigidbody2DComponent& rb, Rigidbody2DComponent::BodyType type) {
+					rb.Type = type;
+					// If the Box2D body already exists, update it live!
+					if (rb.RuntimeBody)
+					{
+						b2Body* body = static_cast<b2Body*>(rb.RuntimeBody);
+
+						b2BodyType b2type = Rigidbody2DTypeToBox2DBody(type);
+						body->SetType(b2type);
+						body->SetAwake(true);
+					}
+				}
+			),
+
+			"FixedRotation", sol::property(
+				[](Rigidbody2DComponent& rb) { return rb.FixedRotation; },
+				[](Rigidbody2DComponent& rb, bool fixed) {
+					rb.FixedRotation = fixed;
+					if (rb.RuntimeBody)
+					{
+						static_cast<b2Body*>(rb.RuntimeBody)->SetFixedRotation(fixed);
+					}
+				}
+			)
 		);
 		m_Lua->new_usertype<BoxCollider2DComponent>("BoxCollider",
 			"Offset", &BoxCollider2DComponent::Offset,
@@ -368,6 +405,40 @@ namespace Engine
 				}
 			)
 		);
+		m_Lua->new_usertype<RelationshipComponent>("Relation",
+			"Parent", sol::property(
+				// GETTER
+				[scene, m_Lua](RelationshipComponent& src) -> sol::object {
+					if (src.Parent == entt::null || src.Parent == scene->m_SceneRoot)
+						return sol::nil;
+					return sol::make_object(*m_Lua, Entity{ src.Parent, scene });
+				}
+			),
+			"FirstChild", sol::property(
+				// GETTER
+				[scene, m_Lua](RelationshipComponent& src) -> sol::object {
+					if (src.FirstChild == entt::null)
+						return sol::nil;
+					return sol::make_object(*m_Lua, Entity{ src.FirstChild, scene });
+				}
+			),
+			"NextSibling", sol::property(
+				// GETTER
+				[scene, m_Lua](RelationshipComponent& src) -> sol::object {
+					if (src.NextSibling == entt::null)
+						return sol::nil;
+					return sol::make_object(*m_Lua, Entity{ src.NextSibling, scene });
+				}
+			),
+			"PrevSibling", sol::property(
+				// GETTER
+				[scene, m_Lua](RelationshipComponent& src) -> sol::object {
+					if (src.PrevSibling == entt::null)
+						return sol::nil;
+					return sol::make_object(*m_Lua, Entity{ src.PrevSibling, scene });
+				}
+			)
+		);
 		m_Lua->new_usertype<Camera>("Camera",
 			// Constructors (Optional: usually you don't instantiate raw Cameras in Lua)
 			sol::constructors<Camera(), Camera(const glm::mat4&)>(),
@@ -401,8 +472,9 @@ namespace Engine
 			"AspectRatio", sol::property(&SceneCamera::GetAspectRatio)
 		);
 		m_Lua->new_usertype<Entity>("Entity",
-			"GetUUID", &Entity::GetUUID,
+			"GetUUID", [](Entity& entity) -> std::string { return std::to_string((uint64_t)entity.GetUUID()); },
 			"GetName", &Entity::GetName,
+			"SetName", [](Entity& entity, std::string& newName) { entity.GetComponent<TagComponent>().Tag = newName; },
 #define BIND_COMPONENT_PROPERTY(name, component) name, sol::property([](Entity& entity) -> component* {\
 				if (!entity)\
 					throw std::runtime_error("Attempted to access " name " on a destroyed entity!");\
@@ -418,6 +490,7 @@ namespace Engine
 			BIND_COMPONENT_PROPERTY("BoxCollider", BoxCollider2DComponent),
 			BIND_COMPONENT_PROPERTY("CircleCollider", CircleCollider2DComponent),
 			BIND_COMPONENT_PROPERTY("Text", TextComponent),
+			BIND_COMPONENT_PROPERTY("Relation", RelationshipComponent),
 
 #undef BIND_COMPONENT_PROPERTY
 			
@@ -450,7 +523,12 @@ namespace Engine
 				scene->SyncPhysicsToTransform(entity);
 			},
 			"IsEnabled", [](Entity entity) -> bool {return entity.isEnabled(); },
-			"SetEnabled", [](Entity entity, bool enable) { entity.setEnabled(enable); }
+			"SetEnabled", [](Entity entity, bool enable) { entity.setEnabled(enable); },
+
+			"RebuildFixtures", [](Entity& entity) {
+				entity.DetachFixturesFromRigidbodyParent();
+				entity.AttachFixturesToRigidbodyParent();
+			}
 		);
 
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -511,8 +589,8 @@ namespace Engine
 		sceneTable.set_function("UpdateParent", [scene](Entity childEntity, Entity parentEntity, sol::optional<bool> keepWorldTransform) {
 			scene->UpdateParent(childEntity, parentEntity, keepWorldTransform ? keepWorldTransform.value() : false);
 		});
-		sceneTable.set_function("DuplicateEntity", [scene](Entity entity) {
-			scene->DuplicateEntity(entity);
+		sceneTable.set_function("DuplicateEntity", [scene](Entity entity) -> Entity {
+			return scene->DuplicateEntity(entity);
 		});
 		sceneTable.set_function("IsDescendant", [scene](Entity potentialAncestor, Entity potentialDescendant) -> bool {
 			return scene->IsDescendant(potentialAncestor, potentialDescendant);
@@ -705,6 +783,32 @@ namespace Engine
 		{
 		}
 
+		struct ContactData
+		{
+			Entity A, B;
+			std::string func;
+		};
+
+		std::vector<ContactData> PendingCollisions;
+
+		void FireCallbacks()
+		{
+			// 1. Make a local copy of all pending collisions
+			std::vector<ContactData> currentCollisions = PendingCollisions;
+
+			// 2. Clear the main queue immediately!
+			// Now, if Box2D triggers EndContact during our loop, it will push 
+			// into the empty PendingCollisions vector, leaving our local copy perfectly safe.
+			PendingCollisions.clear();
+
+			// 3. Iterate over the safe, local copy
+			for (auto& col : currentCollisions)
+			{
+				callCollision(col.A, col.B, col.func);
+				callCollision(col.B, col.A, col.func);
+			}
+		}
+
 		// Called when two fixtures begin to touch
 		virtual void BeginContact(b2Contact* contact) override
 		{
@@ -720,11 +824,7 @@ namespace Engine
 			Entity entityA = { (entt::entity)userDataA, m_Scene };
 			Entity entityB = { (entt::entity)userDataB, m_Scene };
 
-			// --- YOUR GAME LOGIC HERE ---
-
-			// Call for both entities
-			callCollision(entityA, entityB, "OnCollisionBegin");
-			callCollision(entityB, entityA, "OnCollisionBegin");
+			PendingCollisions.push_back({ entityA, entityB, "OnCollisionBegin" });
 		}
 
 		// Called when two fixtures cease to touch
@@ -742,11 +842,7 @@ namespace Engine
 			Entity entityA = { (entt::entity)userDataA, m_Scene };
 			Entity entityB = { (entt::entity)userDataB, m_Scene };
 
-			// --- YOUR GAME LOGIC HERE ---
-
-			// Call for both entities
-			callCollision(entityA, entityB, "OnCollisionEnd");
-			callCollision(entityB, entityA, "OnCollisionEnd");
+			PendingCollisions.push_back({ entityA, entityB, "OnCollisionEnd" });
 		}
 
 	private:

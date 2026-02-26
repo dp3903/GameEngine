@@ -56,6 +56,8 @@ namespace Engine {
 		ImGui::Begin("Properties");
 		if (m_SelectionContext)
 		{
+			ImGui::Text("UUID: %ul", m_SelectionContext.GetUUID());
+			ImGui::Text("EnTT ID: %ul", (uint32_t)m_SelectionContext);
 			DrawComponents(m_SelectionContext);
 		}
 

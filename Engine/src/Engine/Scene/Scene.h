@@ -1,5 +1,8 @@
 #pragma once
 
+#include <filesystem>
+#include <unordered_map> // Must come after filesystem
+
 #include "Engine/Utils/UUID.h"
 #include "Engine/Renderer/EditorCamera.h"
 #include "entt.hpp"
@@ -40,7 +43,7 @@ namespace Engine {
 		void OnUpdateEditor(float ts, EditorCamera& camera);
 		void OnViewportResize(uint32_t width, uint32_t height);
 		
-		void DuplicateEntity(Entity entity);
+		Entity DuplicateEntity(Entity entity);
 
 		const entt::entity& GetSceneRoot() { return m_SceneRoot; }
 		Entity GetPrimaryCameraEntity();
@@ -58,7 +61,7 @@ namespace Engine {
 		template<typename T>
 		void OnComponentAdded(Entity entity, T& component);
 
-		Entity DuplicateEntityRecursive(Entity entity);
+		void CreateDuplicationMap(Entity& entity, std::unordered_map<entt::entity, entt::entity>& map);
 		void UpdateGlobalTransforms();
 		void UpdateTransformRecursive(entt::entity entity, const glm::mat4& parentTransform);
 		void SyncPhysicsToTransform(Entity entity);
@@ -81,6 +84,8 @@ namespace Engine {
 		b2World* m_PhysicsWorld = nullptr;
 		PhysicsContactListener* m_ContactListener = nullptr;
 		sol::state* m_Lua = nullptr;
+		// Create a cache to store file's returned class
+		std::unordered_map<std::filesystem::path, sol::table> m_ScriptCache;
 
 	friend class Entity;
 	friend class SceneHierarchyPanel;

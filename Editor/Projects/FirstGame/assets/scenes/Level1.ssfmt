@@ -6,6 +6,99 @@
     ],
     "Entities": [
         {
+            "Entity": 15795986251690538444,
+            "TagComponent": {
+                "Tag": "Enemy Manager"
+            },
+            "TransformComponent": {
+                "Translation": [
+                    -4.284877777099609,
+                    1.4827806949615479,
+                    -6.103515625e-05
+                ],
+                "Rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "Scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            },
+            "ScriptComponent": {
+                "ScriptFile": "scripts\\EnemyHandler.lua"
+            },
+            "Children": [
+                {
+                    "Entity": 8816662477408676923,
+                    "TagComponent": {
+                        "Tag": "Enemy"
+                    },
+                    "TransformComponent": {
+                        "Translation": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "Rotation": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "Scale": [
+                            2.0,
+                            2.0,
+                            1.0
+                        ]
+                    },
+                    "SpriteRendererComponent": {
+                        "Color": [
+                            1.0,
+                            1.0,
+                            1.0,
+                            1.0
+                        ],
+                        "Texture": {
+                            "TexturePath": "textures\\plant-enemy.png",
+                            "TilingFactor": 1.0,
+                            "FlipX": false,
+                            "FlipY": false,
+                            "SubTexture": {
+                                "SpriteWidth": 11,
+                                "SpriteHeight": 11,
+                                "XSpriteIndex": 0,
+                                "YSpriteIndex": 0
+                            }
+                        }
+                    },
+                    "Rigidbody2DComponent": {
+                        "BodyType": "Dynamic",
+                        "FixedRotation": true
+                    },
+                    "BoxCollider2DComponent": {
+                        "Offset": [
+                            0.029999999329447746,
+                            -0.30000001192092896
+                        ],
+                        "Size": [
+                            0.4000000059604645,
+                            0.4000000059604645
+                        ],
+                        "Density": 1.0,
+                        "Friction": 0.5,
+                        "Restitution": 0.0,
+                        "RestitutionThreshold": 0.5
+                    },
+                    "ScriptComponent": {
+                        "ScriptFile": "scripts\\Enemy.lua"
+                    },
+                    "Children": []
+                }
+            ]
+        },
+        {
             "Entity": 5211096368850274846,
             "TagComponent": {
                 "Tag": "Environment"

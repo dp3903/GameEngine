@@ -62,7 +62,7 @@ namespace Engine
 
 		m_EditorCamera = EditorCamera(30.0f, 1.778f, 0.1f, 1000.0f);
 
-		m_ActiveScene = Scene::Copy(m_EditorScene);
+		m_ActiveScene = m_EditorScene;
 		m_SceneHierarchyPanel->SetContext(m_ActiveScene);
 
 		APP_LOG_INFO("Editor Attached");
@@ -138,6 +138,8 @@ namespace Engine
 			int pixelData = m_Framebuffer->ReadPixel(1, mouseX, mouseY);
 			m_HoveredEntity = pixelData == -1 ? Entity() : Entity((entt::entity)pixelData, m_ActiveScene.get());
 		}
+		else
+			m_HoveredEntity = Entity();
 
 		OnOverlayRender();
 

@@ -1,6 +1,7 @@
 #include "egpch.h"
 #include "Entity.h"
 
+#include "Engine/Project/Project.h"
 #include "Engine/Utils/Math.h"
 
 #include "box2d/b2_world.h"
@@ -203,4 +204,94 @@ namespace Engine {
             }
         }
     }
+
+	void Entity::OnScriptStart()
+	{
+		if (HasComponent<ScriptComponent>() && m_Scene->m_Lua)
+		{
+			auto& sc = GetComponent<ScriptComponent>();
+			auto& tag = GetComponent<TagComponent>();
+
+			if (sc.ScriptPath.empty())
+			{
+				// Just skip this entity, it has no script attached.
+				ENGINE_LOG_WARN("Entity {0} has script entity but no script path.", tag.Tag);
+				return;
+			}
+
+			std::filesystem::path scriptPath = Project::GetAssetFileSystemPath(sc.ScriptPath);
+
+			// Prevents crashing if you deleted the file but didn't update the entity
+			if (!std::filesystem::exists(scriptPath))
+			{
+				ENGINE_LOG_ERROR("Script file not found: {0} for Entity: {1}", scriptPath.string(), tag.Tag);
+				return;
+			}
+
+			// add script class to script cache if it does not exists, get from the cache otherwise
+			sol::table scriptClass;
+			if (m_Scene->m_ScriptCache.find(scriptPath) == m_Scene->m_ScriptCache.end())
+			{
+
+				// Load the file (Get the "Class" table)
+				// 1. LOAD the file (This checks for Syntax Errors)
+	// Unlike safe_script_file, this does NOT run the script yet.
+				sol::load_result loadResult = m_Scene->m_Lua->load_file(scriptPath.string());
+
+				// 2. CHECK if loading succeeded
+				if (!loadResult.valid())
+				{
+					sol::error err = loadResult;
+					ENGINE_LOG_ERROR("Syntax Error in script '{0}'", scriptPath.string());
+					ENGINE_LOG_ERROR("Details: {0}", err.what());
+					return; // Skip this entity safely
+				}
+
+				// 3. EXECUTE the script (This runs the code to return the table)
+				// Now we convert the loaded script into a protected function and run it.
+				sol::protected_function scriptFunc = loadResult;
+				sol::protected_function_result result = scriptFunc();
+
+				if (!result.valid())
+				{
+					// Handle Syntax Errors (e.g., "unexpected symbol near 'if'")
+					sol::error err = result;
+					ENGINE_LOG_ERROR("Failed to compile script '{0}'", scriptPath.string());
+					ENGINE_LOG_ERROR("Error: {0}", err.what());
+					return; // Skip this entity
+				}
+
+				// Create the Instance
+				// We take the "Class" table returned by the script and deep copy it
+				// into our component's Instance slot.
+				scriptClass = result;
+				m_Scene->m_ScriptCache[scriptPath] = scriptClass;
+			}
+			else
+				scriptClass = m_Scene->m_ScriptCache.at(scriptPath);
+
+			sc.Instance = m_Scene->m_Lua->create_table();
+
+			// Setup metatable for inheritance (so Instance behaves like Class)
+			// This is Lua magic to make the instance allow variable overrides
+			sc.Instance[sol::metatable_key] = m_Scene->m_Lua->create_table_with("__index", scriptClass);
+
+			// Inject the Entity into the instance
+			// This is how the script knows which entity it belongs to!
+			sc.Instance["Entity"] = *this;
+
+			// Call OnCreate
+			sol::protected_function onCreate = sc.Instance["OnCreate"];
+			sol::protected_function_result result = onCreate(sc.Instance);
+
+			if (!result.valid())
+			{
+				sol::error err = result;
+				std::string errorMsg = err.what();
+
+				// 1. Log to Terminal (Standard)
+				ENGINE_LOG_ERROR("Script Runtime Error: {0}", errorMsg);
+			}
+		}
+	}
 }

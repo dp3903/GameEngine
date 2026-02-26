@@ -2,8 +2,13 @@ local PlayerAnimationStatus = require("scripts.Base")
 
 local player = {}
 
+function MyCallback()
+    print("Called callback on player dead.")
+end
+
 function player:OnCreate()
     PlayerAnimationStatus:OnCreate()
+    PlayerAnimationStatus.OnDeadCallback = MyCallback
     print("Player initialized with Animation System")
 end
 

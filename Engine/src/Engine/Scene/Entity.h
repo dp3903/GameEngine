@@ -79,6 +79,9 @@ namespace Engine {
 		void AttachFixturesToRigidbodyParent();
 		void DetachFixturesFromRigidbodyParent();
 
+		void OnScriptStart();
+		bool BelongsToScene(Scene* scene) { return m_Scene == scene; }
+
 	private:
 		entt::entity m_EntityHandle{ entt::null };
 		Scene* m_Scene = nullptr;

@@ -13,19 +13,6 @@
 
 namespace Engine {
 
-	static b2BodyType Rigidbody2DTypeToBox2DBody(Rigidbody2DComponent::BodyType bodyType)
-	{
-		switch (bodyType)
-		{
-		case Rigidbody2DComponent::BodyType::Static:    return b2_staticBody;
-		case Rigidbody2DComponent::BodyType::Dynamic:   return b2_dynamicBody;
-		case Rigidbody2DComponent::BodyType::Kinematic: return b2_kinematicBody;
-		}
-
-		ASSERT(false, "Unknown body type");
-		return b2_staticBody;
-	}
-
 	template<typename Component>
 	static void CopyComponent(entt::registry& dst, entt::registry& src, const std::unordered_map<UUID, entt::entity>& enttMap)
 	{
@@ -86,7 +73,13 @@ namespace Engine {
 	static void CopyComponentIfExists(Entity dst, Entity src)
 	{
 		if (src.HasComponent<Component>())
-			dst.AddOrReplaceComponent<Component>(src.GetComponent<Component>());
+		{
+			// 1. Copy by value to a safe local variable first!
+			Component copy = src.GetComponent<Component>();
+
+			// 2. Safely emplace the copy
+			dst.AddOrReplaceComponent<Component>(copy);
+		}
 	}
 
 	// Helper to transform child data into parent's local space
@@ -163,6 +156,40 @@ namespace Engine {
 		}
 	}
 
+	// To be ued only for debugging
+	namespace Debug
+	{
+		static void PrintHierarchy(Entity entity, Scene* scene, int n=0)
+		{
+			std::cout << std::left;
+			std::cout << std::setw(20) << entity.GetName() << ' ' << std::setw(5) << (uint32_t)entity << ' ' << std::setw(20) << entity.GetUUID();
+			auto& rc = entity.GetComponent<RelationshipComponent>();
+			Entity child = { rc.FirstChild, scene };
+			while (child)
+			{
+				std::cout << std::endl << std::setw(n*4) << ' ' << '|' << std::string(3, '_');
+				PrintHierarchy(child, scene, n+1);
+				child = Entity{ child.GetComponent<RelationshipComponent>().NextSibling, scene };
+			}
+			std::cout << std::endl;
+			std::cout << std::right;
+		}
+
+		static void PrintHierarchyAsTable(Scene* scene)
+		{
+			std::cout << "\t\t|" << std::setw(10) << "EnTT ID " << '|' << std::setw(20) << "UUID " << '|' << std::setw(20) << "Name " << '|' << std::setw(5) << "P " << '|' << std::setw(5) << "FC " << '|' << std::setw(5) << "PS " << '|' << std::setw(5) << "NS " << '|' << std::endl;
+			auto view = scene->GetAllEntitiesWith<IDComponent,TagComponent,RelationshipComponent>();
+			for (auto& e : view)
+			{
+				auto& ic = view.get<IDComponent>(e);
+				auto& tc = view.get<TagComponent>(e);
+				auto& rc = view.get<RelationshipComponent>(e);
+
+				std::cout << "\t\t|" << std::setw(10) << (uint32_t)e << '|' << std::setw(20) << ic.ID << '|' << std::setw(20) << tc.Tag << '|' << std::setw(5) << (rc.Parent == entt::null ? -1 : (uint32_t)rc.Parent) << '|' << std::setw(5) << (rc.FirstChild == entt::null ? -1 : (uint32_t)rc.FirstChild) << '|' << std::setw(5) << (rc.PrevSibling == entt::null ? -1 : (uint32_t)rc.PrevSibling) << '|' << std::setw(5) << (rc.NextSibling == entt::null ? -1 : (uint32_t)rc.NextSibling) << '|' << std::endl;
+			}
+		}
+	}
+		
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Scene //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -226,7 +253,68 @@ namespace Engine {
 		return newScene;
 	}
 
-	void Scene::DuplicateEntity(Entity entity)
+	Entity Scene::DuplicateEntity(Entity entity)
+	{
+		ASSERT(entity.BelongsToScene(this), "This Scene cannot duplicate entity of other scene.")
+		if (entity == m_SceneRoot)
+		{
+			ASSERT(false, "Trying duplicate root is not valid.")
+				return Entity{};
+		}
+
+		std::unordered_map<entt::entity, entt::entity> duplicationMap;
+		CreateDuplicationMap(entity, duplicationMap);
+
+		// A helper lambda to safely translate an original handle to a clone handle
+		auto getMapped = [&](entt::entity originalHandle) -> entt::entity {
+			if (duplicationMap.find(originalHandle) != duplicationMap.end())
+				return duplicationMap[originalHandle];
+			return entt::null;
+		};
+
+		for (auto& [originalHandle, cloneHandle] : duplicationMap)
+		{
+			auto& originalRel = m_Registry.get<RelationshipComponent>(originalHandle);
+			auto& cloneRel = m_Registry.get<RelationshipComponent>(cloneHandle);
+
+			// Remap internal tree pointers
+			cloneRel.Parent = getMapped(originalRel.Parent);
+			cloneRel.FirstChild = getMapped(originalRel.FirstChild);
+			cloneRel.NextSibling = getMapped(originalRel.NextSibling);
+			cloneRel.PrevSibling = getMapped(originalRel.PrevSibling);
+
+			Entity originalEntity{ originalHandle, this };
+			Entity cloneEntity{ cloneHandle, this };
+		}
+
+		Entity newEntity = Entity{ duplicationMap[entity], this };
+		auto& newRelation = newEntity.GetComponent<RelationshipComponent>();
+		auto& oldRelation = entity.GetComponent<RelationshipComponent>();
+		Entity nextsibling = Entity{ oldRelation.NextSibling, this };
+		oldRelation.NextSibling = newEntity;
+		newRelation.PrevSibling = entity;
+		newRelation.Parent = oldRelation.Parent;
+		newRelation.NextSibling = nextsibling;
+		if (nextsibling)
+			nextsibling.GetComponent<RelationshipComponent>().PrevSibling = newEntity;
+
+		// The tree is now 100% built and stitched. It is completely safe to run Lua!
+		if (m_Lua)
+		{
+			for (auto& [originalHandle, cloneHandle] : duplicationMap)
+			{
+				Entity cloneEntity{ cloneHandle, this };
+				if (cloneEntity.HasComponent<ScriptComponent>())
+				{
+					cloneEntity.OnScriptStart(); // Fire OnCreate safely!
+				}
+			}
+		}
+
+		return newEntity;
+	}
+
+	void Scene::CreateDuplicationMap(Entity& entity, std::unordered_map<entt::entity, entt::entity>& map)
 	{
 		if (entity == m_SceneRoot)
 		{
@@ -234,67 +322,31 @@ namespace Engine {
 			return;
 		}
 
-		Entity newEntity = DuplicateEntityRecursive(entity);
-
-		auto& srcRelation = entity.GetComponent<RelationshipComponent>();
-		auto& dstRelation = newEntity.GetComponent<RelationshipComponent>();
-
-		if (srcRelation.NextSibling != entt::null)
-		{
-			Entity nextOld = Entity(srcRelation.NextSibling, this);
-			nextOld.GetComponent<RelationshipComponent>().PrevSibling = newEntity;
-		}
-		dstRelation.Parent = srcRelation.Parent;
-		dstRelation.NextSibling = srcRelation.NextSibling;
-		dstRelation.PrevSibling = entity;
-		srcRelation.NextSibling = newEntity;
-	}
-
-	Entity Scene::DuplicateEntityRecursive(Entity entity)
-	{
-		if (entity == m_SceneRoot)
-		{
-			ASSERT(false, "Trying duplicate root is not valid.")
-			return Entity();
-		}
-
 		std::string name = entity.GetName();
 		ENGINE_LOG_INFO("Duplicating entity {}", name);
 		Entity newEntity = CreateEntity(name);
 
 		CopyComponentIfExists<TransformComponent>(newEntity, entity);
-		CopyComponentIfExists<SpriteRendererComponent>(newEntity, entity);
+		CopyComponentIfExists<DisabledComponent>(newEntity, entity);
 		CopyComponentIfExists<CameraComponent>(newEntity, entity);
-		CopyComponentIfExists<ScriptComponent>(newEntity, entity);
+		CopyComponentIfExists<SpriteRendererComponent>(newEntity, entity);
 		CopyComponentIfExists<CircleRendererComponent>(newEntity, entity);
 		CopyComponentIfExists<Rigidbody2DComponent>(newEntity, entity);
 		CopyComponentIfExists<BoxCollider2DComponent>(newEntity, entity);
 		CopyComponentIfExists<CircleCollider2DComponent>(newEntity, entity);
 		CopyComponentIfExists<TextComponent>(newEntity, entity);
-		CopyComponentIfExists<DisabledComponent>(newEntity, entity);
+		CopyComponentIfExists<ScriptComponent>(newEntity, entity);
 
 		auto& srcRelation = entity.GetComponent<RelationshipComponent>();
 
-		if (srcRelation.FirstChild != entt::null)
+		Entity child = Entity(srcRelation.FirstChild, this);
+		while (child)
 		{
-			Entity prevNew;
-			Entity crntOld = Entity(srcRelation.FirstChild, this);
-			while (crntOld)
-			{
-				Entity crntNew = DuplicateEntityRecursive(crntOld);
-				auto& crntNewRelation = crntNew.GetComponent<RelationshipComponent>();
-				crntNewRelation.Parent = newEntity;
-				crntNewRelation.PrevSibling = prevNew;
-				if (prevNew)
-					prevNew.GetComponent<RelationshipComponent>().NextSibling = crntNew;
-				else
-					newEntity.GetComponent<RelationshipComponent>().FirstChild = crntNew;
-				prevNew = crntNew;
-				crntOld = Entity(crntOld.GetComponent<RelationshipComponent>().NextSibling, this);
-			}
+			CreateDuplicationMap(child, map);
+			child = Entity(child.GetComponent<RelationshipComponent>().NextSibling, this);
 		}
-
-		return newEntity;
+		
+		map[entity] = newEntity;
 	}
 
 
@@ -305,6 +357,8 @@ namespace Engine {
 
 	Entity Scene::CreateNewChildEntity(Entity parentEntity)
 	{
+		ASSERT(parentEntity.BelongsToScene(this), "This Scene cannot create a child entity of a parent of other other scene.")
+
 		auto& childEntity = CreateEntity("Empty entity");
 		auto& childRelation = childEntity.GetComponent<RelationshipComponent>();
 		auto& parentRelation = parentEntity.GetComponent<RelationshipComponent>();
@@ -328,17 +382,19 @@ namespace Engine {
 	{
 		Entity entity = { m_Registry.create(), this };
 		entity.AddComponent<IDComponent>(uuid);
-		entity.AddComponent<TransformComponent>();
-		auto& relation = entity.AddComponent<RelationshipComponent>();
 		auto& tag = entity.AddComponent<TagComponent>();
 		tag.Tag = name.empty() ? "Entity" : name;
+		auto& relation = entity.AddComponent<RelationshipComponent>();
 		relation.Parent = m_SceneRoot;
+		entity.AddComponent<TransformComponent>();
 
 		return entity;
 	}
 	
 	void Scene::DestroyEntity(Entity entity)
 	{
+		ASSERT(entity.BelongsToScene(this), "This Scene cannot destroy entity of other scene.")
+
 		if (entity == m_SceneRoot)
 			return;
 
@@ -381,6 +437,9 @@ namespace Engine {
 
 	bool Scene::IsDescendant(Entity potentialAncestor, Entity potentialDescendant)
 	{
+		ASSERT(potentialAncestor.BelongsToScene(this), "This Scene cannot verify ancestry of other scene.")
+		ASSERT(potentialDescendant.BelongsToScene(this), "This Scene cannot verify descentry of other scene.")
+
 		// Walk up the tree from 'potentialDescendant'
 		// If we hit 'potentialAncestor', then it IS a descendant (bad!)
 		if (!potentialDescendant.HasComponent<RelationshipComponent>()) return false;
@@ -401,6 +460,9 @@ namespace Engine {
 
 	void Scene::UpdateParent(Entity& child, Entity& newParent, bool keepWorldTransform)
 	{
+		ASSERT(child.BelongsToScene(this), "This Scene cannot modify child of other scene.")
+		ASSERT(newParent.BelongsToScene(this), "This child cannot update parent to other scene.")
+
 		auto& childRelation = child.GetComponent<RelationshipComponent>();
 		auto& newParentRelation = newParent.GetComponent<RelationshipComponent>();
 		Entity oldParent = { childRelation.Parent, this };
@@ -504,6 +566,7 @@ namespace Engine {
 
 	void Scene::SyncPhysicsToTransform(Entity entity)
 	{
+		ASSERT(entity.BelongsToScene(this), "This Scene cannot sync physics of entity of other scene.")
 		// Safety: Only works if physics is running
 		if (!m_PhysicsWorld) return;
 
@@ -662,6 +725,8 @@ namespace Engine {
 		const int32_t velocityIterations = 6;
 		const int32_t positionIterations = 2;
 		m_PhysicsWorld->Step(ts, velocityIterations, positionIterations);
+		// Fire pending callbacks
+		m_ContactListener->FireCallbacks();
 
 		// Retrieve transform from Box2D
 		auto view = m_Registry.view<Rigidbody2DComponent>();
@@ -718,96 +783,12 @@ namespace Engine {
 		// bind lua types and functions
 		BindLuaTypesAndFunctions(m_Lua, this);
 
-		// Create a cache to store file's returned class
-		std::unordered_map<std::filesystem::path, sol::table> script_cache;
-
 		// Iterate all entities with scripts
 		auto view = m_Registry.view<ScriptComponent, TagComponent>();
 		for (auto e : view)
 		{
 			Entity entity = { e, this };
-			auto [sc, tag] = view.get<ScriptComponent, TagComponent>(e);
-
-			if (sc.ScriptPath.empty())
-			{
-				// Just skip this entity, it has no script attached.
-				ENGINE_LOG_WARN("Entity {0} has script entity but no script path.", tag.Tag);
-				continue;
-			}
-
-			std::filesystem::path scriptPath = Project::GetAssetFileSystemPath(sc.ScriptPath);
-
-			// Prevents crashing if you deleted the file but didn't update the entity
-			if (!std::filesystem::exists(scriptPath))
-			{
-				ENGINE_LOG_ERROR("Script file not found: {0} for Entity: {1}", scriptPath.string(), tag.Tag);
-				continue;
-			}
-
-			// add script class to script cache if it does not exists, get from the cache otherwise
-			sol::table scriptClass;
-			if (script_cache.find(scriptPath) == script_cache.end())
-			{
-
-				// Load the file (Get the "Class" table)
-				// 1. LOAD the file (This checks for Syntax Errors)
-// Unlike safe_script_file, this does NOT run the script yet.
-				sol::load_result loadResult = m_Lua->load_file(scriptPath.string());
-
-				// 2. CHECK if loading succeeded
-				if (!loadResult.valid())
-				{
-					sol::error err = loadResult;
-					ENGINE_LOG_ERROR("Syntax Error in script '{0}'", scriptPath.string());
-					ENGINE_LOG_ERROR("Details: {0}", err.what());
-					continue; // Skip this entity safely
-				}
-
-				// 3. EXECUTE the script (This runs the code to return the table)
-				// Now we convert the loaded script into a protected function and run it.
-				sol::protected_function scriptFunc = loadResult;
-				sol::protected_function_result result = scriptFunc();
-
-				if (!result.valid())
-				{
-					// Handle Syntax Errors (e.g., "unexpected symbol near 'if'")
-					sol::error err = result;
-					ENGINE_LOG_ERROR("Failed to compile script '{0}'", scriptPath.string());
-					ENGINE_LOG_ERROR("Error: {0}", err.what());
-					continue; // Skip this entity
-				}
-
-				// Create the Instance
-				// We take the "Class" table returned by the script and deep copy it
-				// into our component's Instance slot.
-				scriptClass = result;
-				script_cache[scriptPath] = scriptClass;
-			}
-			else
-				scriptClass = script_cache.at(scriptPath);
-
-			sc.Instance = m_Lua->create_table();
-
-			// Setup metatable for inheritance (so Instance behaves like Class)
-			// This is Lua magic to make the instance allow variable overrides
-			sc.Instance[sol::metatable_key] = m_Lua->create_table_with("__index", scriptClass);
-
-			// Inject the Entity into the instance
-			// This is how the script knows which entity it belongs to!
-			sc.Instance["Entity"] = entity;
-
-			// Call OnCreate
-			sol::protected_function onCreate = sc.Instance["OnCreate"];
-			sol::protected_function_result result = onCreate(sc.Instance);
-
-			if (!result.valid())
-			{
-				sol::error err = result;
-				std::string errorMsg = err.what();
-
-				// 1. Log to Terminal (Standard)
-				ENGINE_LOG_ERROR("Script Runtime Error: {0}", errorMsg);
-			}
+			entity.OnScriptStart();
 		}
 	}
 
@@ -836,7 +817,7 @@ namespace Engine {
 		// IMPORTANT : DO NOT REMOVE
 		// clear runtime function registry
 		RuntimeData::ClearFunctionRegistry();
-
+		m_ScriptCache.clear();
 		delete m_Lua;
 		m_Lua = nullptr;
 	}
@@ -953,6 +934,12 @@ namespace Engine {
 	template<>
 	void Scene::OnComponentAdded<TransformComponent>(Entity entity, TransformComponent& component)
 	{
+		Entity parent = { entity.GetComponent<RelationshipComponent>().Parent, this };
+		if (parent)
+			component.GlobalTransform = parent.GetComponent<TransformComponent>().GlobalTransform * component.GetTransform();
+		else // it's scene root
+			component.GlobalTransform = glm::mat4(1);
+		
 	}
 
 	template<>
@@ -980,6 +967,7 @@ namespace Engine {
 	template<>
 	void Scene::OnComponentAdded<Rigidbody2DComponent>(Entity entity, Rigidbody2DComponent& component)
 	{
+		component.RuntimeBody = nullptr;
 		if(m_PhysicsWorld)
 			CreateRigidbody(entity, m_PhysicsWorld, this);
 	}
@@ -990,6 +978,7 @@ namespace Engine {
 		if (m_PhysicsWorld)
 		{
 			component.ClosestRigidbodyParent = entity.ClosestRigidbodyParent();
+			component.RuntimeFixture = nullptr;
 			SyncPhysicsToTransform(entity);
 		}
 	}
@@ -1005,6 +994,7 @@ namespace Engine {
 		if (m_PhysicsWorld)
 		{
 			component.ClosestRigidbodyParent = entity.ClosestRigidbodyParent();
+			component.RuntimeFixture = nullptr;
 			SyncPhysicsToTransform(entity);
 		}
 	}
