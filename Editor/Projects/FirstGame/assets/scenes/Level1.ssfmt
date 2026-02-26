@@ -89,7 +89,9 @@
                         "Density": 1.0,
                         "Friction": 0.5,
                         "Restitution": 0.0,
-                        "RestitutionThreshold": 0.5
+                        "RestitutionThreshold": 0.5,
+                        "Category": 2,
+                        "Mask": 65533
                     },
                     "ScriptComponent": {
                         "ScriptFile": "scripts\\Enemy.lua"
@@ -176,7 +178,9 @@
                         "Density": 1.0,
                         "Friction": 0.5,
                         "Restitution": 0.0,
-                        "RestitutionThreshold": 0.5
+                        "RestitutionThreshold": 0.5,
+                        "Category": 1,
+                        "Mask": 65535
                     },
                     "Children": []
                 },
@@ -315,7 +319,9 @@
                 "Density": 1.0,
                 "Friction": 0.5,
                 "Restitution": 0.0,
-                "RestitutionThreshold": 0.5
+                "RestitutionThreshold": 0.5,
+                "Category": 1,
+                "Mask": 65535
             },
             "ScriptComponent": {
                 "ScriptFile": "scripts\\Charactermovement.lua"

@@ -31,7 +31,6 @@ namespace Engine {
 			return GetProjectDirectory() / s_ActiveProject->m_Config.AssetDirectory;
 		}
 
-		// TODO(Yan): move to asset manager when we have one
 		static std::filesystem::path GetAssetFileSystemPath(const std::filesystem::path& path)
 		{
 			ASSERT(s_ActiveProject, "No Active Project set.");

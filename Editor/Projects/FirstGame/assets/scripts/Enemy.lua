@@ -1,6 +1,7 @@
 local AnimationConfig = {
     Walk    = { Row = 0, Column = 0, Count = 9, Speed = 0.15 },
     Attack  = { Row = 9, Column = 0, Count = 5, Speed = 0.20 },
+    Hurt    = { Row = 3, Column = 0, Count = 3, Speed = 0.25 },
     Death   = { Row = 5, Column = 0, Count = 2, Speed = 0.5 },
 }
 
@@ -10,12 +11,14 @@ local Enemy = {
     TimeElapsed = 0.0,
     MovementSpeed = 2.0,
     Alive = true,
-    FacingDirection = 1
+    FacingDirection = 1,
+    HP = 3
 }
 
 function Enemy:OnCreate()
     self.CurrentStates = {
         ["Walk"] = true,
+        ["Hurt"] = false,
         ["Attack"] = false,
         ["Death"] = false
     }
@@ -25,12 +28,14 @@ function Enemy:OnDeadCallback()
 
     self.CurrentStates["Death"] = false
     self.Alive = true
+    self.HP = 3
+    
 end
 
 function Enemy:OnUpdate(ts)
     if self.Alive then
 
-        local priority = {"Death", "Attack", "Walk"}
+        local priority = {"Death", "Attack", "Hurt", "Walk"}
         for _, p in ipairs(priority) do
             if self.CurrentStates[p] then
                 if self.AnimationState ~= p then
@@ -90,10 +95,16 @@ end
 
 function Enemy:OnCollisionBegin(otherEntity)
     if otherEntity:GetName() == "Fireball" then
-        print("Enemy died")
+        self.HP = self.HP - 1
         otherEntity:SetEnabled(false)
-        self.CurrentStates["Death"] = true
-        Physics.SetEnabled(self.Entity, false)
+        if self.HP == 0 then
+            print("Enemy died")
+            self.CurrentStates["Death"] = true
+            Physics.SetEnabled(self.Entity, false)
+        else
+            print("Enemy " .. self.Entity:GetName() .. " HP reduced to ".. self.HP)
+            self.CurrentStates["Hurt"] = true
+        end
     elseif otherEntity:GetName() == "Player" then
         self.CurrentStates["Attack"] = true
     end

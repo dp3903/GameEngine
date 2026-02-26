@@ -167,6 +167,8 @@ namespace Engine {
                 { "Friction",               bc2c.Friction },
                 { "Restitution",            bc2c.Restitution },
                 { "RestitutionThreshold",   bc2c.RestitutionThreshold },
+                { "Category",               bc2c.Category },
+                { "Mask",                   bc2c.Mask },
             };
         }
 
@@ -182,6 +184,8 @@ namespace Engine {
                 { "Friction",               cc2c.Friction },
                 { "Restitution",            cc2c.Restitution },
                 { "RestitutionThreshold",   cc2c.RestitutionThreshold },
+                { "Category",               cc2c.Category },
+                { "Mask",                   cc2c.Mask },
             };
         }
 
@@ -329,6 +333,8 @@ namespace Engine {
             bc2c.Friction = bc2Json["Friction"];
             bc2c.Restitution = bc2Json["Restitution"];
             bc2c.RestitutionThreshold = bc2Json["RestitutionThreshold"];
+            bc2c.Category = bc2Json["Category"];
+            bc2c.Mask = bc2Json["Mask"];
         }
 
         // Load CircleCollider2D
@@ -343,6 +349,8 @@ namespace Engine {
             cc2c.Friction = cc2Json["Friction"];
             cc2c.Restitution = cc2Json["Restitution"];
             cc2c.RestitutionThreshold = cc2Json["RestitutionThreshold"];
+            cc2c.Category = cc2Json["Category"];
+            cc2c.Mask = cc2Json["Mask"];
         }
 
         // Load Text

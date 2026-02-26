@@ -169,11 +169,12 @@ namespace Engine {
 		glm::vec2 Offset = { 0.0f, 0.0f };
 		glm::vec2 Size = { 1.0f, 1.0f };
 
-		// TODO: move into physics material in the future maybe
 		float Density = 1.0f;
 		float Friction = 0.5f;
 		float Restitution = 0.0f;
 		float RestitutionThreshold = 0.5f;
+		uint16_t Category = 0x0001;		// Box2D Default: I am layer 1 (0x0001)
+		uint16_t Mask = 0xFFFF;		// Box2D Default: I collide with everything (0xFFFF)
 
 		// storage for runtime
 		void* RuntimeFixture = nullptr;
@@ -192,11 +193,12 @@ namespace Engine {
 		glm::vec2 Offset = { 0.0f, 0.0f };
 		float Radius = 0.5f;
 
-		// TODO: move into physics material in the future maybe
 		float Density = 1.0f;
 		float Friction = 0.5f;
 		float Restitution = 0.0f;
 		float RestitutionThreshold = 0.5f;
+		uint16_t Category = 0x0001;		// Box2D Default: I am layer 1 (0x0001)
+		uint16_t Mask = 0xFFFF;		// Box2D Default: I collide with everything (0xFFFF)
 
 		// storage for runtime
 		void* RuntimeFixture = nullptr;

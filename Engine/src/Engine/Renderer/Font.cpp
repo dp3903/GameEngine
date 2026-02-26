@@ -57,7 +57,6 @@ namespace Engine {
 
 		std::string fileString = filepath.string();
 
-		// TODO(Yan): msdfgen::loadFontData loads from memory buffer which we'll need 
 		msdfgen::FontHandle* font = msdfgen::loadFont(ft, fileString.c_str());
 		if (!font)
 		{

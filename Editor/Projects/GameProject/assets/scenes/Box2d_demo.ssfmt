@@ -2,7 +2,7 @@
     "Scene": "Untitled Scene",
     "Gravity": [
         0.0,
-        -9.8
+        -9.800000190734863
     ],
     "Entities": [
         {
@@ -51,8 +51,11 @@
                 "Density": 1.0,
                 "Friction": 0.5,
                 "Restitution": 0.7599999904632568,
-                "RestitutionThreshold": 0.7099999785423279
-            }
+                "RestitutionThreshold": 0.7099999785423279,
+                "Category": 1,
+                "Mask": 65535
+            },
+            "Children": []
         },
         {
             "Entity": 3180503428376048118,
@@ -100,8 +103,11 @@
                 "Density": 1.0,
                 "Friction": 0.5,
                 "Restitution": 0.0,
-                "RestitutionThreshold": 0.5
-            }
+                "RestitutionThreshold": 0.5,
+                "Category": 1,
+                "Mask": 65535
+            },
+            "Children": []
         },
         {
             "Entity": 14187066813989703363,
@@ -137,7 +143,8 @@
                 },
                 "Primary": true,
                 "FixedAspectRatio": false
-            }
+            },
+            "Children": []
         },
         {
             "Entity": 15398695261524873696,
@@ -185,8 +192,11 @@
                 "Density": 1.0,
                 "Friction": 0.5,
                 "Restitution": 0.0,
-                "RestitutionThreshold": 0.5
-            }
+                "RestitutionThreshold": 0.5,
+                "Category": 1,
+                "Mask": 65535
+            },
+            "Children": []
         }
     ]
 }

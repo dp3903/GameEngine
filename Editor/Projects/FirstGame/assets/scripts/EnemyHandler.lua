@@ -13,7 +13,7 @@ local EnemiesMetaData = {
     Parent = nil,
     Entities = {},
     NextEntityIndex = 1,
-    EntityCount = 10
+    EntityCount = 20
 }
 
 local EnemyDirections = {}

@@ -125,6 +125,8 @@ namespace Engine {
 			fixtureDef.friction = bc2d.Friction;
 			fixtureDef.restitution = bc2d.Restitution;
 			fixtureDef.restitutionThreshold = bc2d.RestitutionThreshold;
+			fixtureDef.filter.categoryBits = bc2d.Category;
+			fixtureDef.filter.maskBits = bc2d.Mask;
 			fixtureDef.userData.pointer = (uintptr_t)(uint32_t)m_EntityHandle;
 
 			if (bc2d.RuntimeFixture && bc2d.ClosestRigidbodyParent != entt::null)
@@ -160,6 +162,8 @@ namespace Engine {
 			fixtureDef.friction = cc2d.Friction;
 			fixtureDef.restitution = cc2d.Restitution;
 			fixtureDef.restitutionThreshold = cc2d.RestitutionThreshold;
+			fixtureDef.filter.categoryBits = cc2d.Category;
+			fixtureDef.filter.maskBits = cc2d.Mask;
 			fixtureDef.userData.pointer = (uintptr_t)(uint32_t)m_EntityHandle;
 
 			if (cc2d.RuntimeFixture && cc2d.ClosestRigidbodyParent != entt::null)

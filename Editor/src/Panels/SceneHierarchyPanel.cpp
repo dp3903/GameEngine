@@ -576,7 +576,43 @@ namespace Engine {
 				ImGui::DragFloat("Density", &component.Density, 0.01f, 0.0f, 1.0f);
 				ImGui::DragFloat("Friction", &component.Friction, 0.01f, 0.0f, 1.0f);
 				ImGui::DragFloat("Restitution", &component.Restitution, 0.01f, 0.0f, 1.0f);
-				ImGui::DragFloat("Restitution Threshold", &component.RestitutionThreshold, 0.01f, 0.0f);  
+				ImGui::DragFloat("Restitution Threshold", &component.RestitutionThreshold, 0.01f, 0.0f);
+				if (ImGui::TreeNode("My Categories"))
+				{
+					for (int i = 0; i < 16; i++)
+					{
+						// Check if the i-th bit is currently 1
+						bool active = (component.Category & (1 << i)) != 0;
+
+						if (ImGui::Checkbox((std::string("Category-") + std::to_string(i)).c_str(), &active))
+						{
+							if (active)
+								component.Category |= (1 << i);  // Set the bit to 1
+							else
+								component.Category &= ~(1 << i); // Clear the bit to 0
+						}
+					}
+					ImGui::TreePop();
+				}
+
+				// --- MASK: What can I hit? ---
+				if (ImGui::TreeNode("Collidable Categories"))
+				{
+					for (int i = 0; i < 16; i++)
+					{
+						// Check if the i-th bit is currently 1
+						bool active = (component.Mask & (1 << i)) != 0;
+
+						if (ImGui::Checkbox((std::string("Category-") + std::to_string(i)).c_str(), &active))
+						{
+							if (active)
+								component.Mask |= (1 << i);  // Set the bit to 1
+							else
+								component.Mask &= ~(1 << i); // Clear the bit to 0
+						}
+					}
+					ImGui::TreePop();
+				}
 			});
 
 		DrawComponent<CircleCollider2DComponent>("Circle Collider 2D", entity, [](CircleCollider2DComponent& component)
@@ -587,6 +623,42 @@ namespace Engine {
 				ImGui::DragFloat("Friction", &component.Friction, 0.01f, 0.0f, 1.0f);
 				ImGui::DragFloat("Restitution", &component.Restitution, 0.01f, 0.0f, 1.0f);
 				ImGui::DragFloat("Restitution Threshold", &component.RestitutionThreshold, 0.01f, 0.0f);
+				if (ImGui::TreeNode("My Categories"))
+				{
+					for (int i = 0; i < 16; i++)
+					{
+						// Check if the i-th bit is currently 1
+						bool active = (component.Category & (1 << i)) != 0;
+
+						if (ImGui::Checkbox((std::string("Category-") + std::to_string(i)).c_str(), &active))
+						{
+							if (active)
+								component.Category |= (1 << i);  // Set the bit to 1
+							else
+								component.Category &= ~(1 << i); // Clear the bit to 0
+						}
+					}
+					ImGui::TreePop();
+				}
+
+				// --- MASK: What can I hit? ---
+				if (ImGui::TreeNode("Collidable Categories"))
+				{
+					for (int i = 0; i < 16; i++)
+					{
+						// Check if the i-th bit is currently 1
+						bool active = (component.Mask & (1 << i)) != 0;
+
+						if (ImGui::Checkbox((std::string("Category-") + std::to_string(i)).c_str(), &active))
+						{
+							if (active)
+								component.Mask |= (1 << i);  // Set the bit to 1
+							else
+								component.Mask &= ~(1 << i); // Clear the bit to 0
+						}
+					}
+					ImGui::TreePop();
+				}
 			});
 
 		DrawComponent<TextComponent>("Text Renderer", entity, [](TextComponent& component)
@@ -606,7 +678,6 @@ namespace Engine {
 						const wchar_t* path = (const wchar_t*)payload->Data;
 						std::filesystem::path fontPath = Project::GetAssetFileSystemPath(path);
 						component.FontAsset = Font::Create(fontPath);
-						// TODO: Trigger a reload here!
 					}
 					ImGui::EndDragDropTarget();
 				}
@@ -633,7 +704,6 @@ namespace Engine {
 						const wchar_t* path = (const wchar_t*)payload->Data;
 						std::filesystem::path scriptPath(path);
 						component.ScriptPath = scriptPath.string();
-						// TODO: Trigger a reload here!
 					}
 					ImGui::EndDragDropTarget();
 				}
