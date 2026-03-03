@@ -96,7 +96,52 @@
                     "ScriptComponent": {
                         "ScriptFile": "scripts\\Enemy.lua"
                     },
-                    "Children": []
+                    "Children": [
+                        {
+                            "Entity": 8706414892451703471,
+                            "TagComponent": {
+                                "Tag": "HP Indicator"
+                            },
+                            "TransformComponent": {
+                                "Translation": [
+                                    0.0,
+                                    0.0,
+                                    0.0
+                                ],
+                                "Rotation": [
+                                    0.0,
+                                    0.0,
+                                    0.0
+                                ],
+                                "Scale": [
+                                    0.20000000298023224,
+                                    0.20000000298023224,
+                                    1.0
+                                ]
+                            },
+                            "SpriteRendererComponent": {
+                                "Color": [
+                                    1.0,
+                                    1.0,
+                                    1.0,
+                                    1.0
+                                ],
+                                "Texture": {
+                                    "TexturePath": "textures\\HP.png",
+                                    "TilingFactor": 1.0,
+                                    "FlipX": false,
+                                    "FlipY": false,
+                                    "SubTexture": {
+                                        "SpriteWidth": 3,
+                                        "SpriteHeight": 2,
+                                        "XSpriteIndex": 0,
+                                        "YSpriteIndex": 1
+                                    }
+                                }
+                            },
+                            "Children": []
+                        }
+                    ]
                 }
             ]
         },
@@ -130,6 +175,46 @@
                 "ScriptFile": "scripts\\Environment.lua"
             },
             "Children": [
+                {
+                    "Entity": 2320791356991957885,
+                    "TagComponent": {
+                        "Tag": "Score"
+                    },
+                    "TransformComponent": {
+                        "Translation": [
+                            0.0,
+                            0.4000000059604645,
+                            0.0
+                        ],
+                        "Rotation": [
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "Scale": [
+                            0.10000000149011612,
+                            0.10000000149011612,
+                            1.0
+                        ]
+                    },
+                    "TextComponent": {
+                        "TextString": "Score: 0",
+                        "Color": [
+                            0.8501946926116943,
+                            0.009755892679095268,
+                            0.9950980544090271,
+                            1.0
+                        ],
+                        "Scale": 1.0,
+                        "Allign": [
+                            -1.5,
+                            0.0
+                        ],
+                        "Kerning": 0.0,
+                        "LineSpacing": 0.0
+                    },
+                    "Children": []
+                },
                 {
                     "Entity": 3970987660540739155,
                     "TagComponent": {

@@ -10,10 +10,12 @@ function player:OnCreate()
     PlayerAnimationStatus:OnCreate()
     PlayerAnimationStatus.OnDeadCallback = MyCallback
     print("Player initialized with Animation System")
+    SetGlobal("Score", 0)
 end
 
 function player:OnUpdate(ts)
     PlayerAnimationStatus:OnUpdate(ts, self.Entity)
+    GetEntityByTag("Score").Text.TextString = "Score: " .. GetGlobal("Score")
 end
 
 function player:OnCollisionBegin(otherEntity)

@@ -12,7 +12,8 @@ local Enemy = {
     MovementSpeed = 2.0,
     Alive = true,
     FacingDirection = 1,
-    HP = 3
+    MaxHP = 5,
+    HP = 5
 }
 
 function Enemy:OnCreate()
@@ -28,8 +29,18 @@ function Enemy:OnDeadCallback()
 
     self.CurrentStates["Death"] = false
     self.Alive = true
-    self.HP = 3
-    
+    self.HP = self.MaxHP
+
+end
+
+function Enemy:HPSpriteUpdate()
+    local hpIndicator = self.Entity.Relation.FirstChild -- Assuming the HP indicator is the first child of the enemy entity
+    if hpIndicator then
+        local row = math.floor(self.HP / 3)
+        hpIndicator.SpriteRenderer.YSpriteIndex = row
+        local col = 2 - self.HP % 3
+        hpIndicator.SpriteRenderer.XSpriteIndex = col
+    end
 end
 
 function Enemy:OnUpdate(ts)
@@ -90,6 +101,8 @@ function Enemy:OnUpdate(ts)
             local direction = CallFunction("GetEnemyDirection", self.Entity:GetUUID())
             Physics.SetLinearVelocity(self.Entity, Vec2.new(direction * self.MovementSpeed, 0))
         end
+
+        self:HPSpriteUpdate()
     end
 end
 
@@ -101,9 +114,11 @@ function Enemy:OnCollisionBegin(otherEntity)
             print("Enemy died")
             self.CurrentStates["Death"] = true
             Physics.SetEnabled(self.Entity, false)
+            SetGlobal("Score", GetGlobal("Score") + 2)
         else
             print("Enemy " .. self.Entity:GetName() .. " HP reduced to ".. self.HP)
             self.CurrentStates["Hurt"] = true
+            SetGlobal("Score", GetGlobal("Score") + 1)
         end
     elseif otherEntity:GetName() == "Player" then
         self.CurrentStates["Attack"] = true
