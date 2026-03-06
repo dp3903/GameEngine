@@ -1,6 +1,6 @@
 local EnemiesHandler = {
     ActiveEnemies = {},
-    SpawnRate = 0.1,
+    SpawnRate = 0.5,
     SpawnVariance = 0.5,
     Cooldown = 0.0,
     LeftSpawnPoint = Vec3.new(-8.0, -1.0, 0),

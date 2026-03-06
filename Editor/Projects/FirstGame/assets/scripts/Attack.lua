@@ -1,7 +1,7 @@
 local AttackEffects = {
     -- Table to hold our active projectiles
     ActiveProjectiles = {},
-    Cooldown = 0.5, -- Time between attacks
+    Cooldown = 0.3, -- Time between attacks
     TimeSinceLastAttack = 0.0
 }
 

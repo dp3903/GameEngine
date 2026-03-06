@@ -220,7 +220,17 @@ namespace Engine
 		m_Lua->new_usertype<glm::vec2>("Vec2",
 			sol::constructors<glm::vec2(), glm::vec2(float, float), glm::vec2(float)>(),
 			"x", &glm::vec2::x,
-			"y", &glm::vec2::y
+			"y", &glm::vec2::y,
+
+			// Operator Overloads
+			sol::meta_function::multiplication, sol::overload(
+				// vec2 * vec2 
+				[](const glm::vec2& v1, const glm::vec2& v2) { return v1 * v2; },
+				// vec2 * float (Scaling all elements)
+				[](const glm::vec2& v, float f) { return v * f; }
+			),
+			sol::meta_function::addition, [](const glm::vec2& a, const glm::vec2& b) { return a + b; },
+			sol::meta_function::subtraction, [](const glm::vec2& a, const glm::vec2& b) { return a - b; }
 		);
 		m_Lua->new_usertype<glm::vec3>("Vec3",
 			sol::constructors<glm::vec3(), glm::vec3(float, float, float), glm::vec3(float)>(),
@@ -229,7 +239,17 @@ namespace Engine
 			"z", &glm::vec3::z,
 			"r", &glm::vec3::r,
 			"g", &glm::vec3::g,
-			"b", &glm::vec3::b
+			"b", &glm::vec3::b,
+
+			// Operator Overloads
+			sol::meta_function::multiplication, sol::overload(
+				// vec2 * vec2 
+				[](const glm::vec3& v1, const glm::vec3& v2) { return v1 * v2; },
+				// vec2 * float (Scaling all elements)
+				[](const glm::vec3& v, float f) { return v * f; }
+			),
+			sol::meta_function::addition, [](const glm::vec3& a, const glm::vec3& b) { return a + b; },
+			sol::meta_function::subtraction, [](const glm::vec3& a, const glm::vec3& b) { return a - b; }
 		);
 		m_Lua->new_usertype<glm::vec4>("Vec4",
 			sol::constructors<glm::vec4(), glm::vec4(float, float, float, float), glm::vec4(float)>(),
@@ -240,7 +260,17 @@ namespace Engine
 			"r", &glm::vec4::r,
 			"g", &glm::vec4::g,
 			"b", &glm::vec4::b,
-			"a", &glm::vec4::a
+			"a", &glm::vec4::a,
+
+			// Operator Overloads
+			sol::meta_function::multiplication, sol::overload(
+				// vec2 * vec2 
+				[](const glm::vec4& v1, const glm::vec4& v2) { return v1 * v2; },
+				// vec2 * float (Scaling all elements)
+				[](const glm::vec4& v, float f) { return v * f; }
+			),
+			sol::meta_function::addition, [](const glm::vec4& a, const glm::vec4& b) { return a + b; },
+			sol::meta_function::subtraction, [](const glm::vec4& a, const glm::vec4& b) { return a - b; }
 		);
 		m_Lua->new_usertype<glm::mat4>("Mat4",
 			sol::constructors<glm::mat4(float), glm::mat4()>(),
@@ -471,6 +501,11 @@ namespace Engine
 			"ProjectionType", sol::property(&SceneCamera::GetProjectionType, &SceneCamera::SetProjectionType),
 			"AspectRatio", sol::property(&SceneCamera::GetAspectRatio)
 		);
+		m_Lua->new_usertype<CameraComponent>("CameraComponent",
+			"Camera", &CameraComponent::Camera,
+			"Primary", &CameraComponent::Primary,
+			"FixedAspectRatio", &CameraComponent::FixedAspectRatio
+		);
 		m_Lua->new_usertype<Entity>("Entity",
 			"GetUUID", [](Entity& entity) -> std::string { return std::to_string((uint64_t)entity.GetUUID()); },
 			"GetName", &Entity::GetName,
@@ -491,6 +526,7 @@ namespace Engine
 			BIND_COMPONENT_PROPERTY("CircleCollider", CircleCollider2DComponent),
 			BIND_COMPONENT_PROPERTY("Text", TextComponent),
 			BIND_COMPONENT_PROPERTY("Relation", RelationshipComponent),
+			BIND_COMPONENT_PROPERTY("CameraComponent", CameraComponent),
 
 #undef BIND_COMPONENT_PROPERTY
 			
@@ -502,24 +538,28 @@ namespace Engine
 			BIND_ADD_COMPONENT_FUNCTION("AddBoxCollider", BoxCollider2DComponent),
 			BIND_ADD_COMPONENT_FUNCTION("AddCircleCollider", CircleCollider2DComponent),
 			BIND_ADD_COMPONENT_FUNCTION("AddText", TextComponent),
+			BIND_ADD_COMPONENT_FUNCTION("AddCameraComponent", CameraComponent),
 #undef BIND_ADD_COMPONENT_FUNCTION
 
 			"GetScale", [](Entity entity) -> glm::vec3 { return entity.GetComponent<TransformComponent>().Scale; },
 			"SetScale", [scene](Entity entity, glm::vec3 scale) {
 				entity.GetComponent<TransformComponent>().Scale = scale;
-				scene->UpdateGlobalTransforms();
+				auto& parent = Entity{ entity.GetComponent<RelationshipComponent>().Parent, scene };
+				scene->UpdateTransformRecursive(entity, parent.GetComponent<TransformComponent>().GlobalTransform);
 				scene->SyncPhysicsToTransform(entity);
 			},
 			"GetPosition", [](Entity entity) -> glm::vec3 { return entity.GetComponent<TransformComponent>().Translation; },
 			"SetPosition", [scene](Entity entity, glm::vec3 pos) {
 				entity.GetComponent<TransformComponent>().Translation = pos;
-				scene->UpdateGlobalTransforms();
+				auto& parent = Entity{ entity.GetComponent<RelationshipComponent>().Parent, scene };
+				scene->UpdateTransformRecursive(entity, parent.GetComponent<TransformComponent>().GlobalTransform);
 				scene->SyncPhysicsToTransform(entity);
 			},
 			"GetRotation", [](Entity entity) -> glm::vec3 { return entity.GetComponent<TransformComponent>().Rotation; },
 			"SetRotation", [scene](Entity entity, glm::vec3 rot) {
 				entity.GetComponent<TransformComponent>().Rotation = rot;
-				scene->UpdateGlobalTransforms();
+				auto& parent = Entity{ entity.GetComponent<RelationshipComponent>().Parent, scene };
+				scene->UpdateTransformRecursive(entity, parent.GetComponent<TransformComponent>().GlobalTransform);
 				scene->SyncPhysicsToTransform(entity);
 			},
 			"IsEnabled", [](Entity entity) -> bool {return entity.isEnabled(); },
@@ -605,8 +645,8 @@ namespace Engine
 				return sol::make_object(*m_Lua, sol::nil);
 			}
 
-			// Return by REFERENCE
-			return sol::make_object(*m_Lua, std::ref(primaryCam.GetComponent<CameraComponent>().Camera));
+			// Return camera entity
+			return sol::make_object(*m_Lua, primaryCam);
 		});
 		// get viewport dimensions
 		sceneTable.set_function("GetViewportWidth", [scene]() -> uint32_t {
@@ -614,6 +654,10 @@ namespace Engine
 		});
 		sceneTable.set_function("GetViewportHeight", [scene]() -> uint32_t {
 			return scene->m_ViewportHeight;
+		});
+		// get viewport location
+		sceneTable.set_function("GetViewportLocation", [scene]() -> glm::vec2 {
+			return scene->m_VieportLocation;
 		});
 
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -630,7 +674,10 @@ namespace Engine
 		inputTable.set_function("IsMouseButtonPressed", &Input::IsMouseButtonPressed);
 		inputTable.set_function("GetMouseX", &Input::GetMouseX);
 		inputTable.set_function("GetMouseY", &Input::GetMouseY);
-		inputTable.set_function("GetMousePosition", &Input::GetMousePosition);
+		inputTable.set_function("GetMousePosition", []() -> glm::vec2 {
+			auto& pos = Input::GetMousePosition();
+			return glm::vec2(pos.first, pos.second);
+			});
 
 		////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		// Bind Box2D functions to 'Physics' table
@@ -651,6 +698,13 @@ namespace Engine
 				}
 
 				return false;
+			};
+
+		physicsTable["SetGravityScale"] = [ExecuteOnPhysicsBody](Entity& entity, float scale) {
+			ExecuteOnPhysicsBody(entity, [&](b2Body* body) {
+				body->SetGravityScale(scale);
+				return true;
+				});
 			};
 
 		physicsTable["ApplyLinearImpulse"] = [ExecuteOnPhysicsBody](Entity& entity, glm::vec2 impulse, glm::vec2 point, bool wake) {
@@ -734,6 +788,18 @@ namespace Engine
 			ExecuteOnPhysicsBody(entity, [&](b2Body* body) {
 				body->SetEnabled(wake);
 				return true;
+				});
+			};
+
+		physicsTable["GetMass"] = [ExecuteOnPhysicsBody](Entity& entity) {
+			ExecuteOnPhysicsBody(entity, [&](b2Body* body) {
+				return body->GetMass();
+				});
+			};
+
+		physicsTable["GetGravityScale"] = [ExecuteOnPhysicsBody](Entity& entity) {
+			ExecuteOnPhysicsBody(entity, [&](b2Body* body) {
+				return body->GetGravityScale();
 				});
 			};
 

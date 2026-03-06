@@ -545,6 +545,9 @@ namespace Engine {
 
 	void Scene::UpdateTransformRecursive(entt::entity entity, const glm::mat4& parentTransform)
 	{
+		// Optimization: dont propogate down disabled hierarchy
+		if (m_Registry.has<DisabledComponent>(entity))
+			return;
 		// Calculate Global = Parent * Local
 		// (Optimization: If entity == m_SceneRoot, we know it's Identity, but the math holds up anyway)
 		auto& tc = m_Registry.get<TransformComponent>(entity);

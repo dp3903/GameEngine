@@ -1,11 +1,11 @@
 local AttackEffects = require("scripts.Attack")
 
 local AnimationConfig = {
-    Idle    = { Row = 6, Column = 0, Count = 4, Speed = 0.20 },  
-    Walk    = { Row = 1, Column = 0, Count = 6, Speed = 0.15 },  
-    Jump    = { Row = 5, Column = 3, Count = 4, Speed = 0.25 },
-    Attack  = { Row =11, Column = 0, Count = 4, Speed = 0.15 },
-    Death   = { Row = 8, Column = 0, Count = 8, Speed = 0.10 },
+    Idle    = { Row = 6, Column = 0, Count = 4, Speed = 0.20, StartFrame = 0 },  
+    Walk    = { Row = 1, Column = 0, Count = 6, Speed = 0.15, StartFrame = 0 },  
+    Jump    = { Row = 5, Column = 3, Count = 4, Speed = 0.25, StartFrame = 0 },
+    Attack  = { Row =11, Column = 0, Count = 4, Speed = 0.15, StartFrame = 2 },
+    Death   = { Row = 8, Column = 0, Count = 8, Speed = 0.10, StartFrame = 0 },
 }
 
 local PlayerAnimationStatus = {
@@ -73,7 +73,7 @@ function PlayerAnimationStatus:OnUpdate(ts, playerEntity)
         for _, p in ipairs(priority) do
             if self.CurrentStates[p] then
                 if self.AnimationState ~= p then
-                    self.FrameIndex = 0 -- Reset to first frame of new animation
+                    self.FrameIndex = AnimationConfig[p].StartFrame -- Reset to first frame of new animation
                     self.TimeElapsed = 0.0 -- Reset timer for new animation
                     print("Switching to animation: " .. p)
                 end
@@ -87,6 +87,20 @@ function PlayerAnimationStatus:OnUpdate(ts, playerEntity)
         -- Accumulate time
         self.TimeElapsed = self.TimeElapsed + ts
 
+        
+        -- X Index = Which Frame (Column)
+        playerEntity.SpriteRenderer.XSpriteIndex = self.FrameIndex + animData.Column
+        
+        -- Y Index = Which Action (Row)
+        playerEntity.SpriteRenderer.YSpriteIndex = animData.Row
+        
+        -- Frame based logic (e.g. apply damage on specific attack frames)
+        if self.CurrentStates["Attack"] == true and self.FrameIndex == 2 then
+            local playerPos = playerEntity:GetPosition()
+            local direction = Vec2.new(self.FacingDirection, 0.0)
+            AttackEffects:Emit(Vec3.new(playerPos.x + (self.FacingDirection * 0.5), playerPos.y, playerPos.z), direction, 5.0, 2.0)
+        end
+        
         -- If enough time passed, advance the frame
         if self.TimeElapsed >= animData.Speed then
             self.TimeElapsed = self.TimeElapsed - animData.Speed
@@ -108,19 +122,6 @@ function PlayerAnimationStatus:OnUpdate(ts, playerEntity)
                     playerEntity:SetEnabled(false)
                 end
             end
-        end
-
-        -- X Index = Which Frame (Column)
-        playerEntity.SpriteRenderer.XSpriteIndex = self.FrameIndex + animData.Column
-        
-        -- Y Index = Which Action (Row)
-        playerEntity.SpriteRenderer.YSpriteIndex = animData.Row
-
-        -- Frame based logic (e.g. apply damage on specific attack frames)
-        if self.CurrentStates["Attack"] == true and self.FrameIndex == 2 then
-            local playerPos = playerEntity:GetPosition()
-            local direction = Vec2.new(self.FacingDirection, 0.0)
-            AttackEffects:Emit(Vec3.new(playerPos.x + (self.FacingDirection * 0.5), playerPos.y, playerPos.z), direction, 5.0, 2.0)
         end
     else
         -- print("Player is dead")

@@ -56,6 +56,7 @@ namespace Engine {
 
 		std::string m_SceneName = "Untitled Scene";
 		glm::vec2 m_Acc = { 0.0f, -9.8f };
+		glm::vec2 m_VieportLocation = { 0.0f,0.0f };
 
 	private:
 		template<typename T>

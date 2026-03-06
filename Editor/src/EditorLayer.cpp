@@ -75,9 +75,23 @@ namespace Engine
 
 	void EditorLayer::OnUpdate(float ts)
 	{
-
-		static float rotation = 0.0f;
-		rotation += ts * 50.0f;
+		static float timeSinceLastCheck = 0.0f;
+		static int noOfMeasures = 0;
+		static float averageTimePerFrameOfDuration = 0.0f;
+		timeSinceLastCheck += ts;
+		averageTimePerFrameOfDuration = (averageTimePerFrameOfDuration * noOfMeasures + ts) / (noOfMeasures + 1);
+		noOfMeasures++;
+		if (timeSinceLastCheck >= m_FPSCheckInterval)
+		{
+			float currentFPS = 1.0f / averageTimePerFrameOfDuration;
+			// Alternatively, you can use ImGui's built-in framerate tracker:
+			// float currentFPS = ImGui::GetIO().Framerate;
+			m_FPSHistory[m_FPSOffset] = currentFPS;
+			m_FPSOffset = (m_FPSOffset + 1) % 10;
+			timeSinceLastCheck = 0;
+			noOfMeasures = 0;
+			averageTimePerFrameOfDuration = 0;
+		}
 
 		// Resize
 		if (Engine::FramebufferSpecification spec = m_Framebuffer->GetSpecification();
@@ -212,6 +226,8 @@ namespace Engine
 			{
 				ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
 				ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+				ImVec2 dockSpacePosScreen = ImGui::GetWindowPos();
+				m_DockspaceLocation = { dockSpacePosScreen.x,dockSpacePosScreen.y };
 			}
 			style.WindowMinSize.x = minWinSizeX;
 
@@ -754,6 +770,43 @@ namespace Engine
 			name = m_HoveredEntity.GetComponent<TagComponent>().Tag;
 		ImGui::Text("Hovered Entity: %s", name.c_str());
 
+		// Print the exact numbers
+		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
+			1000.0f / ImGui::GetIO().Framerate,
+			ImGui::GetIO().Framerate);
+
+		// Draw the graph
+		float graphHeight = 180.0f;
+		float graphWidth = ImGui::GetContentRegionAvail().x - 40.0f;
+
+		// Save the starting Y position before we draw anything
+		float startY = ImGui::GetCursorPosY();
+
+		// 1. Draw the graph
+		ImGui::BeginGroup();
+		ImGui::PlotLines("##FPS", m_FPSHistory, 10, m_FPSOffset, "", 0.0f, 90.0f, ImVec2(graphWidth, graphHeight));
+		ImGui::EndGroup();
+
+		ImGui::SameLine();
+
+		// 2. Draw the Y-axis scale next to it using absolute offsets
+		const std::string labels[7] = { "90", "75", "60", "45", "30", "15", " 0" };
+		ImGui::BeginGroup();
+
+		float textHeight = ImGui::GetTextLineHeight();
+
+		for (int i = 0; i < 7; ++i)
+		{
+			// Calculate exact pixel offset. 
+			// We subtract textHeight from graphHeight so the final "0" aligns exactly with the bottom edge.
+			float targetY = startY + (i * ((graphHeight - textHeight) / 6.0f));
+
+			ImGui::SetCursorPosY(targetY);
+			ImGui::Text(labels[i].c_str());
+		}
+
+		ImGui::EndGroup();
+
 		ImGui::End();
 	}
 
@@ -830,6 +883,12 @@ namespace Engine
 		auto viewportOffset = ImGui::GetWindowPos();
 		m_ViewportBounds[0] = { viewportMinRegion.x + viewportOffset.x, viewportMinRegion.y + viewportOffset.y };
 		m_ViewportBounds[1] = { viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y };
+		
+		m_ActiveScene->m_VieportLocation = m_ViewportBounds[0];
+		if (ImGui::GetWindowDockID() != 0) {
+			// The window is docked
+			m_ActiveScene->m_VieportLocation -= m_DockspaceLocation;
+		}
 
 		m_ViewportFocused = ImGui::IsWindowFocused();
 		m_ViewportHovered = ImGui::IsWindowHovered();
