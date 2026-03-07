@@ -123,6 +123,7 @@ function Enemy:OnCollisionBegin(otherEntity)
     elseif otherEntity:GetName() == "Player" then
         self.CurrentStates["Attack"] = true
     end
+    CallFunction("EnemyCollisionBeginHandler", self.Entity, otherEntity)
 end
 
 function Enemy:OnDestroy()

@@ -1,3 +1,5 @@
+local ParticleSystem = require("scripts.ParticleSystem")
+
 local EnemiesHandler = {
     ActiveEnemies = {},
     SpawnRate = 0.5,
@@ -24,7 +26,16 @@ function GetEnemyDirection(entityId)
     return EnemyDirections[entityId]
 end
 
+function EnemyCollisionBeginHandler(enemyEntity, otherEntity)
+    if otherEntity:GetName() == "Fireball" then
+        for i = 1, 20 do
+            ParticleSystem:Emit(enemyEntity:GetPosition(), Vec2.new((Random:Float()*2-1) * 5, (Random:Float()*2-1) * 5))
+        end
+    end
+end
+
 function EnemiesHandler:OnCreate()
+    ParticleSystem:OnCreate()
     EnemiesMetaData.Parent = GetEntityByTag("Enemy Manager")
     EnemiesMetaData.Parent:SetPosition(Vec3.new(0.0, 0.0, 0.0))
     local origEnemy = EnemiesMetaData.Parent.Relation.FirstChild
@@ -41,10 +52,12 @@ function EnemiesHandler:OnCreate()
 
     RegisterFunction("ChangeEnemyDirection", ChangeEnemyDirection)
     RegisterFunction("GetEnemyDirection", GetEnemyDirection)
+    RegisterFunction("EnemyCollisionBeginHandler", EnemyCollisionBeginHandler)
 
 end
 
 function EnemiesHandler:OnUpdate(ts)
+    ParticleSystem:OnUpdate(ts)
     self.Cooldown = self.Cooldown - ts
 
     for i = 1, #self.ActiveEnemies do

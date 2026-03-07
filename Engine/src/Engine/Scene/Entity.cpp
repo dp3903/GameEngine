@@ -20,8 +20,19 @@ namespace Engine {
 	Entity Entity::ClosestRigidbodyParent()
 	{
 		Entity rbp = { m_EntityHandle, m_Scene };
+		int safetyDepth = 0;
 		while (rbp && !rbp.HasComponent<Rigidbody2DComponent>())
+		{
+			entt::entity currentHandle = rbp;
 			rbp = Entity{ rbp.GetComponent<RelationshipComponent>().Parent, m_Scene };
+			entt::entity parentHandle = rbp;
+
+			if (++safetyDepth > 100) { // 100 is plenty deep
+				spdlog::error("CYCLIC GRAPH DETECTED! Entity ID: {} is looping with Parent ID: {}",
+					(uint32_t)currentHandle, (uint32_t)parentHandle);
+				break;
+			}
+		}
 		return rbp;
 	}
 

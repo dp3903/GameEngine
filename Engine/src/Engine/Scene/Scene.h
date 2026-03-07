@@ -79,7 +79,7 @@ namespace Engine {
 
 	private:
 		entt::registry m_Registry;
-		entt::entity m_SceneRoot;
+		entt::entity m_SceneRoot = entt::null;
 		uint32_t m_ViewportWidth = 0, m_ViewportHeight = 0;
 		
 		b2World* m_PhysicsWorld = nullptr;

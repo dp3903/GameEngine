@@ -8,10 +8,10 @@ function CameraFollower:OnUpdate(ts)
     -- Get ball entity
     local ball = GetEntityByTag("Ball")
     -- Get Transform components
-    local ballTransform = ball.Transform
+    local ballPos = ball:GetPosition()
     -- Update this entity's Translation to follow the ball
-    self.Entity.Transform.Translation.x = ballTransform.Translation.x
-    self.Entity.Transform.Translation.y = ballTransform.Translation.y
+    local newPos = Vec3.new(ballPos.x, ballPos.y, self.Entity:GetPosition().z)
+    self.Entity:SetPosition(newPos)
 
     if Input.IsKeyPressed(Key.P) then
         print("Health:", GetGlobal("Health"))

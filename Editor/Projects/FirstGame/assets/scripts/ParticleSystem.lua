@@ -1,6 +1,6 @@
 local ParticleSystem = {
     Root = nil,
-    maxParticles = 200,
+    maxParticles = 50,
     UsePhysics = false,
     Lifetime = 2.0,
     StartColor = Vec4.new(1, 0.8, 0, 1), -- Orange color
@@ -23,12 +23,12 @@ function ParticleSystem:OnCreate()
             body.Type = BodyType.Dynamic
             local collider = p1:AddCircleCollider()
             collider.Restitution = 0.5
-            -- Physics.SetGravityScale(p1, 0.0) -- low gravity for particles
+            collider.Friction = 0.0
+            collider.Density = 0.01
+            Physics.SetGravityScale(p1, 0.3) -- low gravity for particles
             p1:RebuildFixtures()
         end
-        print("debug before scale")
         p1:SetScale(Vec3.new(0.1, 0.1, 0.1)) -- Small size for particles
-        print("debug after scale")
         p1:SetEnabled(false) -- Start disabled, will be enabled when emitted
         table.insert(ParticleMetadata.particles, {
             id = i,

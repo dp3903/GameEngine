@@ -26,7 +26,7 @@ function MouseClick:OnUpdate(ts)
         local worldPos = Vec2.new((mousePos.x / viewportSize.x) * worldWidth - worldWidth / 2, -((mousePos.y / viewportSize.y) * worldHeight - worldHeight / 2))
         -- print("Mouse clicked at world position: (" .. worldPos.x .. ", " .. worldPos.y .. ")")
         for i = 1, 3 do
-            ParticleSystem:Emit(Vec3.new(worldPos.x, worldPos.y, 0), Vec2.new((Random:Float()*2-1) * 5, (Random:Float()*2-1) * 5), 1.0)
+            ParticleSystem:Emit(Vec3.new(worldPos.x, worldPos.y, 0), Vec2.new((Random:Float()*2-1) * 5, (Random:Float()*2-1) * 5))
         end
     end
 end
