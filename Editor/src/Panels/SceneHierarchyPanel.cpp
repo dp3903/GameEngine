@@ -7,6 +7,7 @@
 #include <imgui/imgui_stdlib.h>
 #include <glm/gtc/type_ptr.hpp>
 #include "Engine/Scene/Components.h"
+#include "Engine/Utils/AudioEngine.h"
 
 namespace Engine {
 
@@ -272,6 +273,7 @@ namespace Engine {
 			DisplayAddComponentEntry<CircleCollider2DComponent>("Circle Collider 2D");
 			DisplayAddComponentEntry<TextComponent>("Text Component");
 			DisplayAddComponentEntry<ScriptComponent>("Script");
+			DisplayAddComponentEntry<AudioSourceComponent>("Audio Source");
 
 			ImGui::EndPopup();
 		}
@@ -719,6 +721,109 @@ namespace Engine {
 						component.ScriptPath = std::string();
 					}
 					ImGui::PopStyleColor(2);
+				}
+			});
+
+		DrawComponent<AudioSourceComponent>("Audio Source", entity, [](AudioSourceComponent& component)
+			{
+				std::string filename = "None";
+				if (!component.FilePath.empty())
+					filename = std::filesystem::path(component.FilePath).filename().string();
+
+				ImGui::Button(filename.c_str(), ImVec2(-1.0f, 0.0f));
+
+				// Add drag-and-drop support for audio files from your Content Browser
+				if (ImGui::BeginDragDropTarget())
+				{
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM_SOUND"))
+					{
+						const wchar_t* path = (const wchar_t*)payload->Data;
+						std::filesystem::path audioPath = path;
+						component.FilePath = audioPath.string();
+					}
+					ImGui::EndDragDropTarget();
+				}
+
+				if (!component.FilePath.empty())
+				{
+					// The "Remove" Button
+					// We use a red color for the button to indicate a destructive action
+					ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.1f, 0.15f, 1.0f));
+					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.2f, 0.2f, 1.0f));
+					if (ImGui::Button("Remove Audio"))
+					{
+						AudioEngine::UnloadSound(component.SoundHandle);
+						component.SoundHandle = nullptr;
+						component.IsPlaying = false;
+						component.FilePath = std::string();
+					}
+					ImGui::PopStyleColor(2);
+
+					// 2. Audio Properties
+					bool propertiesChanged = false;
+
+					// If the user drags the slider, propertiesChanged becomes true
+					if (ImGui::DragFloat("Volume", &component.Volume, 0.01f, 0.0f, 10.0f, "%.2f"))
+						propertiesChanged = true;
+					if (ImGui::DragFloat("Pitch", &component.Pitch, 0.01f, 0.1f, 3.0f, "%.2f"))
+						propertiesChanged = true;
+
+					ImGui::Spacing();
+
+					// 3. Playback Flags
+					if (ImGui::Checkbox("Loop", &component.Loop))
+						propertiesChanged = true;
+					ImGui::SameLine();
+					ImGui::Checkbox("Play On Awake", &component.PlayOnAwake);
+					
+					// Instantly push the changes to miniaudio if the sound is currently playing
+					if (propertiesChanged && component.IsPlaying && component.SoundHandle)
+					{
+						AudioEngine::UpdateSound(component.SoundHandle, component.Volume, component.Pitch, component.Loop);
+					}
+
+					component.IsPlaying = AudioEngine::IsSoundPlaying(component.SoundHandle);
+					// 4. Editor Preview Controls
+					// These buttons let you test the sound directly in the editor without hitting "Play"
+					if (ImGui::Button("Play Preview"))
+					{
+						// Remove old sound
+						if (component.SoundHandle)
+						{
+							AudioEngine::UnloadSound(component.SoundHandle);
+						}
+
+						// If the sound isn't loaded yet (because we are in Edit mode, not Play mode), load it temporarily
+						if (!component.FilePath.empty())
+						{
+							component.SoundHandle = AudioEngine::LoadSound(Project::GetAssetFileSystemPath(component.FilePath).string(), component.Loop);
+						}
+
+						if (component.SoundHandle)
+						{
+							AudioEngine::StartSound(component.SoundHandle, component.Volume, component.Pitch);
+							component.IsPlaying = true;
+						}
+					}
+
+					ImGui::SameLine();
+
+					if (ImGui::Button("Stop"))
+					{
+						if (component.SoundHandle)
+						{
+							AudioEngine::StopSound(component.SoundHandle);
+							component.IsPlaying = false;
+						}
+					}
+
+					ImGui::SameLine();
+
+					// Display dynamic text showing the current state
+					if (component.IsPlaying)
+						ImGui::TextColored(ImVec4(0.2f, 0.8f, 0.2f, 1.0f), "(Playing)");
+					else
+						ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "(Stopped)");
 				}
 			});
 	}

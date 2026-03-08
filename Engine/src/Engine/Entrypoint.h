@@ -8,6 +8,7 @@ int main(int argc, char** argv)
 {
 	Engine::Logger::Init();
 	Engine::Random::Init();
+	Engine::AudioEngine::Init();
 
 	auto app = Engine::CreateApplication({ argc, argv });
 	app->run();

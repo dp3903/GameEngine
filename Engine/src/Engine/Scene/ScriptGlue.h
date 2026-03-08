@@ -6,6 +6,7 @@
 #include "Engine/Window/KeyCodes.h"
 #include "Engine/Window/MouseCodes.h"
 #include "Engine/Utils/Random.h"
+#include "Engine/Utils/AudioEngine.h"
 #include "Engine/Project/Project.h"
 
 // Box2D
@@ -435,6 +436,46 @@ namespace Engine
 				}
 			)
 		);
+		m_Lua->new_usertype<AudioSourceComponent>("AudioSource",
+			"AudioFile", sol::property(
+				[](AudioSourceComponent& src) { return src.FilePath; },
+				[](AudioSourceComponent& src, const std::string& filepath) {
+					if (src.SoundHandle) {
+						AudioEngine::StopSound(src.SoundHandle);
+						AudioEngine::UnloadSound(src.SoundHandle);
+					}
+					src.IsPlaying = false;
+					src.FilePath = filepath;
+					src.SoundHandle = AudioEngine::LoadSound(Project::GetAssetFileSystemPath(src.FilePath).string(), src.Loop);
+				}
+			),
+			"Loop", sol::property(
+				[](AudioSourceComponent& src) { return src.Loop; },
+				[](AudioSourceComponent& src, const bool& loop) {
+					src.Loop = loop;
+					AudioEngine::UpdateSound(src.SoundHandle, src.Volume, src.Pitch, src.Loop);
+				}
+			),
+			"Volume", sol::property(
+				[](AudioSourceComponent& src) { return src.Volume; },
+				[](AudioSourceComponent& src, const float& volume) {
+					src.Volume = volume;
+					AudioEngine::UpdateSound(src.SoundHandle, src.Volume, src.Pitch, src.Loop);
+				}
+			),
+			"Pitch", sol::property(
+				[](AudioSourceComponent& src) { return src.Pitch; },
+				[](AudioSourceComponent& src, const float& pitch) {
+					src.Pitch = pitch;
+					AudioEngine::UpdateSound(src.SoundHandle, src.Volume, src.Pitch, src.Loop);
+				}
+			),
+			"PlayOnAwake", &AudioSourceComponent::PlayOnAwake,
+			"IsPlaying", sol::property(
+				[](AudioSourceComponent& src) { return src.IsPlaying; }
+			),
+			"StartSound", [](AudioSourceComponent& src) { AudioEngine::StartSound(src.SoundHandle, src.Volume, src.Pitch); }
+		);
 		m_Lua->new_usertype<RelationshipComponent>("Relation",
 			"Parent", sol::property(
 				// GETTER
@@ -527,6 +568,7 @@ namespace Engine
 			BIND_COMPONENT_PROPERTY("Text", TextComponent),
 			BIND_COMPONENT_PROPERTY("Relation", RelationshipComponent),
 			BIND_COMPONENT_PROPERTY("CameraComponent", CameraComponent),
+			BIND_COMPONENT_PROPERTY("AudioSource", AudioSourceComponent),
 
 #undef BIND_COMPONENT_PROPERTY
 			
@@ -539,6 +581,7 @@ namespace Engine
 			BIND_ADD_COMPONENT_FUNCTION("AddCircleCollider", CircleCollider2DComponent),
 			BIND_ADD_COMPONENT_FUNCTION("AddText", TextComponent),
 			BIND_ADD_COMPONENT_FUNCTION("AddCameraComponent", CameraComponent),
+			BIND_ADD_COMPONENT_FUNCTION("AddAudioSource", AudioSourceComponent),
 #undef BIND_ADD_COMPONENT_FUNCTION
 
 			"GetScale", [](Entity entity) -> glm::vec3 { return entity.GetComponent<TransformComponent>().Scale; },

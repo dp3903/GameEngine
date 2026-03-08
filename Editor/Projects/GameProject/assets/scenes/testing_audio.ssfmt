@@ -1,0 +1,43 @@
+{
+    "Scene": "Untitled Scene",
+    "Gravity": [
+        0.0,
+        -9.800000190734863
+    ],
+    "Entities": [
+        {
+            "Entity": 7335416388005934525,
+            "TagComponent": {
+                "Tag": "testing audio"
+            },
+            "TransformComponent": {
+                "Translation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "Rotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ],
+                "Scale": [
+                    1.0,
+                    1.0,
+                    1.0
+                ]
+            },
+            "ScriptComponent": {
+                "ScriptFile": "scripts\\AudioTest.lua"
+            },
+            "AudioSource": {
+                "AudioFile": "sounds\\laserShoot.wav",
+                "Volume": 2.0,
+                "Pitch": 0.75,
+                "Loop": false,
+                "PlayOnAwake": true
+            },
+            "Children": []
+        }
+    ]
+}

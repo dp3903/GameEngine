@@ -4,6 +4,7 @@
 #include "ScriptGlue.h"
 
 #include "Engine/Utils/Math.h"
+#include "Engine/Utils/AudioEngine.h"
 #include "Engine/Renderer/Renderer.h"
 #include "Engine/Project/Project.h"
 
@@ -249,6 +250,7 @@ namespace Engine {
 		CopyComponent<TextComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<RelationshipComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<DisabledComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
+		CopyComponent<AudioSourceComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 
 		return newScene;
 	}
@@ -336,6 +338,7 @@ namespace Engine {
 		CopyComponentIfExists<CircleCollider2DComponent>(newEntity, entity);
 		CopyComponentIfExists<TextComponent>(newEntity, entity);
 		CopyComponentIfExists<ScriptComponent>(newEntity, entity);
+		CopyComponentIfExists<AudioSourceComponent>(newEntity, entity);
 
 		auto& srcRelation = entity.GetComponent<RelationshipComponent>();
 
@@ -606,6 +609,24 @@ namespace Engine {
 	{
 		UpdateGlobalTransforms();
 		OnPhysics2DStart();
+		
+		// Load all sounds into memory
+		auto view = m_Registry.view<AudioSourceComponent>();
+		for (auto entityID : view)
+		{
+			auto& audio = view.get<AudioSourceComponent>(entityID);
+
+			// Initialize the sound object and store the pointer in the component
+			audio.SoundHandle = AudioEngine::LoadSound(Project::GetAssetFileSystemPath(audio.FilePath).string(), audio.Loop);
+
+			// Play immediately if flagged
+			if (audio.PlayOnAwake)
+			{
+				AudioEngine::StartSound(audio.SoundHandle, audio.Volume, audio.Pitch);
+				audio.IsPlaying = true;
+			}
+		}
+
 		OnScriptingStart();
 		UpdateGlobalTransforms();
 	}
@@ -614,6 +635,17 @@ namespace Engine {
 	{
 		OnScriptingStop();
 		OnPhysics2DStop();
+		// Clean up memory when the scene ends to prevent memory leaks!
+		auto view = m_Registry.view<AudioSourceComponent>();
+		for (auto entityID : view)
+		{
+			auto& audio = view.get<AudioSourceComponent>(entityID);
+			if (AudioEngine::IsSoundPlaying(audio.SoundHandle))
+				AudioEngine::StopSound(audio.SoundHandle);
+			AudioEngine::UnloadSound(audio.SoundHandle);
+			audio.SoundHandle = nullptr;
+			audio.IsPlaying = false;
+		}
 	}
 
 	void Scene::OnSimulationStart()
@@ -640,6 +672,23 @@ namespace Engine {
 
 		// Update global transforms
 		UpdateGlobalTransforms();
+
+		auto audioView = m_Registry.view<AudioSourceComponent>();
+		for (auto entityID : audioView)
+		{
+			auto& audio = audioView.get<AudioSourceComponent>(entityID);
+
+			// Only check sounds that the engine *thinks* are playing
+			if (audio.IsPlaying)
+			{
+				if (!AudioEngine::IsSoundPlaying(audio.SoundHandle))
+				{
+					// The sound finished! Reset the flag.
+					audio.IsPlaying = false;
+
+				}
+			}
+		}
 
 		// Render 2D
 		Camera* mainCamera = nullptr;
@@ -1015,5 +1064,21 @@ namespace Engine {
 	template<>
 	void Scene::OnComponentAdded<DisabledComponent>(Entity entity, DisabledComponent& component)
 	{
+	}
+
+	template<>
+	void Scene::OnComponentAdded<AudioSourceComponent>(Entity entity, AudioSourceComponent& component)
+	{
+		if (m_Lua)
+		{
+			component.SoundHandle = AudioEngine::LoadSound(Project::GetAssetFileSystemPath(component.FilePath).string(), component.Loop);
+
+			// Play immediately if flagged
+			if (component.PlayOnAwake)
+			{
+				AudioEngine::StartSound(component.SoundHandle, component.Volume, component.Pitch);
+				component.IsPlaying = true;
+			}
+		}
 	}
 }
