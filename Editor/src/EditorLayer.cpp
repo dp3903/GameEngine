@@ -375,6 +375,130 @@ namespace Engine
 		return false;
 	}
 
+	static void DrawCameraBounds(Entity cameraEntity)
+	{
+		if (cameraEntity.HasComponent<CameraComponent>())
+		{
+			const TransformComponent& transform = cameraEntity.GetComponent<TransformComponent>();
+			auto& cc = cameraEntity.GetComponent<CameraComponent>();
+			if (cc.Camera.GetProjectionType() == SceneCamera::ProjectionType::Orthographic)
+			{
+				float nc = cc.Camera.GetOrthographicNearClip();
+				float fc = cc.Camera.GetOrthographicFarClip();
+				float os = cc.Camera.GetOrthographicSize();
+				float ar = cc.Camera.GetAspectRatio();
+
+				// we cannot multiply by scale of a camera as it is useless in calculating projection.
+				// so we decomponse global transform and create new transform with only translation and rotation.
+				// new scale is as per orthographic size and aspect ratio
+				glm::vec3 translation, rotation, scale;
+				Math::DecomposeTransform(transform.GlobalTransform, translation, rotation, scale);
+				glm::mat4 newTransform = glm::translate(glm::mat4(1), translation)
+					* glm::rotate(glm::mat4(1), rotation.x, { 1,0,0 })
+					* glm::rotate(glm::mat4(1), rotation.y, { 0,1,0 })
+					* glm::rotate(glm::mat4(1), rotation.z, { 0,0,1 })
+					* glm::scale(glm::mat4(1), { ar * os, os, 1.0f });
+
+
+				glm::vec3 np0 = newTransform * glm::vec4{ -0.5, -0.5, -nc, 1 };
+				glm::vec3 np1 = newTransform * glm::vec4{ 0.5, -0.5, -nc, 1 };
+				glm::vec3 np2 = newTransform * glm::vec4{ 0.5,  0.5, -nc, 1 };
+				glm::vec3 np3 = newTransform * glm::vec4{ -0.5,  0.5, -nc, 1 };
+				glm::vec3 fp0 = newTransform * glm::vec4{ -0.5, -0.5, -fc, 1 };
+				glm::vec3 fp1 = newTransform * glm::vec4{ 0.5, -0.5, -fc, 1 };
+				glm::vec3 fp2 = newTransform * glm::vec4{ 0.5,  0.5, -fc, 1 };
+				glm::vec3 fp3 = newTransform * glm::vec4{ -0.5,  0.5, -fc, 1 };
+
+				// draw near clip bounding boxe
+				{
+					Renderer2D::DrawLine(np0, np1, { 0.0f, 0.0f, 1.0f, 1.0f });
+					Renderer2D::DrawLine(np1, np2, { 0.0f, 0.0f, 1.0f, 1.0f });
+					Renderer2D::DrawLine(np2, np3, { 0.0f, 0.0f, 1.0f, 1.0f });
+					Renderer2D::DrawLine(np3, np0, { 0.0f, 0.0f, 1.0f, 1.0f });
+				}
+
+				// draw far clip bounding boxe
+				{
+					Renderer2D::DrawLine(fp0, fp1, { 1.0f, 0.0f, 0.0f, 1.0f });
+					Renderer2D::DrawLine(fp1, fp2, { 1.0f, 0.0f, 0.0f, 1.0f });
+					Renderer2D::DrawLine(fp2, fp3, { 1.0f, 0.0f, 0.0f, 1.0f });
+					Renderer2D::DrawLine(fp3, fp0, { 1.0f, 0.0f, 0.0f, 1.0f });
+				}
+
+				// draw the edges connecting the planes
+				{
+					Renderer2D::DrawLine(np0, fp0, { 0.5f, 0.5f, 0.5f, 1.0f });
+					Renderer2D::DrawLine(np1, fp1, { 0.5f, 0.5f, 0.5f, 1.0f });
+					Renderer2D::DrawLine(np2, fp2, { 0.5f, 0.5f, 0.5f, 1.0f });
+					Renderer2D::DrawLine(np3, fp3, { 0.5f, 0.5f, 0.5f, 1.0f });
+				}
+			}
+			else if (cc.Camera.GetProjectionType() == SceneCamera::ProjectionType::Perspective)
+			{
+				float nc = cc.Camera.GetPerspectiveNearClip();
+				float fc = cc.Camera.GetPerspectiveFarClip();
+				float FOV = cc.Camera.GetPerspectiveVerticalFOV();
+				float ar = cc.Camera.GetAspectRatio();
+				float tanHalfFOV = glm::tan(FOV * 0.5f);
+
+				float nearHeight = 2.0f * nc * tanHalfFOV;
+				float nearWidth = nearHeight * ar;
+
+				float farHeight = 2.0f * fc * tanHalfFOV;
+				float farWidth = farHeight * ar;
+
+				// we cannot multiply by scale of a camera as it is useless in calculating projection.
+				// so we decomponse global transform and create new transform with only translation and rotation.
+				// new scale is as per perspectiveFOV, distance and aspect ratio. scale will be different for near and far planes so require different transforms.
+				glm::vec3 translation, rotation, scale;
+				Math::DecomposeTransform(transform.GlobalTransform, translation, rotation, scale);
+
+				glm::mat4 baseTransform = glm::translate(glm::mat4(1), translation)
+					* glm::rotate(glm::mat4(1), rotation.x, { 1,0,0 })
+					* glm::rotate(glm::mat4(1), rotation.y, { 0,1,0 })
+					* glm::rotate(glm::mat4(1), rotation.z, { 0,0,1 });
+
+				// Apply the correct scale for near and far planes (Z scale stays 1.0f)
+				glm::mat4 nearTransform = baseTransform * glm::scale(glm::mat4(1), { nearWidth, nearHeight, 1.0f });
+				glm::mat4 farTransform = baseTransform * glm::scale(glm::mat4(1), { farWidth, farHeight, 1.0f });
+
+
+				glm::vec3 np0 = nearTransform * glm::vec4{ -0.5, -0.5, -nc, 1 };
+				glm::vec3 np1 = nearTransform * glm::vec4{ 0.5, -0.5, -nc, 1 };
+				glm::vec3 np2 = nearTransform * glm::vec4{ 0.5,  0.5, -nc, 1 };
+				glm::vec3 np3 = nearTransform * glm::vec4{ -0.5,  0.5, -nc, 1 };
+				glm::vec3 fp0 = farTransform * glm::vec4{ -0.5, -0.5, -fc, 1 };
+				glm::vec3 fp1 = farTransform * glm::vec4{ 0.5, -0.5, -fc, 1 };
+				glm::vec3 fp2 = farTransform * glm::vec4{ 0.5,  0.5, -fc, 1 };
+				glm::vec3 fp3 = farTransform * glm::vec4{ -0.5,  0.5, -fc, 1 };
+
+				// draw near clip bounding boxe
+				{
+					Renderer2D::DrawLine(np0, np1, { 0.0f, 0.0f, 1.0f, 1.0f });
+					Renderer2D::DrawLine(np1, np2, { 0.0f, 0.0f, 1.0f, 1.0f });
+					Renderer2D::DrawLine(np2, np3, { 0.0f, 0.0f, 1.0f, 1.0f });
+					Renderer2D::DrawLine(np3, np0, { 0.0f, 0.0f, 1.0f, 1.0f });
+				}
+
+				// draw far clip bounding boxe
+				{
+					Renderer2D::DrawLine(fp0, fp1, { 1.0f, 0.0f, 0.0f, 1.0f });
+					Renderer2D::DrawLine(fp1, fp2, { 1.0f, 0.0f, 0.0f, 1.0f });
+					Renderer2D::DrawLine(fp2, fp3, { 1.0f, 0.0f, 0.0f, 1.0f });
+					Renderer2D::DrawLine(fp3, fp0, { 1.0f, 0.0f, 0.0f, 1.0f });
+				}
+
+				// draw the edges connecting the planes
+				{
+					Renderer2D::DrawLine(np0, fp0, { 0.5f, 0.5f, 0.5f, 1.0f });
+					Renderer2D::DrawLine(np1, fp1, { 0.5f, 0.5f, 0.5f, 1.0f });
+					Renderer2D::DrawLine(np2, fp2, { 0.5f, 0.5f, 0.5f, 1.0f });
+					Renderer2D::DrawLine(np3, fp3, { 0.5f, 0.5f, 0.5f, 1.0f });
+				}
+			}
+		}
+	}
+
 	void EditorLayer::OnOverlayRender()
 	{
 		if (m_SceneState == SceneState::Play)
@@ -507,131 +631,20 @@ namespace Engine
 				}
 			}
 		}
-
-		if (Entity selectedEntity = m_SceneHierarchyPanel->GetSelectedEntity())
+		Entity selectedEntity = m_SceneHierarchyPanel->GetSelectedEntity();
+		if (selectedEntity)
 		{
 			const TransformComponent& transform = selectedEntity.GetComponent<TransformComponent>();
 			Renderer2D::DrawRect(transform.GlobalTransform, m_SelectedEntityColor);
 
-			if (selectedEntity.HasComponent<CameraComponent>())
-			{
-				auto& cc = selectedEntity.GetComponent<CameraComponent>();
-				if (cc.Camera.GetProjectionType() == SceneCamera::ProjectionType::Orthographic)
-				{
-					float nc = cc.Camera.GetOrthographicNearClip();
-					float fc = cc.Camera.GetOrthographicFarClip();
-					float os = cc.Camera.GetOrthographicSize();
-					float ar = cc.Camera.GetAspectRatio();
+			DrawCameraBounds(selectedEntity);
+		}
 
-					// we cannot multiply by scale of a camera as it is useless in calculating projection.
-					// so we decomponse global transform and create new transform with only translation and rotation.
-					// new scale is as per orthographic size and aspect ratio
-					glm::vec3 translation, rotation, scale;
-					Math::DecomposeTransform(transform.GlobalTransform, translation, rotation, scale);
-					glm::mat4 newTransform = glm::translate(glm::mat4(1), translation)
-						* glm::rotate(glm::mat4(1), rotation.x, { 1,0,0 })
-						* glm::rotate(glm::mat4(1), rotation.y, { 0,1,0 })
-						* glm::rotate(glm::mat4(1), rotation.z, { 0,0,1 })
-						* glm::scale(glm::mat4(1), { ar * os, os, 1.0f });
-
-
-					glm::vec3 np0 = newTransform * glm::vec4{ -0.5, -0.5, -nc, 1 };
-					glm::vec3 np1 = newTransform * glm::vec4{  0.5, -0.5, -nc, 1 };
-					glm::vec3 np2 = newTransform * glm::vec4{  0.5,  0.5, -nc, 1 };
-					glm::vec3 np3 = newTransform * glm::vec4{ -0.5,  0.5, -nc, 1 };
-					glm::vec3 fp0 = newTransform * glm::vec4{ -0.5, -0.5, -fc, 1 };
-					glm::vec3 fp1 = newTransform * glm::vec4{  0.5, -0.5, -fc, 1 };
-					glm::vec3 fp2 = newTransform * glm::vec4{  0.5,  0.5, -fc, 1 };
-					glm::vec3 fp3 = newTransform * glm::vec4{ -0.5,  0.5, -fc, 1 };
-
-					// draw near clip bounding boxe
-					{
-						Renderer2D::DrawLine(np0, np1, { 0.0f, 0.0f, 1.0f, 1.0f });
-						Renderer2D::DrawLine(np1, np2, { 0.0f, 0.0f, 1.0f, 1.0f });
-						Renderer2D::DrawLine(np2, np3, { 0.0f, 0.0f, 1.0f, 1.0f });
-						Renderer2D::DrawLine(np3, np0, { 0.0f, 0.0f, 1.0f, 1.0f });
-					}
-
-					// draw far clip bounding boxe
-					{
-						Renderer2D::DrawLine(fp0, fp1, { 1.0f, 0.0f, 0.0f, 1.0f });
-						Renderer2D::DrawLine(fp1, fp2, { 1.0f, 0.0f, 0.0f, 1.0f });
-						Renderer2D::DrawLine(fp2, fp3, { 1.0f, 0.0f, 0.0f, 1.0f });
-						Renderer2D::DrawLine(fp3, fp0, { 1.0f, 0.0f, 0.0f, 1.0f });
-					}
-
-					// draw the edges connecting the planes
-					{
-						Renderer2D::DrawLine(np0, fp0, { 0.5f, 0.5f, 0.5f, 1.0f });
-						Renderer2D::DrawLine(np1, fp1, { 0.5f, 0.5f, 0.5f, 1.0f });
-						Renderer2D::DrawLine(np2, fp2, { 0.5f, 0.5f, 0.5f, 1.0f });
-						Renderer2D::DrawLine(np3, fp3, { 0.5f, 0.5f, 0.5f, 1.0f });
-					}
-				}
-				else if (cc.Camera.GetProjectionType() == SceneCamera::ProjectionType::Perspective)
-				{
-					float nc = cc.Camera.GetPerspectiveNearClip();
-					float fc = cc.Camera.GetPerspectiveFarClip();
-					float FOV = cc.Camera.GetPerspectiveVerticalFOV();
-					float ar = cc.Camera.GetAspectRatio();
-					float tanHalfFOV = glm::tan(FOV * 0.5f);
-
-					float nearHeight = 2.0f * nc * tanHalfFOV;
-					float nearWidth = nearHeight * ar;
-
-					float farHeight = 2.0f * fc * tanHalfFOV;
-					float farWidth = farHeight * ar;
-
-					// we cannot multiply by scale of a camera as it is useless in calculating projection.
-					// so we decomponse global transform and create new transform with only translation and rotation.
-					// new scale is as per perspectiveFOV, distance and aspect ratio. scale will be different for near and far planes so require different transforms.
-					glm::vec3 translation, rotation, scale;
-					Math::DecomposeTransform(transform.GlobalTransform, translation, rotation, scale);
-
-					glm::mat4 baseTransform = glm::translate(glm::mat4(1), translation)
-						* glm::rotate(glm::mat4(1), rotation.x, { 1,0,0 })
-						* glm::rotate(glm::mat4(1), rotation.y, { 0,1,0 })
-						* glm::rotate(glm::mat4(1), rotation.z, { 0,0,1 });
-
-					// Apply the correct scale for near and far planes (Z scale stays 1.0f)
-					glm::mat4 nearTransform = baseTransform * glm::scale(glm::mat4(1), { nearWidth, nearHeight, 1.0f });
-					glm::mat4 farTransform = baseTransform * glm::scale(glm::mat4(1), { farWidth, farHeight, 1.0f });
-
-
-					glm::vec3 np0 = nearTransform * glm::vec4{ -0.5, -0.5, -nc, 1 };
-					glm::vec3 np1 = nearTransform * glm::vec4{  0.5, -0.5, -nc, 1 };
-					glm::vec3 np2 = nearTransform * glm::vec4{  0.5,  0.5, -nc, 1 };
-					glm::vec3 np3 = nearTransform * glm::vec4{ -0.5,  0.5, -nc, 1 };
-					glm::vec3 fp0 = farTransform * glm::vec4{ -0.5, -0.5, -fc, 1 };
-					glm::vec3 fp1 = farTransform * glm::vec4{  0.5, -0.5, -fc, 1 };
-					glm::vec3 fp2 = farTransform * glm::vec4{  0.5,  0.5, -fc, 1 };
-					glm::vec3 fp3 = farTransform * glm::vec4{ -0.5,  0.5, -fc, 1 };
-
-					// draw near clip bounding boxe
-					{
-						Renderer2D::DrawLine(np0, np1, { 0.0f, 0.0f, 1.0f, 1.0f });
-						Renderer2D::DrawLine(np1, np2, { 0.0f, 0.0f, 1.0f, 1.0f });
-						Renderer2D::DrawLine(np2, np3, { 0.0f, 0.0f, 1.0f, 1.0f });
-						Renderer2D::DrawLine(np3, np0, { 0.0f, 0.0f, 1.0f, 1.0f });
-					}
-
-					// draw far clip bounding boxe
-					{
-						Renderer2D::DrawLine(fp0, fp1, { 1.0f, 0.0f, 0.0f, 1.0f });
-						Renderer2D::DrawLine(fp1, fp2, { 1.0f, 0.0f, 0.0f, 1.0f });
-						Renderer2D::DrawLine(fp2, fp3, { 1.0f, 0.0f, 0.0f, 1.0f });
-						Renderer2D::DrawLine(fp3, fp0, { 1.0f, 0.0f, 0.0f, 1.0f });
-					}
-
-					// draw the edges connecting the planes
-					{
-						Renderer2D::DrawLine(np0, fp0, { 0.5f, 0.5f, 0.5f, 1.0f });
-						Renderer2D::DrawLine(np1, fp1, { 0.5f, 0.5f, 0.5f, 1.0f });
-						Renderer2D::DrawLine(np2, fp2, { 0.5f, 0.5f, 0.5f, 1.0f });
-						Renderer2D::DrawLine(np3, fp3, { 0.5f, 0.5f, 0.5f, 1.0f });
-					}
-				}
-			}
+		if (m_ShowPrimaryCameraBounds)
+		{
+			Entity primaryCamera = m_ActiveScene->GetPrimaryCameraEntity();
+			if (primaryCamera != selectedEntity)
+				DrawCameraBounds(primaryCamera);
 		}
 		
 		Renderer2D::EndScene();
@@ -870,6 +883,8 @@ namespace Engine
 		{
 			ImGui::ColorEdit4("Physics Collider Color", glm::value_ptr(m_PhysicsCollidersColor));
 		}
+
+		ImGui::Checkbox("Show Primary Camera bounds", &m_ShowPrimaryCameraBounds);
 		
 		ImGui::End();
 	}

@@ -78,6 +78,8 @@ namespace Engine
 		float m_FPSHistory[10] = { 0.0f };
 		int m_FPSOffset = 0;
 
+		bool m_ShowPrimaryCameraBounds = false;
+
 		int m_GizmoType = -1;
 
 		bool m_ShowPhysicsColliders = false;

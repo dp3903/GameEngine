@@ -718,17 +718,11 @@ namespace Engine {
 		Camera* mainCamera = nullptr;
 		glm::mat4 cameraTransform;
 		{
-			auto view = m_Registry.view<TransformComponent, CameraComponent>();
-			for (auto entity : view)
+			Entity primaryCamera = GetPrimaryCameraEntity();
+			if (primaryCamera)
 			{
-				auto [transform, camera] = view.get<TransformComponent, CameraComponent>(entity);
-
-				if (camera.Primary)
-				{
-					mainCamera = &camera.Camera;
-					cameraTransform = transform.GlobalTransform;
-					break;
-				}
+				mainCamera = &primaryCamera.GetComponent<CameraComponent>().Camera;
+				cameraTransform = primaryCamera.GetComponent<TransformComponent>().GlobalTransform;
 			}
 		}
 
