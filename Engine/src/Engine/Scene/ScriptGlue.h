@@ -6,6 +6,7 @@
 #include "Engine/Window/KeyCodes.h"
 #include "Engine/Window/MouseCodes.h"
 #include "Engine/Utils/Random.h"
+#include "Engine/Utils/AudioEngine.h"
 #include "Engine/Project/Project.h"
 
 // Box2D
@@ -435,6 +436,116 @@ namespace Engine
 				}
 			)
 		);
+		m_Lua->new_usertype<AudioData>("AudioData",
+			// Methods (Called with colon in Lua: sound:Play() )
+			"Play", [](AudioData& src) {
+				if (src.SoundHandle) {
+					// Optional: rewind to start if you want it to trigger from the beginning every time
+					// ma_sound_seek_to_pcm_frame(static_cast<ma_sound*>(src.SoundHandle), 0);
+
+					AudioEngine::StartSound(src.SoundHandle, src.Volume, src.Pitch);
+					src.IsPlaying = true;
+				}
+				else {
+					spdlog::warn("Attempted to play sound '{}' but SoundHandle is null!", src.Name);
+				}
+			},
+			"Stop", [](AudioData& src) {
+				if (src.SoundHandle) {
+					AudioEngine::StopSound(src.SoundHandle);
+					src.IsPlaying = false;
+				}
+			},
+
+			// Properties (Called with dot in Lua: sound.Volume = 0.5 )
+			"AudioFile", sol::property(
+				[](AudioData& src) { return src.FilePath; },
+				[](AudioData& src, const std::string& filepath) {
+					if (src.SoundHandle) {
+						AudioEngine::StopSound(src.SoundHandle);
+						AudioEngine::UnloadSound(src.SoundHandle);
+					}
+					src.IsPlaying = false;
+					src.FilePath = filepath;
+					src.SoundHandle = AudioEngine::LoadSound(Project::GetAssetFileSystemPath(src.FilePath).string(), src.Loop);
+				}
+			),
+			"Loop", sol::property(
+				[](AudioData& src) { return src.Loop; },
+				[](AudioData& src, const bool& loop) {
+					src.Loop = loop;
+					AudioEngine::UpdateSound(src.SoundHandle, src.Volume, src.Pitch, src.Loop);
+				}
+			),
+			"Volume", sol::property(
+				[](AudioData& src) { return src.Volume; },
+				[](AudioData& src, float volume) {
+					src.Volume = volume;
+					AudioEngine::UpdateSound(src.SoundHandle, src.Volume, src.Pitch, src.Loop);
+				}
+			),
+			"Pitch", sol::property(
+				[](AudioData& src) { return src.Pitch; },
+				[](AudioData& src, float pitch) {
+					src.Pitch = pitch;
+					AudioEngine::UpdateSound(src.SoundHandle, src.Volume, src.Pitch, src.Loop);
+				}
+			),
+			"PlayOnAwake", &AudioData::PlayOnAwake,
+			"IsPlaying", sol::property(
+				[](AudioData& src) { return src.IsPlaying; }
+			)
+		);
+		m_Lua->new_usertype<AudioSourcesComponent>("AudioSources",
+			// This overrides the bracket [] access in Lua
+			sol::meta_function::index, [](AudioSourcesComponent& sources, const std::string& soundName) -> AudioData* {
+				// Loop through the C++ vector to find the matching name
+				for (auto& sound : sources.Sounds)
+				{
+					if (sound.Name == soundName)
+					{
+						return &sound; // Return a pointer so Sol2 maps it by reference!
+					}
+				}
+
+				ENGINE_LOG_ERROR("Lua Error: Audio Source '{}' not found for access on Entity!", soundName);
+				return nullptr; // Returns 'nil' to Lua
+			},
+
+			"AddSource", [](AudioSourcesComponent& sources, const std::string& soundName) {
+				// Loop through the C++ vector to find the matching name
+				for (auto& sound : sources.Sounds)
+				{
+					if (sound.Name == soundName)
+					{
+						ENGINE_LOG_ERROR("Lua Error: Audio Source '{}' already exists on Entity!", soundName);
+						return;
+					}
+				}
+
+				AudioData newSource;
+				newSource.Name = soundName;
+				sources.Sounds.push_back(newSource);
+			},
+
+			"RemoveSource", [](AudioSourcesComponent& sources, const std::string& soundName) {
+				// Loop through the C++ vector to find the matching name
+				for (int i = 0 ; i < sources.Sounds.size() ; i++)
+				{
+					if (sources.Sounds[i].Name == soundName)
+					{
+						if (sources.Sounds[i].SoundHandle) {
+							AudioEngine::StopSound(sources.Sounds[i].SoundHandle);
+							AudioEngine::UnloadSound(sources.Sounds[i].SoundHandle);
+						}
+						sources.Sounds.erase(sources.Sounds.begin() + i);
+						return;
+					}
+				}
+
+				ENGINE_LOG_ERROR("Lua Error: Audio Source '{}' not found for removal on Entity!", soundName);
+			}
+		);
 		m_Lua->new_usertype<RelationshipComponent>("Relation",
 			"Parent", sol::property(
 				// GETTER
@@ -527,6 +638,7 @@ namespace Engine
 			BIND_COMPONENT_PROPERTY("Text", TextComponent),
 			BIND_COMPONENT_PROPERTY("Relation", RelationshipComponent),
 			BIND_COMPONENT_PROPERTY("CameraComponent", CameraComponent),
+			BIND_COMPONENT_PROPERTY("AudioSources", AudioSourcesComponent),
 
 #undef BIND_COMPONENT_PROPERTY
 			
@@ -539,6 +651,7 @@ namespace Engine
 			BIND_ADD_COMPONENT_FUNCTION("AddCircleCollider", CircleCollider2DComponent),
 			BIND_ADD_COMPONENT_FUNCTION("AddText", TextComponent),
 			BIND_ADD_COMPONENT_FUNCTION("AddCameraComponent", CameraComponent),
+			BIND_ADD_COMPONENT_FUNCTION("AddAudioSources", AudioSourcesComponent),
 #undef BIND_ADD_COMPONENT_FUNCTION
 
 			"GetScale", [](Entity entity) -> glm::vec3 { return entity.GetComponent<TransformComponent>().Scale; },

@@ -133,6 +133,7 @@
     <ClInclude Include="src\Engine\Scene\SceneRuntimeData.h" />
     <ClInclude Include="src\Engine\Scene\SceneSerializer.h" />
     <ClInclude Include="src\Engine\Scene\ScriptGlue.h" />
+    <ClInclude Include="src\Engine\Utils\AudioEngine.h" />
     <ClInclude Include="src\Engine\Utils\FileDialogs.h" />
     <ClInclude Include="src\Engine\Utils\Math.h" />
     <ClInclude Include="src\Engine\Utils\Random.h" />
@@ -168,8 +169,10 @@
     <ClCompile Include="src\Engine\Scene\Scene.cpp" />
     <ClCompile Include="src\Engine\Scene\SceneCamera.cpp" />
     <ClCompile Include="src\Engine\Scene\SceneSerializer.cpp" />
+    <ClCompile Include="src\Engine\Utils\AudioEngine.cpp" />
     <ClCompile Include="src\Engine\Utils\FileDialogs.cpp" />
     <ClCompile Include="src\Engine\Utils\Math.cpp" />
+    <ClCompile Include="src\Engine\Utils\MiniaudioImpl.cpp" />
     <ClCompile Include="src\Engine\Utils\UUID.cpp" />
     <ClCompile Include="src\Engine\Window\Input.cpp" />
     <ClCompile Include="src\Engine\Window\Window.cpp" />

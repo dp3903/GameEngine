@@ -234,4 +234,67 @@ namespace Engine {
 		entt::entity NextSibling = entt::null; // Linked list of children
 		entt::entity PrevSibling = entt::null;
 	};
+
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	/// AudioSourcesComponent ///////////////////////////////////////////////////////////////////////////////////////////////////////
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	struct AudioData
+	{
+		std::string Name;
+		std::string FilePath;
+		float Volume = 1.0f;
+		float Pitch = 1.0f;
+		bool Loop = false;
+		bool PlayOnAwake = false;
+		bool IsPlaying = false;
+
+		void* SoundHandle = nullptr;
+
+		// Default constructor
+		AudioData() = default;
+		// COPY CONSTRUCTOR (Used during Entity Duplication)
+		AudioData(const AudioData& other)
+		{
+			Name = other.Name;
+			FilePath = other.FilePath;
+			Loop = other.Loop;
+			Pitch = other.Pitch;
+			PlayOnAwake = other.PlayOnAwake;
+			Volume = other.Volume;
+
+			// CRITICAL: Do NOT copy the raw pointer. The duplicate must start fresh!
+			SoundHandle = nullptr;
+			IsPlaying = false;
+		}
+
+		// MOVE CONSTRUCTOR (Used by EnTT during memory reallocation)
+		// The 'noexcept' is strictly required, otherwise EnTT will ignore this and use the copy constructor!
+		AudioData(AudioData&& other) noexcept
+		{
+			Name = other.Name;
+			FilePath = std::move(other.FilePath);
+			Loop = other.Loop;
+			Pitch = other.Pitch;
+			PlayOnAwake = other.PlayOnAwake;
+			Volume = other.Volume;
+
+			// CRITICAL: Steal the active pointer so the playing sound isn't lost!
+			SoundHandle = other.SoundHandle;
+			IsPlaying = other.IsPlaying;
+
+			// Nullify the old component's pointer so it doesn't get double-freed
+			other.SoundHandle = nullptr;
+			other.IsPlaying = false;
+		}
+
+		// Boilerplate assignment operators to keep the compiler happy
+		AudioData& operator=(const AudioData& other) = default;
+		AudioData& operator=(AudioData&& other) = default;
+	};
+
+	struct AudioSourcesComponent
+	{
+		std::vector<AudioData> Sounds;
+	};
 }

@@ -223,6 +223,25 @@ namespace Engine {
             entityJson["Disabled"] = true;
         }
 
+        // Serialize Audio
+        if (entity.HasComponent<AudioSourcesComponent>())
+        {
+            auto& asc = entity.GetComponent<AudioSourcesComponent>();
+
+            entityJson["AudioSources"] = json::array();
+            for (auto& source : asc.Sounds)
+            {
+                entityJson["AudioSources"].push_back({
+                    { "Name", source.Name },
+                    { "AudioFile", source.FilePath },
+                    { "Volume", source.Volume },
+                    { "Pitch", source.Pitch },
+                    { "Loop", source.Loop },
+                    { "PlayOnAwake", source.PlayOnAwake }
+                });
+            }
+        }
+
         // Serialize Children
         if (entity.HasComponent<RelationshipComponent>())
         {
@@ -382,6 +401,24 @@ namespace Engine {
         if (entityJson.contains("Disabled"))
         {
             deserializedEntity.AddComponent<DisabledComponent>();
+        }
+
+        // Load Audio
+        if (entityJson.contains("AudioSources"))
+        {
+            auto& asc = deserializedEntity.AddComponent<AudioSourcesComponent>();
+            
+            for (auto& asJson : entityJson["AudioSources"])
+            {
+                AudioData source;
+                source.Name = asJson["Name"];
+                source.FilePath = asJson["AudioFile"];
+                source.Loop = asJson["Loop"];
+                source.Pitch = asJson["Pitch"];
+                source.PlayOnAwake = asJson["PlayOnAwake"];
+                source.Volume = asJson["Volume"];
+                asc.Sounds.push_back(source);
+            }
         }
 
         // Load Relationship

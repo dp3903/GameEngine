@@ -177,6 +177,7 @@
     <ClInclude Include="vendors\stb_image\stb_image.h">
       <Filter>vendors\stb_image</Filter>
     </ClInclude>
+    <ClInclude Include="src\Engine\Utils\AudioEngine.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Engine\Application.cpp">
@@ -263,5 +264,7 @@
     <ClCompile Include="vendors\stb_image\stb_image.cpp">
       <Filter>vendors\stb_image</Filter>
     </ClCompile>
+    <ClCompile Include="src\Engine\Utils\AudioEngine.cpp" />
+    <ClCompile Include="src\Engine\Utils\MiniaudioImpl.cpp" />
   </ItemGroup>
 </Project>

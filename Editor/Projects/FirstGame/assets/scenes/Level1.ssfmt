@@ -96,6 +96,16 @@
                     "ScriptComponent": {
                         "ScriptFile": "scripts\\Enemy.lua"
                     },
+                    "AudioSources": [
+                        {
+                            "Name": "explosion",
+                            "AudioFile": "sounds\\explosion.wav",
+                            "Volume": 1.0,
+                            "Pitch": 1.0,
+                            "Loop": false,
+                            "PlayOnAwake": false
+                        }
+                    ],
                     "Children": [
                         {
                             "Entity": 8706414892451703471,
@@ -174,6 +184,16 @@
             "ScriptComponent": {
                 "ScriptFile": "scripts\\Environment.lua"
             },
+            "AudioSources": [
+                {
+                    "Name": "bg",
+                    "AudioFile": "sounds\\boss-bg.wav",
+                    "Volume": 1.0,
+                    "Pitch": 1.0,
+                    "Loop": true,
+                    "PlayOnAwake": true
+                }
+            ],
             "Children": [
                 {
                     "Entity": 2320791356991957885,
@@ -411,6 +431,24 @@
             "ScriptComponent": {
                 "ScriptFile": "scripts\\Charactermovement.lua"
             },
+            "AudioSources": [
+                {
+                    "Name": "jump",
+                    "AudioFile": "sounds\\jump.wav",
+                    "Volume": 1.0,
+                    "Pitch": 1.0,
+                    "Loop": false,
+                    "PlayOnAwake": false
+                },
+                {
+                    "Name": "attack",
+                    "AudioFile": "sounds\\laserShoot.wav",
+                    "Volume": 0.699999988079071,
+                    "Pitch": 0.5,
+                    "Loop": false,
+                    "PlayOnAwake": false
+                }
+            ],
             "Children": []
         }
     ]

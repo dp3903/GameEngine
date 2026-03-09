@@ -4,6 +4,7 @@
 #include "ScriptGlue.h"
 
 #include "Engine/Utils/Math.h"
+#include "Engine/Utils/AudioEngine.h"
 #include "Engine/Renderer/Renderer.h"
 #include "Engine/Project/Project.h"
 
@@ -205,6 +206,19 @@ namespace Engine {
 			OnScriptingStop();
 		if (m_PhysicsWorld)
 			OnPhysics2DStop();
+		auto& view = m_Registry.view<AudioSourcesComponent>();
+		for (auto& e : view)
+		{
+			auto& asc = view.get<AudioSourcesComponent>(e);
+			for (auto& ad : asc.Sounds)
+			{
+				if (ad.SoundHandle)
+				{
+					AudioEngine::UnloadSound(ad.SoundHandle);
+					ad.SoundHandle = nullptr;
+				}
+			}
+		}
 	}
 
 	std::shared_ptr<Scene> Scene::Copy(std::shared_ptr<Scene> other)
@@ -249,6 +263,7 @@ namespace Engine {
 		CopyComponent<TextComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<RelationshipComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<DisabledComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
+		CopyComponent<AudioSourcesComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 
 		return newScene;
 	}
@@ -336,6 +351,7 @@ namespace Engine {
 		CopyComponentIfExists<CircleCollider2DComponent>(newEntity, entity);
 		CopyComponentIfExists<TextComponent>(newEntity, entity);
 		CopyComponentIfExists<ScriptComponent>(newEntity, entity);
+		CopyComponentIfExists<AudioSourcesComponent>(newEntity, entity);
 
 		auto& srcRelation = entity.GetComponent<RelationshipComponent>();
 
@@ -606,6 +622,30 @@ namespace Engine {
 	{
 		UpdateGlobalTransforms();
 		OnPhysics2DStart();
+		
+		// Load all sounds into memory
+		auto view = m_Registry.view<AudioSourcesComponent>();
+		for (auto entityID : view)
+		{
+			auto& audio = view.get<AudioSourcesComponent>(entityID);
+
+			for (auto& source : audio.Sounds)
+			{
+				// if sound handle not null, music is on in editor mode, we stop it first
+				if (source.SoundHandle)
+					AudioEngine::UnloadSound(source.SoundHandle);
+				// Initialize the sound object and store the pointer in the component
+				source.SoundHandle = AudioEngine::LoadSound(Project::GetAssetFileSystemPath(source.FilePath).string(), source.Loop);
+
+				// Play immediately if flagged
+				if (source.PlayOnAwake)
+				{
+					AudioEngine::StartSound(source.SoundHandle, source.Volume, source.Pitch);
+					source.IsPlaying = true;
+				}
+			}
+		}
+
 		OnScriptingStart();
 		UpdateGlobalTransforms();
 	}
@@ -614,6 +654,20 @@ namespace Engine {
 	{
 		OnScriptingStop();
 		OnPhysics2DStop();
+		// Clean up memory when the scene ends to prevent memory leaks!
+		auto view = m_Registry.view<AudioSourcesComponent>();
+		for (auto entityID : view)
+		{
+			auto& audio = view.get<AudioSourcesComponent>(entityID);
+			for (auto& source : audio.Sounds)
+			{
+				if (AudioEngine::IsSoundPlaying(source.SoundHandle))
+					AudioEngine::StopSound(source.SoundHandle);
+				AudioEngine::UnloadSound(source.SoundHandle);
+				source.SoundHandle = nullptr;
+				source.IsPlaying = false;
+			}
+		}
 	}
 
 	void Scene::OnSimulationStart()
@@ -640,6 +694,25 @@ namespace Engine {
 
 		// Update global transforms
 		UpdateGlobalTransforms();
+
+		auto audioView = m_Registry.view<AudioSourcesComponent>();
+		for (auto entityID : audioView)
+		{
+			auto& audio = audioView.get<AudioSourcesComponent>(entityID);
+
+			for (auto& source : audio.Sounds)
+			{
+				// Only check sounds that the engine *thinks* are playing
+				if (source.IsPlaying)
+				{
+					if (!AudioEngine::IsSoundPlaying(source.SoundHandle))
+					{
+						// The sound finished! Reset the flag.
+						source.IsPlaying = false;
+					}
+				}
+			}
+		}
 
 		// Render 2D
 		Camera* mainCamera = nullptr;
@@ -1015,5 +1088,24 @@ namespace Engine {
 	template<>
 	void Scene::OnComponentAdded<DisabledComponent>(Entity entity, DisabledComponent& component)
 	{
+	}
+
+	template<>
+	void Scene::OnComponentAdded<AudioSourcesComponent>(Entity entity, AudioSourcesComponent& component)
+	{
+		if (m_Lua)
+		{
+			for (auto& source : component.Sounds)
+			{
+				source.SoundHandle = AudioEngine::LoadSound(Project::GetAssetFileSystemPath(source.FilePath).string(), source.Loop);
+
+				// Play immediately if flagged
+				if (source.PlayOnAwake)
+				{
+					AudioEngine::StartSound(source.SoundHandle, source.Volume, source.Pitch);
+					source.IsPlaying = true;
+				}
+			}
+		}
 	}
 }

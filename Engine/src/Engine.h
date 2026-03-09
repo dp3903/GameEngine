@@ -8,6 +8,7 @@
 #include "Engine/Layers/ImGuiLayer.h"
 
 #include "Engine/Utils/Random.h"
+#include "Engine/Utils/AudioEngine.h"
 
 #include "Engine/Scene/Components.h"
 #include "Engine/Scene/Entity.h"
