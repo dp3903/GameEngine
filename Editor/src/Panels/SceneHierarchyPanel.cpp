@@ -273,7 +273,7 @@ namespace Engine {
 			DisplayAddComponentEntry<CircleCollider2DComponent>("Circle Collider 2D");
 			DisplayAddComponentEntry<TextComponent>("Text Component");
 			DisplayAddComponentEntry<ScriptComponent>("Script");
-			DisplayAddComponentEntry<AudioSourceComponent>("Audio Source");
+			DisplayAddComponentEntry<AudioSourcesComponent>("Audio Sources");
 
 			ImGui::EndPopup();
 		}
@@ -724,106 +724,137 @@ namespace Engine {
 				}
 			});
 
-		DrawComponent<AudioSourceComponent>("Audio Source", entity, [](AudioSourceComponent& component)
+		DrawComponent<AudioSourcesComponent>("Audio Emitter", entity, [](AudioSourcesComponent& component)
 			{
-				std::string filename = "None";
-				if (!component.FilePath.empty())
-					filename = std::filesystem::path(component.FilePath).filename().string();
-
-				ImGui::Button(filename.c_str(), ImVec2(-1.0f, 0.0f));
-
-				// Add drag-and-drop support for audio files from your Content Browser
-				if (ImGui::BeginDragDropTarget())
+				// The Add Button at the top
+				if (ImGui::Button("Add Sound"))
 				{
-					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM_SOUND"))
-					{
-						const wchar_t* path = (const wchar_t*)payload->Data;
-						std::filesystem::path audioPath = path;
-						component.FilePath = audioPath.string();
-					}
-					ImGui::EndDragDropTarget();
+					component.Sounds.push_back(AudioData());
 				}
 
-				if (!component.FilePath.empty())
+				ImGui::Spacing();
+
+				// Variable to track if we need to delete a sound AFTER the loop finishes
+				int soundToDelete = -1;
+
+				// Loop through all sounds
+				for (int i = 0; i < component.Sounds.size(); ++i)
 				{
-					// The "Remove" Button
-					// We use a red color for the button to indicate a destructive action
-					ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.1f, 0.15f, 1.0f));
-					ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.2f, 0.2f, 1.0f));
-					if (ImGui::Button("Remove Audio"))
+					auto& sound = component.Sounds[i];
+
+					// CRITICAL: Push the index as an ID so ImGui knows these sliders are unique!
+					ImGui::PushID(i);
+
+					// 3. The Collapsible Header (TreeNode)
+					// We append "###node" so the ImGui ID stays stable even if you type a new Name
+					char headerName[256];
+					snprintf(headerName, sizeof(headerName), "%s###node", sound.Name.c_str());
+
+					bool isOpen = ImGui::TreeNodeEx(headerName, ImGuiTreeNodeFlags_AllowOverlap | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_FramePadding);
+
+					// Put the Delete button on the far right of the header row
+					ImGui::SameLine(ImGui::GetWindowWidth() - 75.0f);
+					if (ImGui::Button("Delete"))
 					{
-						AudioEngine::UnloadSound(component.SoundHandle);
-						component.SoundHandle = nullptr;
-						component.IsPlaying = false;
-						component.FilePath = std::string();
-					}
-					ImGui::PopStyleColor(2);
-
-					// 2. Audio Properties
-					bool propertiesChanged = false;
-
-					// If the user drags the slider, propertiesChanged becomes true
-					if (ImGui::DragFloat("Volume", &component.Volume, 0.01f, 0.0f, 10.0f, "%.2f"))
-						propertiesChanged = true;
-					if (ImGui::DragFloat("Pitch", &component.Pitch, 0.01f, 0.1f, 3.0f, "%.2f"))
-						propertiesChanged = true;
-
-					ImGui::Spacing();
-
-					// 3. Playback Flags
-					if (ImGui::Checkbox("Loop", &component.Loop))
-						propertiesChanged = true;
-					ImGui::SameLine();
-					ImGui::Checkbox("Play On Awake", &component.PlayOnAwake);
-					
-					// Instantly push the changes to miniaudio if the sound is currently playing
-					if (propertiesChanged && component.IsPlaying && component.SoundHandle)
-					{
-						AudioEngine::UpdateSound(component.SoundHandle, component.Volume, component.Pitch, component.Loop);
+						soundToDelete = i; // Mark for deletion, but DO NOT delete it yet!
 					}
 
-					component.IsPlaying = AudioEngine::IsSoundPlaying(component.SoundHandle);
-					// 4. Editor Preview Controls
-					// These buttons let you test the sound directly in the editor without hitting "Play"
-					if (ImGui::Button("Play Preview"))
+					// 4. The actual properties (only drawn if the node is clicked open)
+					if (isOpen)
 					{
-						// Remove old sound
-						if (component.SoundHandle)
+						// Name Input (This is what Lua will use to call the sound!)
+						char nameBuffer[256];
+						strcpy_s(nameBuffer, sound.Name.c_str());
+						if (ImGui::InputText("Name", nameBuffer, sizeof(nameBuffer)))
+							sound.Name = nameBuffer;
+
+						// Audio File
+						std::string filename = "None";
+						if (!sound.FilePath.empty())
+							filename = std::filesystem::path(sound.FilePath).filename().string();
+						ImGui::Button(filename.c_str(), ImVec2(-1.0f, 0.0f));
+						// Drag and Drop Logic
+						if (ImGui::BeginDragDropTarget())
 						{
-							AudioEngine::UnloadSound(component.SoundHandle);
+							if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM_SOUND"))
+							{
+								const wchar_t* path = (const wchar_t*)payload->Data;
+								std::filesystem::path scriptPath(path);
+								sound.FilePath = scriptPath.string();
+							}
+							ImGui::EndDragDropTarget();
 						}
 
-						// If the sound isn't loaded yet (because we are in Edit mode, not Play mode), load it temporarily
-						if (!component.FilePath.empty())
+						if (!sound.FilePath.empty())
 						{
-							component.SoundHandle = AudioEngine::LoadSound(Project::GetAssetFileSystemPath(component.FilePath).string(), component.Loop);
+							// The "Remove" Button
+							// We use a red color for the button to indicate a destructive action
+							ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.1f, 0.15f, 1.0f));
+							ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.9f, 0.2f, 0.2f, 1.0f));
+							if (ImGui::Button("Remove Audio file"))
+							{
+								sound.FilePath = std::string();
+							}
+							ImGui::PopStyleColor(2);
+
+							// Sliders with Live Updating
+							bool changed = false;
+							if (ImGui::DragFloat("Volume", &sound.Volume, 0.01f, 0.0f, 10.0f)) changed = true;
+							if (ImGui::DragFloat("Pitch", &sound.Pitch, 0.01f, 0.1f, 3.0f)) changed = true;
+							if (ImGui::Checkbox("Loop", &sound.Loop)) changed = true;
+							ImGui::SameLine();
+							ImGui::Checkbox("Play on awake", &sound.PlayOnAwake);
+
+							if (changed && sound.IsPlaying && sound.SoundHandle)
+								AudioEngine::UpdateSound(sound.SoundHandle, sound.Volume, sound.Pitch, sound.Loop);
+
+							// Preview Buttons
+							if (ImGui::Button("Play Preview"))
+							{
+								if (!sound.FilePath.empty())
+								{
+									AudioEngine::UnloadSound(sound.SoundHandle);
+									sound.SoundHandle = AudioEngine::LoadSound(Project::GetAssetFileSystemPath(sound.FilePath).string(), sound.Loop);
+								}
+
+								if (sound.SoundHandle) {
+									AudioEngine::StartSound(sound.SoundHandle, sound.Volume, sound.Pitch);
+									sound.IsPlaying = true;
+								}
+							}
+							sound.IsPlaying = AudioEngine::IsSoundPlaying(sound.SoundHandle);
+							if (sound.IsPlaying)
+							{
+								ImGui::SameLine();
+								if (ImGui::Button("Stop"))
+								{
+									if (sound.SoundHandle) {
+										AudioEngine::StopSound(sound.SoundHandle);
+										AudioEngine::UnloadSound(sound.SoundHandle);
+										sound.SoundHandle = nullptr;
+										sound.IsPlaying = false;
+									}
+								}
+							}
 						}
 
-						if (component.SoundHandle)
-						{
-							AudioEngine::StartSound(component.SoundHandle, component.Volume, component.Pitch);
-							component.IsPlaying = true;
-						}
+						ImGui::TreePop(); // Close the TreeNode
 					}
 
-					ImGui::SameLine();
+					ImGui::PopID(); // CRITICAL: Pop the ID for this specific sound
+					ImGui::Separator();
+				}
 
-					if (ImGui::Button("Stop"))
-					{
-						if (component.SoundHandle)
-						{
-							AudioEngine::StopSound(component.SoundHandle);
-							component.IsPlaying = false;
-						}
-					}
+				// 5. Safe Deletion Step
+				// If the user clicked delete, we do it here safely outside the ImGui rendering loop
+				if (soundToDelete != -1)
+				{
+					// Free the miniaudio memory first!
+					if (component.Sounds[soundToDelete].SoundHandle)
+						AudioEngine::UnloadSound(component.Sounds[soundToDelete].SoundHandle);
 
-					ImGui::SameLine();
-
-					// Display dynamic text showing the current state
-					if (component.IsPlaying)
-						ImGui::TextColored(ImVec4(0.2f, 0.8f, 0.2f, 1.0f), "(Playing)");
-					else
-						ImGui::TextColored(ImVec4(0.5f, 0.5f, 0.5f, 1.0f), "(Stopped)");
+					// Erase it from the vector
+					component.Sounds.erase(component.Sounds.begin() + soundToDelete);
 				}
 			});
 	}

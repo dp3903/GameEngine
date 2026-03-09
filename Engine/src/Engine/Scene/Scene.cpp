@@ -206,6 +206,19 @@ namespace Engine {
 			OnScriptingStop();
 		if (m_PhysicsWorld)
 			OnPhysics2DStop();
+		auto& view = m_Registry.view<AudioSourcesComponent>();
+		for (auto& e : view)
+		{
+			auto& asc = view.get<AudioSourcesComponent>(e);
+			for (auto& ad : asc.Sounds)
+			{
+				if (ad.SoundHandle)
+				{
+					AudioEngine::UnloadSound(ad.SoundHandle);
+					ad.SoundHandle = nullptr;
+				}
+			}
+		}
 	}
 
 	std::shared_ptr<Scene> Scene::Copy(std::shared_ptr<Scene> other)
@@ -250,7 +263,7 @@ namespace Engine {
 		CopyComponent<TextComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<RelationshipComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 		CopyComponent<DisabledComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
-		CopyComponent<AudioSourceComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
+		CopyComponent<AudioSourcesComponent>(dstSceneRegistry, srcSceneRegistry, enttMap);
 
 		return newScene;
 	}
@@ -338,7 +351,7 @@ namespace Engine {
 		CopyComponentIfExists<CircleCollider2DComponent>(newEntity, entity);
 		CopyComponentIfExists<TextComponent>(newEntity, entity);
 		CopyComponentIfExists<ScriptComponent>(newEntity, entity);
-		CopyComponentIfExists<AudioSourceComponent>(newEntity, entity);
+		CopyComponentIfExists<AudioSourcesComponent>(newEntity, entity);
 
 		auto& srcRelation = entity.GetComponent<RelationshipComponent>();
 
@@ -611,19 +624,25 @@ namespace Engine {
 		OnPhysics2DStart();
 		
 		// Load all sounds into memory
-		auto view = m_Registry.view<AudioSourceComponent>();
+		auto view = m_Registry.view<AudioSourcesComponent>();
 		for (auto entityID : view)
 		{
-			auto& audio = view.get<AudioSourceComponent>(entityID);
+			auto& audio = view.get<AudioSourcesComponent>(entityID);
 
-			// Initialize the sound object and store the pointer in the component
-			audio.SoundHandle = AudioEngine::LoadSound(Project::GetAssetFileSystemPath(audio.FilePath).string(), audio.Loop);
-
-			// Play immediately if flagged
-			if (audio.PlayOnAwake)
+			for (auto& source : audio.Sounds)
 			{
-				AudioEngine::StartSound(audio.SoundHandle, audio.Volume, audio.Pitch);
-				audio.IsPlaying = true;
+				// if sound handle not null, music is on in editor mode, we stop it first
+				if (source.SoundHandle)
+					AudioEngine::UnloadSound(source.SoundHandle);
+				// Initialize the sound object and store the pointer in the component
+				source.SoundHandle = AudioEngine::LoadSound(Project::GetAssetFileSystemPath(source.FilePath).string(), source.Loop);
+
+				// Play immediately if flagged
+				if (source.PlayOnAwake)
+				{
+					AudioEngine::StartSound(source.SoundHandle, source.Volume, source.Pitch);
+					source.IsPlaying = true;
+				}
 			}
 		}
 
@@ -636,15 +655,18 @@ namespace Engine {
 		OnScriptingStop();
 		OnPhysics2DStop();
 		// Clean up memory when the scene ends to prevent memory leaks!
-		auto view = m_Registry.view<AudioSourceComponent>();
+		auto view = m_Registry.view<AudioSourcesComponent>();
 		for (auto entityID : view)
 		{
-			auto& audio = view.get<AudioSourceComponent>(entityID);
-			if (AudioEngine::IsSoundPlaying(audio.SoundHandle))
-				AudioEngine::StopSound(audio.SoundHandle);
-			AudioEngine::UnloadSound(audio.SoundHandle);
-			audio.SoundHandle = nullptr;
-			audio.IsPlaying = false;
+			auto& audio = view.get<AudioSourcesComponent>(entityID);
+			for (auto& source : audio.Sounds)
+			{
+				if (AudioEngine::IsSoundPlaying(source.SoundHandle))
+					AudioEngine::StopSound(source.SoundHandle);
+				AudioEngine::UnloadSound(source.SoundHandle);
+				source.SoundHandle = nullptr;
+				source.IsPlaying = false;
+			}
 		}
 	}
 
@@ -673,19 +695,21 @@ namespace Engine {
 		// Update global transforms
 		UpdateGlobalTransforms();
 
-		auto audioView = m_Registry.view<AudioSourceComponent>();
+		auto audioView = m_Registry.view<AudioSourcesComponent>();
 		for (auto entityID : audioView)
 		{
-			auto& audio = audioView.get<AudioSourceComponent>(entityID);
+			auto& audio = audioView.get<AudioSourcesComponent>(entityID);
 
-			// Only check sounds that the engine *thinks* are playing
-			if (audio.IsPlaying)
+			for (auto& source : audio.Sounds)
 			{
-				if (!AudioEngine::IsSoundPlaying(audio.SoundHandle))
+				// Only check sounds that the engine *thinks* are playing
+				if (source.IsPlaying)
 				{
-					// The sound finished! Reset the flag.
-					audio.IsPlaying = false;
-
+					if (!AudioEngine::IsSoundPlaying(source.SoundHandle))
+					{
+						// The sound finished! Reset the flag.
+						source.IsPlaying = false;
+					}
 				}
 			}
 		}
@@ -1067,17 +1091,20 @@ namespace Engine {
 	}
 
 	template<>
-	void Scene::OnComponentAdded<AudioSourceComponent>(Entity entity, AudioSourceComponent& component)
+	void Scene::OnComponentAdded<AudioSourcesComponent>(Entity entity, AudioSourcesComponent& component)
 	{
 		if (m_Lua)
 		{
-			component.SoundHandle = AudioEngine::LoadSound(Project::GetAssetFileSystemPath(component.FilePath).string(), component.Loop);
-
-			// Play immediately if flagged
-			if (component.PlayOnAwake)
+			for (auto& source : component.Sounds)
 			{
-				AudioEngine::StartSound(component.SoundHandle, component.Volume, component.Pitch);
-				component.IsPlaying = true;
+				source.SoundHandle = AudioEngine::LoadSound(Project::GetAssetFileSystemPath(source.FilePath).string(), source.Loop);
+
+				// Play immediately if flagged
+				if (source.PlayOnAwake)
+				{
+					AudioEngine::StartSound(source.SoundHandle, source.Volume, source.Pitch);
+					source.IsPlaying = true;
+				}
 			}
 		}
 	}

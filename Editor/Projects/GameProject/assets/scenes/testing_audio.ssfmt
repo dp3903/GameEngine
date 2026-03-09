@@ -30,13 +30,16 @@
             "ScriptComponent": {
                 "ScriptFile": "scripts\\AudioTest.lua"
             },
-            "AudioSource": {
-                "AudioFile": "sounds\\laserShoot.wav",
-                "Volume": 2.0,
-                "Pitch": 0.75,
-                "Loop": false,
-                "PlayOnAwake": true
-            },
+            "AudioSources": [
+                {
+                    "Name": "laser",
+                    "AudioFile": "sounds\\laserShoot.wav",
+                    "Volume": 2.0,
+                    "Pitch": 0.75,
+                    "Loop": false,
+                    "PlayOnAwake": true
+                }
+            ],
             "Children": []
         }
     ]

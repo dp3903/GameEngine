@@ -55,8 +55,8 @@ namespace Engine
 		{
 			//OpenProject();
 			// TODO remove temporary while not debugging
-			//OpenProject("Projects/FirstGame/Untitled.gmproj");
-			OpenProject("Projects/GameProject/GameProject.gmproj");
+			OpenProject("Projects/FirstGame/Untitled.gmproj");
+			//OpenProject("Projects/GameProject/GameProject.gmproj");
 		}
 
 		m_ContentBrowserPanel = std::make_unique<ContentBrowserPanel>();

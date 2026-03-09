@@ -40,7 +40,8 @@ function PlayerAnimationStatus:OnUpdate(ts, playerEntity)
         if self.OnGround then
             if Input.IsKeyPressed(Key.Space) then
                 self.CurrentStates["Jump"] = true
-                Physics.ApplyLinearImpulse(playerEntity, Vec2.new(0.0, self.Jumpforce), Vec2.new(0.0, 0.0), true)   
+                Physics.ApplyLinearImpulse(playerEntity, Vec2.new(0.0, self.Jumpforce), Vec2.new(0.0, 0.0), true)
+                playerEntity.AudioSources["jump"]:Play() 
             end
             if Input.IsKeyPressed(Key.A) then
                 if self.FacingDirection == 1 then
@@ -96,6 +97,9 @@ function PlayerAnimationStatus:OnUpdate(ts, playerEntity)
         
         -- Frame based logic (e.g. apply damage on specific attack frames)
         if self.CurrentStates["Attack"] == true and self.FrameIndex == 2 then
+            if playerEntity.AudioSources["attack"].IsPlaying == false then
+                playerEntity.AudioSources["attack"]:Play()
+            end
             local playerPos = playerEntity:GetPosition()
             local direction = Vec2.new(self.FacingDirection, 0.0)
             AttackEffects:Emit(Vec3.new(playerPos.x + (self.FacingDirection * 0.5), playerPos.y, playerPos.z), direction, 5.0, 2.0)

@@ -236,11 +236,12 @@ namespace Engine {
 	};
 
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	/// AudioSourceComponent ////////////////////////////////////////////////////////////////////////////////////////////////////////
+	/// AudioSourcesComponent ///////////////////////////////////////////////////////////////////////////////////////////////////////
 	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	struct AudioSourceComponent
+	struct AudioData
 	{
+		std::string Name;
 		std::string FilePath;
 		float Volume = 1.0f;
 		float Pitch = 1.0f;
@@ -251,10 +252,11 @@ namespace Engine {
 		void* SoundHandle = nullptr;
 
 		// Default constructor
-		AudioSourceComponent() = default;
+		AudioData() = default;
 		// COPY CONSTRUCTOR (Used during Entity Duplication)
-		AudioSourceComponent(const AudioSourceComponent& other)
+		AudioData(const AudioData& other)
 		{
+			Name = other.Name;
 			FilePath = other.FilePath;
 			Loop = other.Loop;
 			Pitch = other.Pitch;
@@ -268,8 +270,9 @@ namespace Engine {
 
 		// MOVE CONSTRUCTOR (Used by EnTT during memory reallocation)
 		// The 'noexcept' is strictly required, otherwise EnTT will ignore this and use the copy constructor!
-		AudioSourceComponent(AudioSourceComponent&& other) noexcept
+		AudioData(AudioData&& other) noexcept
 		{
+			Name = other.Name;
 			FilePath = std::move(other.FilePath);
 			Loop = other.Loop;
 			Pitch = other.Pitch;
@@ -286,7 +289,12 @@ namespace Engine {
 		}
 
 		// Boilerplate assignment operators to keep the compiler happy
-		AudioSourceComponent& operator=(const AudioSourceComponent& other) = default;
-		AudioSourceComponent& operator=(AudioSourceComponent&& other) = default;
+		AudioData& operator=(const AudioData& other) = default;
+		AudioData& operator=(AudioData&& other) = default;
+	};
+
+	struct AudioSourcesComponent
+	{
+		std::vector<AudioData> Sounds;
 	};
 }

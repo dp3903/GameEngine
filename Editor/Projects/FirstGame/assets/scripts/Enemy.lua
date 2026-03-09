@@ -108,6 +108,7 @@ end
 
 function Enemy:OnCollisionBegin(otherEntity)
     if otherEntity:GetName() == "Fireball" then
+        self.Entity.AudioSources["explosion"]:Play()
         self.HP = self.HP - 1
         otherEntity:SetEnabled(false)
         if self.HP == 0 then
