@@ -104,116 +104,135 @@ void main()
     // Extract camera position from the translation part of the inverse view matrix
     vec3 rayOrigin = vec3(u_InverseView[3]); 
 
-    // --- 2. Ray-Sphere Intersection Loop ---
-    // Closest t values
-    float Ts[10];
+    // --- 2. Ray Bouncing Setup ---
+    vec3 finalColor = vec3(0.0);
+    float throughput = 1.0; 
 
-    // Loop through the batched data
-    for (int i = 0; i < u_SphereCount; i++)
+    for (int bounce = 0; bounce < 3; bounce++) 
     {
-        Ts[i] = -1.0; // Default to no hit
-        vec3 oc = rayOrigin - u_Spheres[i].Position;
-        float a = dot(rayDir, rayDir);
-        float b = 2.0 * dot(oc, rayDir);
-        float c = dot(oc, oc) - (u_Spheres[i].Radius * u_Spheres[i].Radius);
+        float closestT = 999999.0;
+        float currentExitT = 0.0;
+        int hitObjectID = -1; // Changed name for clarity!
 
-        float discriminant = (b * b) - (4.0 * a * c);
-
-        if (discriminant > 0.0)
+        // --- A. Check the Spheres ---
+        for (int i = 0; i < u_SphereCount; i++)
         {
-            // Calculate the nearest hit point (the minus in the quadratic formula)
-            float t = (-b - sqrt(discriminant)) / (2.0 * a);
-            
-            Ts[i] = t;
+            vec3 oc = rayOrigin - u_Spheres[i].Position;
+            float a = dot(rayDir, rayDir);
+            float b = 2.0 * dot(oc, rayDir);
+            float c = dot(oc, oc) - (u_Spheres[i].Radius * u_Spheres[i].Radius);
+
+            float discriminant = (b * b) - (4.0 * a * c);
+
+            if (discriminant > 0.0)
+            {
+                float tFront = (-b - sqrt(discriminant)) / (2.0 * a);
+                float tBack = (-b + sqrt(discriminant)) / (2.0 * a);
+                
+                if (tFront > 0.001 && tFront < closestT)
+                {
+                    closestT = tFront;
+                    hitObjectID = i; // Regular Sphere
+                    currentExitT = tBack; 
+                }
+            }
         }
-    }
 
-    // Find the closest solid color hit
-    float closestSolidSphereT = 999999.0;
-    int hitSphereIndex = -1;
-    vec3 pixelColor = vec3(0.0); // Default background color
-
-    for (int i = 0; i < u_SphereCount; i++)
-    {
-        if (Ts[i] > 0.0 && Ts[i] < closestSolidSphereT && u_Spheres[i].Color.a >= 0.99)
+        // --- B. Check the Floor (Y = -2.0) ---
+        float floorY = -2.0;
+        if (rayDir.y < 0.0) // Only check if the ray is actually pointing downward!
         {
-            closestSolidSphereT = Ts[i];
-            hitSphereIndex = i;
-            pixelColor = u_Spheres[i].Color.rgb;
+            float tFloor = (floorY - rayOrigin.y) / rayDir.y;
+            if (tFloor > 0.001 && tFloor < closestT)
+            {
+                closestT = tFloor;
+                hitObjectID = -2; // Special ID: Floor
+            }
         }
-    }
 
-    float cumulativeAlpha = 1.0;
-    // check for the closest transparent hit for shading purposes
-    for (int i = 0; i < u_SphereCount; i++)
-    {
-        if (Ts[i] > 0.0 && Ts[i] < closestSolidSphereT)
+        // --- C. Check the Light Bulb ---
+        float lightRadius = 0.2; // Make it a small orb
+        vec3 ocLight = rayOrigin - u_LightPos;
+        float bLight = 2.0 * dot(ocLight, rayDir);
+        float cLight = dot(ocLight, ocLight) - (lightRadius * lightRadius);
+        float discLight = (bLight * bLight) - (4.0 * cLight);
+        
+        if (discLight > 0.0)
         {
-            // pixelColor = mix(pixelColor, u_Spheres[i].Color.rgb, u_Spheres[i].Color.a);
+            float tLight = (-bLight - sqrt(discLight)) / 2.0; // Only care about the front
+            if (tLight > 0.001 && tLight < closestT)
+            {
+                closestT = tLight;
+                hitObjectID = -3; // Special ID: Light Bulb
+            }
+        }
 
-            vec3 hitPoint = rayOrigin + (rayDir * Ts[i]);
-            vec3 normal = normalize(hitPoint - u_Spheres[i].Position);
+        // 2. Evaluate the Hit
+        if (hitObjectID >= 0) // We hit a Sphere!
+        {
+            vec3 hitPoint = rayOrigin + (rayDir * closestT);
+            vec3 normal = normalize(hitPoint - u_Spheres[hitObjectID].Position);
             vec3 lightDir = normalize(u_LightPos - hitPoint);
             
-            // Base direct lighting
+            // Direct lighting & Shadows
             float lightIntensity = max(dot(normal, lightDir), 0.0);
-            
-            // Get our colored shadow multiplier
             vec3 transmission = CalculateLightTransmission(hitPoint, normal);
+            vec3 finalIntensity = (vec3(lightIntensity) * transmission) + vec3(0.1); // Keep 0.1 ambient
 
-            // Apply transmission ONLY to the direct light. Add 0.1 ambient so shadows aren't pitch black.
+            float alpha = u_Spheres[hitObjectID].Color.a;
+
+            // Blend this sphere's lit color into the final image, modulated by the current throughput
+            finalColor += u_Spheres[hitObjectID].Color.rgb * finalIntensity * alpha * throughput;
+
+            // Reduce the throughput for the next bounce (if alpha is 0.4, 60% of light continues)
+            throughput *= (1.0 - alpha);
+
+            // Optimization: If the throughput drops to basically zero, stop calculating!
+            if (throughput <= 0.01) break;
+
+            // 3. Push the ray completely through the sphere for the next loop!
+            // We use the tBack value we saved earlier so we don't get trapped inside the volume
+            rayOrigin = rayOrigin + (rayDir * (currentExitT + 0.001));
+        }
+        else if (hitObjectID == -2) // We hit the Floor
+        {
+            vec3 hitPoint = rayOrigin + (rayDir * closestT);
+            vec3 normal = vec3(0.0, 1.0, 0.0); // Floor normal ALWAYS points straight up
+            
+            // Generate the Checkerboard Pattern
+            float tileSize = 2.0; 
+            float pattern = mod(floor(hitPoint.x / tileSize) + floor(hitPoint.z / tileSize), 2.0);
+            
+            // Mix between a dark grey and light grey based on the pattern
+            vec3 floorColor = mix(vec3(0.15), vec3(0.4), pattern);
+            
+            // Lighting & Shadows for the floor
+            vec3 lightDir = normalize(u_LightPos - hitPoint);
+            float lightIntensity = max(dot(normal, lightDir), 0.0);
+            vec3 transmission = CalculateLightTransmission(hitPoint, normal);
             vec3 finalIntensity = (vec3(lightIntensity) * transmission) + vec3(0.1);
 
-            pixelColor = mix(pixelColor, u_Spheres[i].Color.rgb * finalIntensity, u_Spheres[i].Color.a);
-            cumulativeAlpha *= (1.0 - u_Spheres[i].Color.a);
+            finalColor += floorColor * finalIntensity * throughput;
+            break; // The floor is solid rock. Stop bouncing!
+        }
+        else if (hitObjectID == -3) // We hit the Light Bulb
+        {
+            // Emissive materials don't have shadows or shading. They just glow!
+            vec3 bulbColor = vec3(1.0, 0.9, 0.7); // Warm slightly yellow white
+            finalColor += bulbColor * throughput;
+            break; // The bulb is completely opaque. Stop bouncing!
+        }
+        else
+        {
+            // We hit the empty sky
+            float gradientFactor = (v_ScreenCoord.y + 1.0) * 0.5;
+            vec3 skyColor = mix(vec3(0.05, 0.05, 0.05), vec3(0.1, 0.1, 0.2), gradientFactor);
+            
+            // The sky fills whatever throughput is left over!
+            finalColor += skyColor * throughput;
+            break; // Nothing left to hit
         }
     }
 
-    // final blend for the closest solid hit (if there is one)
-    if (hitSphereIndex != -1)
-    {
-        vec3 hitPoint = rayOrigin + (rayDir * closestSolidSphereT);
-        vec3 normal = normalize(hitPoint - u_Spheres[hitSphereIndex].Position);
-        vec3 lightDir = normalize(u_LightPos - hitPoint);
-        
-        // Base direct lighting
-        float lightIntensity = max(dot(normal, lightDir), 0.0);
-        
-        // Get our colored shadow multiplier
-        vec3 transmission = CalculateLightTransmission(hitPoint, normal);
-
-        // Apply transmission ONLY to the direct light. Add 0.1 ambient so shadows aren't pitch black.
-        vec3 finalIntensity = (vec3(lightIntensity) * transmission) + vec3(0.1);
-
-        pixelColor = pixelColor = mix(pixelColor, u_Spheres[hitSphereIndex].Color.rgb * finalIntensity, cumulativeAlpha);
-    }
-    
-    FragColor = vec4(pixelColor, 1.0);
-
-    // // --- 3. Shading ---
-    // if (hitSphereIndex != -1)
-    // {
-    //     vec3 hitPoint = rayOrigin + (rayDir * closestSolidSphereT);
-    //     vec3 normal = normalize(hitPoint - u_Spheres[hitSphereIndex].Position);
-    //     vec3 lightDir = normalize(u_LightPos - hitPoint);
-        
-    //     // Base direct lighting
-    //     float lightIntensity = max(dot(normal, lightDir), 0.0);
-        
-    //     // Get our colored shadow multiplier
-    //     vec3 transmission = CalculateLightTransmission(hitPoint, normal);
-
-    //     // Apply transmission ONLY to the direct light. Add 0.1 ambient so shadows aren't pitch black.
-    //     vec3 finalIntensity = (vec3(lightIntensity) * transmission) + vec3(0.1);
-
-    //     vec3 finalColor = pixelColor * finalIntensity;
-
-    //     // Keep the alpha of the hit object so the background can show through (if we add background blending later)
-    //     FragColor = vec4(finalColor, 1.0);
-    // }
-    // else
-    // {
-    //     // No hit, just output the background color (black in this case)
-    //     FragColor = vec4(pixelColor, 1.0);
-    // }
+    FragColor = vec4(finalColor, 1.0);
 }

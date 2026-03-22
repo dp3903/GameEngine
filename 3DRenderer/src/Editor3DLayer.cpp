@@ -173,14 +173,14 @@ namespace Engine
 		ImGui::PushID(1);
 		ImGui::DragFloat3("Position", glm::value_ptr(Sphere1Pos), 0.1);
 		ImGui::DragFloat("Radius", &Sphere1Rad, 0.1);
-		ImGui::DragFloat4("Color", glm::value_ptr(Sphere1Col), 0.1);
+		ImGui::DragFloat4("Color", glm::value_ptr(Sphere1Col), 0.1, 0.0f, 1.0f);
 		ImGui::PopID();
 
 		ImGui::Text("Sphere 2");
 		ImGui::PushID(2);
 		ImGui::DragFloat3("Position", glm::value_ptr(Sphere2Pos), 0.1);
 		ImGui::DragFloat("Radius", &Sphere2Rad, 0.1);
-		ImGui::DragFloat4("Color", glm::value_ptr(Sphere2Col), 0.1);
+		ImGui::DragFloat4("Color", glm::value_ptr(Sphere2Col), 0.1, 0.0f, 1.0f);
 		ImGui::PopID();
 
 		ImGui::End();
