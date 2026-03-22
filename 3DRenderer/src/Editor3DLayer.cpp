@@ -1,0 +1,214 @@
+#include "Editor3DLayer.h"
+#include "imgui/imgui.h"
+#include <imgui/imgui_internal.h>
+#include <imgui/imgui_stdlib.h>
+
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
+#include "ImGuizmo.h"
+
+namespace Engine
+{
+
+	Editor3DLayer::Editor3DLayer()
+		: Layer("EditorLayer")
+	{
+
+	}
+
+	void Editor3DLayer::OnAttach()
+	{
+		FramebufferSpecification fbSpec;
+		fbSpec.Attachments = { FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::RED_INTEGER, FramebufferTextureFormat::Depth };
+		fbSpec.Width = 1280;
+		fbSpec.Height = 720;
+		m_Framebuffer = Framebuffer::Create(fbSpec);
+
+		m_EditorCamera = EditorCamera(30.0f, 1.778f, 0.1f, 1000.0f);
+
+		APP_LOG_INFO("Editor3D Attached");
+	}
+
+	void Editor3DLayer::OnDetach()
+	{
+		APP_LOG_INFO("Editor3D Detached");
+	}
+
+	void Editor3DLayer::OnUpdate(float ts)
+	{
+
+		// Resize
+		if (Engine::FramebufferSpecification spec = m_Framebuffer->GetSpecification();
+			m_ViewportSize.x > 0.0f && m_ViewportSize.y > 0.0f && // zero sized framebuffer is invalid
+			(spec.Width != m_ViewportSize.x || spec.Height != m_ViewportSize.y))
+		{
+			m_Framebuffer->Resize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+
+			m_EditorCamera.SetViewportSize(m_ViewportSize.x, m_ViewportSize.y);
+		}
+
+		// Bind frame buffer before any renderer calls
+		m_Framebuffer->Bind();
+
+		// Render
+		Renderer2D::ResetStats();
+
+		RenderCommand::SetClearColor({ 0.01f, 0.01f, 0.01f, 1 });
+		RenderCommand::Clear();
+		
+		// Clear our entity ID attachment to -1
+		m_Framebuffer->ClearAttachment(1, -1);
+
+		m_EditorCamera.OnUpdate(ts);
+
+		// Draw
+		{
+			//Renderer2D::BeginScene(m_EditorCamera);
+
+			//Renderer2D::DrawQuad({ 1, 1 }, { 2, 1 }, { 0.4f, 0.7f, 0.8f, 1.0f });
+
+			//Renderer2D::EndScene();
+
+			Renderer3D::BeginScene(m_EditorCamera, m_LightPosition);
+
+			Renderer3D::DrawSphere(Sphere1Pos, Sphere1Rad, Sphere1Col);
+			Renderer3D::DrawSphere(Sphere2Pos, Sphere2Rad, Sphere2Col);
+
+			Renderer3D::EndScene();
+		}
+
+		m_Framebuffer->Unbind();
+	}
+
+	void Editor3DLayer::OnImGuiRender()
+	{
+		// Note: Switch this to true to enable dockspace
+		static bool dockspaceOpen = true;
+		static bool opt_fullscreen_persistant = true;
+		bool opt_fullscreen = opt_fullscreen_persistant;
+		static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
+
+		// We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
+		// because it would be confusing to have two docking targets within each others.
+		ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+		if (opt_fullscreen)
+		{
+			ImGuiViewport* viewport = ImGui::GetMainViewport();
+			ImGui::SetNextWindowPos(viewport->Pos);
+			ImGui::SetNextWindowSize(viewport->Size);
+			ImGui::SetNextWindowViewport(viewport->ID);
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+			window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+			window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+		}
+
+		// When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background and handle the pass-thru hole, so we ask Begin() to not render a background.
+		if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
+			window_flags |= ImGuiWindowFlags_NoBackground;
+
+		// Important: note that we proceed even if Begin() returns false (aka window is collapsed).
+		// This is because we want to keep our DockSpace() active. If a DockSpace() is inactive, 
+		// all active windows docked into it will lose their parent and become undocked.
+		// We cannot preserve the docking relationship between an active window and an inactive docking, otherwise 
+		// any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+		ImGui::Begin("DockSpace Demo", &dockspaceOpen, window_flags);
+			ImGui::PopStyleVar();
+
+			if (opt_fullscreen)
+				ImGui::PopStyleVar(2);
+
+			// DockSpace
+			ImGuiIO& io = ImGui::GetIO();
+			ImGuiStyle& style = ImGui::GetStyle();
+			float minWinSizeX = style.WindowMinSize.x;
+			style.WindowMinSize.x = 370.0f;
+			if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
+			{
+				ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+				ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+				ImVec2 dockSpacePosScreen = ImGui::GetWindowPos();
+				m_DockspaceLocation = { dockSpacePosScreen.x,dockSpacePosScreen.y };
+			}
+			style.WindowMinSize.x = minWinSizeX;
+
+			UI_Stats();
+
+			UI_Viewport();
+
+		ImGui::End();
+		
+	}
+
+	void Editor3DLayer::OnEvent(Event& e)
+	{
+		m_EditorCamera.OnEvent(e);
+
+		EventDispatcher dispatcher(e);
+		dispatcher.Dispatch<KeyPressedEvent>(std::bind(&Editor3DLayer::OnKeyPressed, this, std::placeholders::_1));
+		dispatcher.Dispatch<MouseButtonPressedEvent>(std::bind(&Editor3DLayer::OnMouseButtonPressed, this, std::placeholders::_1));
+	}
+
+	bool Editor3DLayer::OnKeyPressed(KeyPressedEvent& e)
+	{
+
+		return false;
+	}
+
+	bool Editor3DLayer::OnMouseButtonPressed(MouseButtonPressedEvent& e)
+	{
+		
+		return false;
+	}
+
+	void Editor3DLayer::UI_Stats()
+	{
+		ImGui::Begin("Stats");
+
+		ImGui::DragFloat3("Light Position", glm::value_ptr(m_LightPosition), 0.2f);
+
+		ImGui::Text("Sphere 1");
+		ImGui::PushID(1);
+		ImGui::DragFloat3("Position", glm::value_ptr(Sphere1Pos), 0.1);
+		ImGui::DragFloat("Radius", &Sphere1Rad, 0.1);
+		ImGui::DragFloat4("Color", glm::value_ptr(Sphere1Col), 0.1);
+		ImGui::PopID();
+
+		ImGui::Text("Sphere 2");
+		ImGui::PushID(2);
+		ImGui::DragFloat3("Position", glm::value_ptr(Sphere2Pos), 0.1);
+		ImGui::DragFloat("Radius", &Sphere2Rad, 0.1);
+		ImGui::DragFloat4("Color", glm::value_ptr(Sphere2Col), 0.1);
+		ImGui::PopID();
+
+		ImGui::End();
+	}
+
+	void Editor3DLayer::UI_Viewport()
+	{
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{ 0, 0 });
+		ImGui::Begin("Viewport");
+
+		auto viewportMinRegion = ImGui::GetWindowContentRegionMin();
+		auto viewportMaxRegion = ImGui::GetWindowContentRegionMax();
+		auto viewportOffset = ImGui::GetWindowPos();
+		m_ViewportBounds[0] = { viewportMinRegion.x + viewportOffset.x, viewportMinRegion.y + viewportOffset.y };
+		m_ViewportBounds[1] = { viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y };
+		
+		m_ViewportFocused = ImGui::IsWindowFocused();
+		m_ViewportHovered = ImGui::IsWindowHovered();
+		Application::Get().GetImGuiLayer()->BlockEvents(!m_ViewportFocused || !m_ViewportHovered);
+
+		ImVec2 viewportPanelSize = ImGui::GetContentRegionAvail();
+
+		m_ViewportSize = { viewportPanelSize.x, viewportPanelSize.y };
+
+		uint32_t textureID = m_Framebuffer->GetColorAttachmentRendererID();
+		ImGui::Image((void*)textureID, ImVec2{ m_ViewportSize.x, m_ViewportSize.y }, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+
+		ImGui::End();
+		ImGui::PopStyleVar();
+	}
+}

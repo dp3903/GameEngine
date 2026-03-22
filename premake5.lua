@@ -166,6 +166,61 @@ project "Editor"
 		optimize "on"
 
 
+project "3DRenderer"
+	location "3DRenderer"
+	kind "ConsoleApp"
+	cppdialect "C++17"
+	staticruntime "on"
+	language "C++"
+
+	targetdir ("bin/" .. output_dir .. "/%{prj.name}")
+	objdir ("bin-int/" .. output_dir .. "/%{prj.name}")
+
+	files
+	{
+		"%{prj.name}/src/**.h",
+		"%{prj.name}/src/**.cpp"
+	}
+
+	includedirs
+	{
+		"Engine/vendors",
+		"Engine/src",
+		"%{IncludeDir.GLFW}",
+		"%{IncludeDir.GLAD}",
+		"%{IncludeDir.GLM}",
+		"%{IncludeDir.entt}",
+		"%{IncludeDir.ImGuizmo}",
+		"%{IncludeDir.msdfgen}",
+		"%{IncludeDir.msdf_atlas_gen}",
+		"%{IncludeDir.lua}",
+		"%{IncludeDir.sol}"
+	}
+
+	links
+	{
+		"Engine"
+	}
+
+	filter "system:windows"
+		systemversion "latest"
+		buildoptions { "/utf-8" }
+
+		defines
+		{
+			"ENGINE_PLATFORM_WINDOWS",
+			"GLFW_INCLUDE_NONE"
+		}
+
+	filter "configurations:Debug"
+		defines "ENGINE_DEBUG"
+		symbols "on"
+		
+	filter "configurations:Release"
+		defines "ENGINE_RELEASE"
+		optimize "on"
+
+
 project "Game"
 	location "Game"
 	kind "ConsoleApp"
