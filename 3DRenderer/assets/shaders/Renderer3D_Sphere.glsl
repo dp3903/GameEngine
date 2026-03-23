@@ -33,6 +33,7 @@ struct Sphere {
     float Radius;
     vec3 Albedo;
     float Roughness;
+    float Metallic;
     float Opacity;
     float IOR;
 };
@@ -196,26 +197,27 @@ void main()
         if (hit.ObjectID >= 0) // We hit a Sphere!
         {
             vec3 lightDir = normalize(u_LightPos - hit.Position);
-            
-            // Direct lighting & Shadows
             float lightIntensity = max(dot(hit.Normal, lightDir), 0.0);
             vec3 transmission = CalculateLightTransmission(hit.Position, hit.Normal);
-            vec3 finalIntensity = (vec3(lightIntensity) * transmission) + vec3(0.1); // Keep 0.1 ambient
+            vec3 finalIntensity = (vec3(lightIntensity) * transmission) + vec3(0.1); 
 
-            float alpha = u_Spheres[hit.ObjectID].Opacity; // Use the Transmission property for blending
+            float alpha = u_Spheres[hit.ObjectID].Opacity; 
+            float metallic = u_Spheres[hit.ObjectID].Metallic; // Use Metallic for reflections!
 
-            // Blend this sphere's lit color into the final image, modulated by the current throughput
-            finalColor += u_Spheres[hit.ObjectID].Albedo * finalIntensity * alpha * throughput;
+            // 1. Diffuse Color: The color of the sphere itself. 
+            // Metals don't have diffuse color, so we fade it out as Metallic approaches 1.0
+            vec3 diffuseColor = u_Spheres[hit.ObjectID].Albedo * finalIntensity;
+            finalColor += diffuseColor * (1.0 - metallic) * alpha * throughput;
 
-            // Reduce the throughput for the next bounce (if alpha is 0.4, 60% of light continues)
-            throughput *= (1.0 - alpha);
+            // 2. Update Throughput for the reflection bounce.
+            // A mirror continues with 100% energy. A matte surface drops the energy to 0%.
+            throughput *= metallic; 
 
-            // Optimization: If the throughput drops to basically zero, stop calculating!
+            // Optimization: If the surface isn't reflective, stop bouncing!
             if (throughput <= 0.01) break;
 
             // --- 3. Prepare for Next Bounce ---
-            // For simplicity, we'll do perfect reflections for now.
-            rayOrigin = hit.Position + (hit.Normal * 0.001); // Offset to prevent self-intersection
+            rayOrigin = hit.Position + (hit.Normal * 0.001); 
             rayDir = reflect(rayDir, hit.Normal);
         }
         else if (hit.ObjectID == -2) // We hit the Floor

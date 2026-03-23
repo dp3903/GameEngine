@@ -132,10 +132,11 @@ namespace Engine
 			// Materialproperties
 			glm::vec3 Albedo = {1.0f, 1.0f, 1.0f};      // The base color
 			float Roughness = 1;						// 0.0 = perfect mirror, 1.0 = chalk
+			float Metallic = 0;							// 0.0 = plastic/matte, 1.0 = metallic
 			float Opacity = 1;						    // 1.0 = solid, 0.0 = fully transparent glass
 			float IOR = 1;
 
-			float padding[2];
+			float padding;
 		};
 
 		static const Sphere VoidSphere;

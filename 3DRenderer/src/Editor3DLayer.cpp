@@ -182,6 +182,7 @@ namespace Engine
 			ImGui::DragFloat("Radius", &m_Spheres[i].Radius, 0.05f);
 			ImGui::ColorEdit3("Albedo", glm::value_ptr(m_Spheres[i].Albedo));
 			ImGui::DragFloat("Roughness", &m_Spheres[i].Roughness, 0.0f, 0.05f, 1.0f);
+			ImGui::DragFloat("Metallic", &m_Spheres[i].Metallic, 0.0f, 0.05f, 1.0f);
 			ImGui::DragFloat("Opacity", &m_Spheres[i].Opacity, 0.0f, 0.05f, 1.0f);
 			ImGui::DragFloat("IOR", &m_Spheres[i].IOR, 0.0f, 0.05f, 1.0f);
 			ImGui::PopID();
