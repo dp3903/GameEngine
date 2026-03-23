@@ -42,13 +42,6 @@ namespace Engine
 		glm::vec2 m_ViewportBounds[2];
 		glm::vec2 m_DockspaceLocation = { 0.0f,0.0f };
 
-		glm::vec3 m_LightPosition = { 5.0f,5.0f,-5.0f };
-		
-		glm::vec3 Sphere1Pos = { 0,0,0 };
-		float Sphere1Rad = 1;
-		glm::vec4 Sphere1Col = { 1,1,1,1 };
-		glm::vec3 Sphere2Pos = { -2,-2,2 };
-		float Sphere2Rad = 1;
-		glm::vec4 Sphere2Col = { 0.9, 0.4, 0.8, 1 };
+		std::vector<Renderer3D::Sphere> m_Spheres;
 	};
 }

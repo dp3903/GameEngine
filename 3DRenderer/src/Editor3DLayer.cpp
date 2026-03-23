@@ -14,7 +14,6 @@ namespace Engine
 	Editor3DLayer::Editor3DLayer()
 		: Layer("EditorLayer")
 	{
-
 	}
 
 	void Editor3DLayer::OnAttach()
@@ -26,6 +25,9 @@ namespace Engine
 		m_Framebuffer = Framebuffer::Create(fbSpec);
 
 		m_EditorCamera = EditorCamera(30.0f, 1.778f, 0.1f, 1000.0f);
+
+		m_Spheres.push_back({ { 0,0,0 }, 1 });
+		m_Spheres.push_back({ { -2,-2,-2 }, 1 });
 
 		APP_LOG_INFO("Editor3D Attached");
 	}
@@ -70,10 +72,10 @@ namespace Engine
 
 			//Renderer2D::EndScene();
 
-			Renderer3D::BeginScene(m_EditorCamera, m_LightPosition);
-
-			Renderer3D::DrawSphere(Sphere1Pos, Sphere1Rad, Sphere1Col);
-			Renderer3D::DrawSphere(Sphere2Pos, Sphere2Rad, Sphere2Col);
+			Renderer3D::BeginScene(m_EditorCamera);
+			
+			for (auto& sphere : m_Spheres)
+				Renderer3D::DrawSphere(sphere);
 
 			Renderer3D::EndScene();
 		}
@@ -167,21 +169,23 @@ namespace Engine
 	{
 		ImGui::Begin("Stats");
 
-		ImGui::DragFloat3("Light Position", glm::value_ptr(m_LightPosition), 0.2f);
+		ImGui::DragFloat3("Light Position", glm::value_ptr(Renderer3D::m_LightPosition), 0.1f);
+		ImGui::DragInt("Bounce Factor", (int*)&Renderer3D::m_BounceFactor, 1, 1, 10);
+		ImGui::DragInt("Sampling Rate", (int*)&Renderer3D::m_SamplingRate, 1, 3, 10);
 
-		ImGui::Text("Sphere 1");
-		ImGui::PushID(1);
-		ImGui::DragFloat3("Position", glm::value_ptr(Sphere1Pos), 0.1);
-		ImGui::DragFloat("Radius", &Sphere1Rad, 0.1);
-		ImGui::DragFloat4("Color", glm::value_ptr(Sphere1Col), 0.1, 0.0f, 1.0f);
-		ImGui::PopID();
-
-		ImGui::Text("Sphere 2");
-		ImGui::PushID(2);
-		ImGui::DragFloat3("Position", glm::value_ptr(Sphere2Pos), 0.1);
-		ImGui::DragFloat("Radius", &Sphere2Rad, 0.1);
-		ImGui::DragFloat4("Color", glm::value_ptr(Sphere2Col), 0.1, 0.0f, 1.0f);
-		ImGui::PopID();
+		for (uint32_t i = 0 ; i < m_Spheres.size() ; i++)
+		{
+			ImGui::Separator();
+			ImGui::Text("Sphere: %d", i);
+			ImGui::PushID(i);
+			ImGui::DragFloat3("Position", glm::value_ptr(m_Spheres[i].Position), 0.05f);
+			ImGui::DragFloat("Radius", &m_Spheres[i].Radius, 0.05f);
+			ImGui::ColorEdit3("Albedo", glm::value_ptr(m_Spheres[i].Albedo));
+			ImGui::DragFloat("Roughness", &m_Spheres[i].Roughness, 0.0f, 0.05f, 1.0f);
+			ImGui::DragFloat("Opacity", &m_Spheres[i].Opacity, 0.0f, 0.05f, 1.0f);
+			ImGui::DragFloat("IOR", &m_Spheres[i].IOR, 0.0f, 0.05f, 1.0f);
+			ImGui::PopID();
+		}
 
 		ImGui::End();
 	}

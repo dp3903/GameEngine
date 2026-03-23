@@ -125,13 +125,33 @@ namespace Engine
 	class Renderer3D
 	{
 	public:
+		struct Sphere {
+			glm::vec3 Position;
+			float Radius;
+			
+			// Materialproperties
+			glm::vec3 Albedo = {1.0f, 1.0f, 1.0f};      // The base color
+			float Roughness = 1;						// 0.0 = perfect mirror, 1.0 = chalk
+			float Opacity = 1;						    // 1.0 = solid, 0.0 = fully transparent glass
+			float IOR = 1;
+
+			float padding[2];
+		};
+
+		static const Sphere VoidSphere;
+	public:
 		static void Init();
 		static void Shutdown();
 
-		static void BeginScene(const EditorCamera& camera, const glm::vec3& lightPos);
+		static void BeginScene(const EditorCamera& camera);
 		static void EndScene();
 
-		static void DrawSphere(const glm::vec3& position, const float& radius, const glm::vec4& color = { 1.0f, 1.0f, 1.0f, 1.0f });
+		static void DrawSphere(const Sphere& sphere);
+
+	public:
+		inline static glm::vec3 m_LightPosition = { 5.0f, 5.0f, -5.0f };
+		inline static uint32_t m_BounceFactor = 3;
+		inline static uint32_t m_SamplingRate = 5;
 	};
 }
 

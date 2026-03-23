@@ -824,13 +824,7 @@ namespace Engine {
 	/// Renderer-3D ///////////////////////////////////////////////////////////////////////////////////////////////////
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	struct SphereVertex
-	{
-		glm::vec3 Position;
-		float Radius;
-		glm::vec4 Color;
-	};
-
+	
 	struct Renderer3DData
 	{
 		static const uint32_t MaxSphereCount = 10;
@@ -843,11 +837,9 @@ namespace Engine {
 		std::shared_ptr<Shader> SphereShader;
 
 		// CPU Batching Data (This stays exactly the same!)
-		SphereVertex* SphereBufferBase = nullptr;
-		SphereVertex* SphereBufferPtr = nullptr;
+		Renderer3D::Sphere* SphereBufferBase = nullptr;
+		Renderer3D::Sphere* SphereBufferPtr = nullptr;
 		uint32_t SphereCount = 0;
-
-		glm::vec3 lightPos;
 
 		struct CameraData
 		{
@@ -867,15 +859,14 @@ namespace Engine {
 	// This struct mirrors the GLSL std140 layout exactly
 	struct SphereUBOData
 	{
-		SphereVertex Spheres[Renderer3DData::MaxSphereCount];
+		Renderer3D::Sphere Spheres[Renderer3DData::MaxSphereCount];
 		uint32_t SphereCount;
 		float padding[3]; // std140 requires the end of the struct to align to 16 bytes
 	};
 
+
 	void Renderer3D::Init()
 	{
-		s_3DData.lightPos = { 5.0f, 5.0f, -5.0f };
-
 		// --- Create the Full Screen Quad ---
 		float quadVertices[] = {
 			-1.0f, -1.0f, 0.0f,
@@ -895,7 +886,7 @@ namespace Engine {
 		s_3DData.QuadVertexArray->SetIndexBuffer(s_3DData.QuadIndexBuffer);
 
 		// Keep the CPU buffer for batching
-		s_3DData.SphereBufferBase = new SphereVertex[s_3DData.MaxSphereCount];
+		s_3DData.SphereBufferBase = new Sphere[s_3DData.MaxSphereCount];
 
 		// Create Camera UBO at binding point 0
 		s_3DData.CameraUniformBuffer = UniformBuffer::Create(sizeof(Renderer3DData::CameraData), 0);
@@ -906,7 +897,12 @@ namespace Engine {
 		s_3DData.SphereShader = Shader::Create("assets/shaders/Renderer3D_Sphere.glsl");
 	}
 
-	void Renderer3D::BeginScene(const EditorCamera& camera, const glm::vec3& lightPos)
+	void Renderer3D::Shutdown()
+	{
+
+	}
+
+	void Renderer3D::BeginScene(const EditorCamera& camera)
 	{
 		// Pass the matrices so the shader can un-project the screen coordinates
 		s_3DData.CameraBuffer.InverseProjection = glm::inverse(camera.GetProjection());
@@ -916,8 +912,6 @@ namespace Engine {
 
 		s_3DData.SphereBufferPtr = s_3DData.SphereBufferBase;
 		s_3DData.SphereCount = 0;
-
-		s_3DData.lightPos = lightPos;
 	}
 
 	void Renderer3D::EndScene()
@@ -927,13 +921,15 @@ namespace Engine {
 			s_3DData.SphereShader->Bind();
 
 			// 1. Upload standard uniforms (Lighting is usually fine as standard uniforms unless you have many lights)
-			s_3DData.SphereShader->SetFloat3("u_LightPos", s_3DData.lightPos);
+			s_3DData.SphereShader->SetFloat3("u_LightPos", m_LightPosition);
+			s_3DData.SphereShader->SetInt("u_BounceCount", m_BounceFactor);
+			s_3DData.SphereShader->SetInt("u_SampleCount", m_SamplingRate);
 
 			// 2. The Clean UBO Upload!
 			SphereUBOData uboData;
 
 			// Copy the batched spheres into our UBO struct
-			memcpy(uboData.Spheres, s_3DData.SphereBufferBase, sizeof(SphereVertex) * s_3DData.SphereCount);
+			memcpy(uboData.Spheres, s_3DData.SphereBufferBase, sizeof(Sphere) * s_3DData.SphereCount);
 			uboData.SphereCount = s_3DData.SphereCount;
 
 			// Send the entire chunk of memory to the GPU in one single API call
@@ -944,14 +940,12 @@ namespace Engine {
 		}
 	}
 
-	void Renderer3D::DrawSphere(const glm::vec3& position, const float& radius, const glm::vec4& color)
+	void Renderer3D::DrawSphere(const Sphere& sphere)
 	{
 		if (s_3DData.SphereCount >= Renderer3DData::MaxSphereCount)
 			return;
 
-		s_3DData.SphereBufferPtr->Position = position;
-		s_3DData.SphereBufferPtr->Radius = radius;
-		s_3DData.SphereBufferPtr->Color = color;
+		*(s_3DData.SphereBufferPtr) = sphere;
 		s_3DData.SphereBufferPtr++;
 		s_3DData.SphereCount++;
 	}
