@@ -224,7 +224,7 @@ void main()
 
         // --- 2. Ray Bouncing Setup ---
         vec3 sampleColor = vec3(0.0);
-        float throughput = 1.0; 
+        vec3 throughput = vec3(1.0); // CHANGED: Now tracks RGB light energy
 
         for (int bounce = 0; bounce < u_BounceCount; bounce++) 
         {
@@ -247,34 +247,66 @@ void main()
                 sampleColor += diffuseColor * (1.0 - metallic) * alpha * throughput;
 
                 // 2. Update Throughput for the reflection bounce.
-                // A mirror continues with 100% energy. A matte surface drops the energy to 0%.
-                throughput *= metallic; 
+                // If it is plastic (metallic=0), it reflects pure white light. 
+                // If it is metal (metallic=1), the reflection is tinted by the sphere's Albedo!
+                vec3 specularTint = mix(vec3(1.0), u_Spheres[hit.ObjectID].Albedo, metallic);
+                throughput *= specularTint;
 
-                // Optimization: If the surface isn't reflective, stop bouncing!
-                if (throughput <= 0.01) break;
+                // Optimization: If the remaining light energy is basically zero, stop calculating!
+                if (length(throughput) <= 0.01) break;
                 if (u_Spheres[hit.ObjectID].Metallic <= 0.01) break;
 
                 // --- 3. Prepare for Next Bounce ---
-                float roughness = u_Spheres[hit.ObjectID].Roughness;
+                if (alpha < 0.99) // It is a transparent/glass object!
+                {
+                    // 1. Are we entering the sphere or exiting it?
+                    bool isInside = dot(rayDir, hit.Normal) > 0.0;
+                    
+                    // If we are inside, flip the normal so it points inward, and invert the IOR ratio
+                    vec3 outwardNormal = isInside ? -hit.Normal : hit.Normal;
+                    float refractionRatio = isInside ? u_Spheres[hit.ObjectID].IOR : (1.0 / u_Spheres[hit.ObjectID].IOR);
 
-                // --- THE CONE MATH (UPGRADED) ---
-                vec3 perfectReflection = reflect(rayDir, hit.Normal);
-                vec3 randomVec = randomDirection(rngState);
+                    // 2. Calculate Fresnel (Probability of Reflection)
+                    float cosTheta = min(dot(-rayDir, outwardNormal), 1.0);
+                    float r0 = (1.0 - refractionRatio) / (1.0 + refractionRatio);
+                    r0 = r0 * r0;
+                    float reflectance = r0 + (1.0 - r0) * pow(1.0 - cosTheta, 5.0);
 
-                // 1. If the random vector points inside the sphere, flip it so it points outward!
-                if (dot(randomVec, hit.Normal) < 0.0) {
-                    randomVec = -randomVec;
+                    // 3. The "Stupid" Idea that makes Path Tracing work!
+                    float randVal = randomFloat(rngState);
+
+                    // Attempt to calculate the refraction vector
+                    vec3 refractedDir = refract(rayDir, outwardNormal, refractionRatio);
+
+                    // If random is less than reflectance, OR if Total Internal Reflection occurs (refractedDir is 0)
+                    if (randVal < reflectance || length(refractedDir) < 0.001) 
+                    {
+                        // WE REFLECT
+                        rayDir = reflect(rayDir, outwardNormal);
+                        rayOrigin = hit.Position + (outwardNormal * 0.001); // Push slightly OUT of the surface
+                    } 
+                    else 
+                    {
+                        // WE REFRACT
+                        rayDir = refractedDir;
+                        rayOrigin = hit.Position - (outwardNormal * 0.001); // Push slightly INTO the surface!
+                    }
+                    
+                    // Tint the glass by multiplying throughput by the Albedo
+                    throughput *= u_Spheres[hit.ObjectID].Albedo;
                 }
-
-                // 2. Create a perfectly diffuse, random bounce
-                vec3 diffuseBounce = normalize(hit.Normal + randomVec * 0.5);
-
-                // 3. Mix between mirror and diffuse based on roughness.
-                // (Squaring the roughness gives a much more natural, linear slider feel)
-                rayDir = normalize(mix(perfectReflection, diffuseBounce, roughness * roughness));
-
-                // Apply the offset and move to the next bounce
-                rayOrigin = hit.Position + (hit.Normal * 0.001);
+                else 
+                {
+                    // [Your existing Solid Opaque / Metallic reflection math goes here]
+                    vec3 perfectReflection = reflect(rayDir, hit.Normal);
+                    vec3 randomVec = randomDirection(rngState);
+                    if (dot(randomVec, hit.Normal) < 0.0) { randomVec = -randomVec; }
+                    vec3 diffuseBounce = normalize(hit.Normal + randomVec);
+                    
+                    float roughness = u_Spheres[hit.ObjectID].Roughness;
+                    rayDir = normalize(mix(perfectReflection, diffuseBounce, roughness * roughness));
+                    rayOrigin = hit.Position + (hit.Normal * 0.001);
+                }
             }
             else if (hit.ObjectID == -2) // We hit the Floor
             {   
