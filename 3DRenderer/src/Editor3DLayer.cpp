@@ -170,8 +170,8 @@ namespace Engine
 		ImGui::Begin("Stats");
 
 		ImGui::DragFloat3("Light Position", glm::value_ptr(Renderer3D::m_LightPosition), 0.1f);
-		ImGui::DragInt("Bounce Factor", (int*)&Renderer3D::m_BounceFactor, 1, 1, 10);
-		ImGui::DragInt("Sampling Rate", (int*)&Renderer3D::m_SamplingRate, 1, 3, 10);
+		ImGui::SliderInt("Bounce Factor", (int*)&Renderer3D::m_BounceFactor, 1, 10);
+		ImGui::SliderInt("Sampling Rate", (int*)&Renderer3D::m_SamplingRate, 3, 30);
 
 		for (uint32_t i = 0 ; i < m_Spheres.size() ; i++)
 		{
@@ -181,10 +181,10 @@ namespace Engine
 			ImGui::DragFloat3("Position", glm::value_ptr(m_Spheres[i].Position), 0.05f);
 			ImGui::DragFloat("Radius", &m_Spheres[i].Radius, 0.05f);
 			ImGui::ColorEdit3("Albedo", glm::value_ptr(m_Spheres[i].Albedo));
-			ImGui::DragFloat("Roughness", &m_Spheres[i].Roughness, 0.0f, 0.05f, 1.0f);
-			ImGui::DragFloat("Metallic", &m_Spheres[i].Metallic, 0.0f, 0.05f, 1.0f);
-			ImGui::DragFloat("Opacity", &m_Spheres[i].Opacity, 0.0f, 0.05f, 1.0f);
-			ImGui::DragFloat("IOR", &m_Spheres[i].IOR, 0.0f, 0.05f, 1.0f);
+			ImGui::SliderFloat("Roughness", &m_Spheres[i].Roughness, 0.0f, 1.0f);
+			ImGui::SliderFloat("Metallic", &m_Spheres[i].Metallic, 0.0f, 1.0f);
+			ImGui::SliderFloat("Opacity", &m_Spheres[i].Opacity, 0.0f, 1.0f);
+			ImGui::SliderFloat("IOR", &m_Spheres[i].IOR, 1.0f, 3.0f);
 			ImGui::PopID();
 		}
 

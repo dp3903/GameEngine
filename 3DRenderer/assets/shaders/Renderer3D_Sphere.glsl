@@ -175,87 +175,144 @@ vec3 CalculateLightTransmission(vec3 hitPoint, vec3 normal)
     return lightMultiplier;
 }
 
+// A fast, high-quality random number generator (PCG Hash)
+uint pcg_hash(uint seed)
+{
+    uint state = seed * 747796405u + 2891336453u;
+    uint word = ((state >> ((state >> 28u) + 4u)) ^ state) * 277803737u;
+    return (word >> 22u) ^ word;
+}
+
+// Generates a random float between 0.0 and 1.0
+float randomFloat(inout uint seed)
+{
+    seed = pcg_hash(seed);
+    return float(seed) / 4294967295.0; // Divide by max uint32
+}
+
+// Generates a random point inside a 3D unit sphere
+vec3 randomDirection(inout uint seed)
+{
+    float x = randomFloat(seed) * 2.0 - 1.0;
+    float y = randomFloat(seed) * 2.0 - 1.0;
+    float z = randomFloat(seed) * 2.0 - 1.0;
+    return normalize(vec3(x, y, z));
+}
+
 void main()
 {
-    // --- 1. Calculate Ray Origin and Direction ---
-    // Un-project screen coordinates into world space directions
-    vec4 target = u_InverseProjection * vec4(v_ScreenCoord.x, v_ScreenCoord.y, 1.0, 1.0);
-    vec3 rayDir = vec3(u_InverseView * vec4(normalize(vec3(target) / target.w), 0.0));
-    
-    // Extract camera position from the translation part of the inverse view matrix
-    vec3 rayOrigin = vec3(u_InverseView[3]); 
+    // Create a unique seed for this specific pixel
+    // (Combining X, Y coords and the current sample number)
+    // gl_FragCoord is strictly positive, preventing the negative-to-uint clamping bug!
+    uint pixelIndex = uint(gl_FragCoord.x) + uint(gl_FragCoord.y) * 1920u;
+    uint rngState = pixelIndex;
 
-    // --- 2. Ray Bouncing Setup ---
-    vec3 finalColor = vec3(0.0);
-    float throughput = 1.0; 
-
-    for (int bounce = 0; bounce < u_BounceCount; bounce++) 
+    vec3 accumulatedColor = vec3(0.0);
+    // --- The Multisampling Loop ---
+    for (int sampleIdx = 0; sampleIdx < u_SampleCount; sampleIdx++)
     {
-        HitInfo hit = TraceRay(rayOrigin, rayDir);
+        // Advance the RNG state for this sample
+        rngState = pcg_hash(rngState + uint(sampleIdx));
 
-        // 2. Evaluate the Hit
-        if (hit.ObjectID >= 0) // We hit a Sphere!
+        // --- 1. Calculate Ray Origin and Direction ---
+        // Un-project screen coordinates into world space directions
+        vec4 target = u_InverseProjection * vec4(v_ScreenCoord.x, v_ScreenCoord.y, 1.0, 1.0);
+        vec3 rayDir = vec3(u_InverseView * vec4(normalize(vec3(target) / target.w), 0.0));
+        
+        // Extract camera position from the translation part of the inverse view matrix
+        vec3 rayOrigin = vec3(u_InverseView[3]); 
+
+        // --- 2. Ray Bouncing Setup ---
+        vec3 sampleColor = vec3(0.0);
+        float throughput = 1.0; 
+
+        for (int bounce = 0; bounce < u_BounceCount; bounce++) 
         {
-            vec3 lightDir = normalize(u_LightPos - hit.Position);
-            float lightIntensity = max(dot(hit.Normal, lightDir), 0.0);
-            vec3 transmission = CalculateLightTransmission(hit.Position, hit.Normal);
-            vec3 finalIntensity = (vec3(lightIntensity) * transmission) + vec3(0.1); 
+            HitInfo hit = TraceRay(rayOrigin, rayDir);
 
-            float alpha = u_Spheres[hit.ObjectID].Opacity; 
-            float metallic = u_Spheres[hit.ObjectID].Metallic; // Use Metallic for reflections!
+            // 2. Evaluate the Hit
+            if (hit.ObjectID >= 0) // We hit a Sphere!
+            {
+                vec3 lightDir = normalize(u_LightPos - hit.Position);
+                float lightIntensity = max(dot(hit.Normal, lightDir), 0.0);
+                vec3 transmission = CalculateLightTransmission(hit.Position, hit.Normal);
+                vec3 finalIntensity = (vec3(lightIntensity) * transmission) + vec3(0.1); 
 
-            // 1. Diffuse Color: The color of the sphere itself. 
-            // Metals don't have diffuse color, so we fade it out as Metallic approaches 1.0
-            vec3 diffuseColor = u_Spheres[hit.ObjectID].Albedo * finalIntensity;
-            finalColor += diffuseColor * (1.0 - metallic) * alpha * throughput;
+                float alpha = u_Spheres[hit.ObjectID].Opacity; 
+                float metallic = u_Spheres[hit.ObjectID].Metallic; // Use Metallic for reflections!
 
-            // 2. Update Throughput for the reflection bounce.
-            // A mirror continues with 100% energy. A matte surface drops the energy to 0%.
-            throughput *= metallic; 
+                // 1. Diffuse Color: The color of the sphere itself. 
+                // Metals don't have diffuse color, so we fade it out as Metallic approaches 1.0
+                vec3 diffuseColor = u_Spheres[hit.ObjectID].Albedo * finalIntensity;
+                sampleColor += diffuseColor * (1.0 - metallic) * alpha * throughput;
 
-            // Optimization: If the surface isn't reflective, stop bouncing!
-            if (throughput <= 0.01) break;
+                // 2. Update Throughput for the reflection bounce.
+                // A mirror continues with 100% energy. A matte surface drops the energy to 0%.
+                throughput *= metallic; 
 
-            // --- 3. Prepare for Next Bounce ---
-            rayOrigin = hit.Position + (hit.Normal * 0.001); 
-            rayDir = reflect(rayDir, hit.Normal);
+                // Optimization: If the surface isn't reflective, stop bouncing!
+                if (throughput <= 0.01) break;
+                if (u_Spheres[hit.ObjectID].Metallic <= 0.01) break;
+
+                // --- 3. Prepare for Next Bounce ---
+                float roughness = u_Spheres[hit.ObjectID].Roughness;
+
+                // --- THE CONE MATH (UPGRADED) ---
+                vec3 perfectReflection = reflect(rayDir, hit.Normal);
+                vec3 randomVec = randomDirection(rngState);
+
+                // 1. If the random vector points inside the sphere, flip it so it points outward!
+                if (dot(randomVec, hit.Normal) < 0.0) {
+                    randomVec = -randomVec;
+                }
+
+                // 2. Create a perfectly diffuse, random bounce
+                vec3 diffuseBounce = normalize(hit.Normal + randomVec * 0.5);
+
+                // 3. Mix between mirror and diffuse based on roughness.
+                // (Squaring the roughness gives a much more natural, linear slider feel)
+                rayDir = normalize(mix(perfectReflection, diffuseBounce, roughness * roughness));
+
+                // Apply the offset and move to the next bounce
+                rayOrigin = hit.Position + (hit.Normal * 0.001);
+            }
+            else if (hit.ObjectID == -2) // We hit the Floor
+            {   
+                // Generate the Checkerboard Pattern
+                float tileSize = 2.0; 
+                float pattern = mod(floor(hit.Position.x / tileSize) + floor(hit.Position.z / tileSize), 2.0);
+                
+                // Mix between a dark grey and light grey based on the pattern
+                vec3 floorColor = mix(vec3(0.15), vec3(0.4), pattern);
+                
+                // Lighting & Shadows for the floor
+                vec3 lightDir = normalize(u_LightPos - hit.Position);
+                float lightIntensity = max(dot(hit.Normal, lightDir), 0.0);
+                vec3 transmission = CalculateLightTransmission(hit.Position, hit.Normal);
+                vec3 finalIntensity = (vec3(lightIntensity) * transmission) + vec3(0.1);
+
+                sampleColor += floorColor * finalIntensity * throughput;
+                break; // The floor is solid rock. Stop bouncing!
+            }
+            else if (hit.ObjectID == -3) // We hit the Light Bulb
+            {
+                vec3 bulbColor = vec3(1.0, 0.9, 0.7);
+                sampleColor += bulbColor * throughput;
+                break; 
+            }
+            else
+            {
+                // We hit the empty sky
+                float gradientFactor = (v_ScreenCoord.y + 1.0) * 0.5;
+                vec3 skyColor = mix(vec3(0.05, 0.05, 0.05), vec3(0.1, 0.1, 0.2), gradientFactor);
+                
+                // The sky fills whatever throughput is left over!
+                sampleColor += skyColor * throughput;
+                break; // Nothing left to hit
+            }
         }
-        else if (hit.ObjectID == -2) // We hit the Floor
-        {   
-            // Generate the Checkerboard Pattern
-            float tileSize = 2.0; 
-            float pattern = mod(floor(hit.Position.x / tileSize) + floor(hit.Position.z / tileSize), 2.0);
-            
-            // Mix between a dark grey and light grey based on the pattern
-            vec3 floorColor = mix(vec3(0.15), vec3(0.4), pattern);
-            
-            // Lighting & Shadows for the floor
-            vec3 lightDir = normalize(u_LightPos - hit.Position);
-            float lightIntensity = max(dot(hit.Normal, lightDir), 0.0);
-            vec3 transmission = CalculateLightTransmission(hit.Position, hit.Normal);
-            vec3 finalIntensity = (vec3(lightIntensity) * transmission) + vec3(0.1);
-
-            finalColor += floorColor * finalIntensity * throughput;
-            break; // The floor is solid rock. Stop bouncing!
-        }
-        else if (hit.ObjectID == -3) // We hit the Light Bulb
-        {
-            // Emissive materials don't have shadows or shading. They just glow!
-            vec3 bulbColor = vec3(1.0, 0.9, 0.7); // Warm slightly yellow white
-            finalColor += bulbColor * throughput;
-            break; // The bulb is completely opaque. Stop bouncing!
-        }
-        else
-        {
-            // We hit the empty sky
-            float gradientFactor = (v_ScreenCoord.y + 1.0) * 0.5;
-            vec3 skyColor = mix(vec3(0.05, 0.05, 0.05), vec3(0.1, 0.1, 0.2), gradientFactor);
-            
-            // The sky fills whatever throughput is left over!
-            finalColor += skyColor * throughput;
-            break; // Nothing left to hit
-        }
+        accumulatedColor += sampleColor;
     }
 
-    FragColor = vec4(finalColor, 1.0);
+    FragColor = vec4(accumulatedColor / float(u_SampleCount), 1.0);
 }
