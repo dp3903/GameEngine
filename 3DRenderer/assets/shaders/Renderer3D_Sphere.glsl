@@ -17,6 +17,7 @@ void main()
 #type fragment
 #version 450 core
 layout(location = 0) out vec4 FragColor;
+layout(location = 1) out vec4 BrightColor; // <--- ADD THIS
 
 in vec2 v_ScreenCoord;
 
@@ -328,7 +329,7 @@ void main()
             }
             else if (hit.ObjectID == -3) // We hit the Light Bulb
             {
-                vec3 bulbColor = vec3(1.0, 0.9, 0.7);
+                vec3 bulbColor = vec3(1.0, 0.9, 0.7) * 20;
                 sampleColor += bulbColor * throughput;
                 break; 
             }
@@ -347,4 +348,13 @@ void main()
     }
 
     FragColor = vec4(accumulatedColor / float(u_SampleCount), 1.0);
+
+    // Calculate the perceived brightness of the pixel using standard luminance weights
+    float brightness = dot(FragColor.rgb, vec3(0.2126, 0.7152, 0.0722));
+    
+    // If it is brighter than a standard monitor can display, send it to the Bloom buffer!
+    if(brightness > 5.0)
+        BrightColor = vec4(FragColor.rgb, 1.0);
+    else
+        BrightColor = vec4(0.0, 0.0, 0.0, 1.0);
 }

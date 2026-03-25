@@ -79,6 +79,7 @@ namespace Engine {
 		switch (format)
 		{
 		case FramebufferTextureFormat::RGBA8:       return GL_RGBA8;
+		case FramebufferTextureFormat::RGBA16F:     return GL_RGBA16F;
 		case FramebufferTextureFormat::RED_INTEGER: return GL_RED_INTEGER;
 		}
 
@@ -148,6 +149,9 @@ namespace Engine {
 				{
 				case FramebufferTextureFormat::RGBA8:
 					AttachColorTexture(m_ColorAttachments[i], m_Specification.Samples, GL_RGBA8, GL_RGBA, m_Specification.Width, m_Specification.Height, i);
+					break;
+				case FramebufferTextureFormat::RGBA16F:
+					AttachColorTexture(m_ColorAttachments[i], m_Specification.Samples, GL_RGBA16F, GL_RGBA, m_Specification.Width, m_Specification.Height, i);
 					break;
 				case FramebufferTextureFormat::RED_INTEGER:
 					AttachColorTexture(m_ColorAttachments[i], m_Specification.Samples, GL_R32I, GL_RED_INTEGER, m_Specification.Width, m_Specification.Height, i);

@@ -2,6 +2,7 @@
 #include "VertexArray.h"
 #include "glm/glm.hpp"
 #include "Engine/Renderer/Shader.h"
+#include "Engine/Renderer/FrameBuffer.h"
 #include "Texture.h"
 #include "Camera.h"
 #include "EditorCamera.h"
@@ -148,11 +149,14 @@ namespace Engine
 		static void EndScene();
 
 		static void DrawSphere(const Sphere& sphere);
+		static void PostProcess(const std::shared_ptr<Framebuffer>& HDRframeBuffer, const std::shared_ptr<Framebuffer>& targetFrameBuffer);
 
+		static void OnViewportResize(uint32_t width, uint32_t height);
 	public:
 		inline static glm::vec3 m_LightPosition = { 5.0f, 5.0f, -5.0f };
 		inline static uint32_t m_BounceFactor = 3;
 		inline static uint32_t m_SamplingRate = 5;
+		inline static float m_Exposure = 1.0;
 	};
 }
 

@@ -852,6 +852,11 @@ namespace Engine {
 		// We now have TWO Uniform Buffers
 		std::shared_ptr<UniformBuffer> CameraUniformBuffer;
 		std::shared_ptr<UniformBuffer> SphereUniformBuffer;
+		
+		// For post-processing
+		std::shared_ptr<Framebuffer> PingPongFBO[2];
+		std::shared_ptr<Shader> BlurShader;
+		std::shared_ptr<Shader> CompositeShader;
 	};
 
 	static Renderer3DData s_3DData;
@@ -895,6 +900,16 @@ namespace Engine {
 		s_3DData.SphereUniformBuffer = UniformBuffer::Create(sizeof(SphereUBOData), 1);
 
 		s_3DData.SphereShader = Shader::Create("assets/shaders/Renderer3D_Sphere.glsl");
+
+		// Post-processing assets
+		FramebufferSpecification pingpongSpec;
+		pingpongSpec.Attachments = { FramebufferTextureFormat::RGBA16F };
+		pingpongSpec.Width = 640;
+		pingpongSpec.Height = 360;
+		s_3DData.PingPongFBO[0] = Framebuffer::Create(pingpongSpec);
+		s_3DData.PingPongFBO[1] = Framebuffer::Create(pingpongSpec);
+		s_3DData.BlurShader = Shader::Create("assets/shaders/Blur.glsl");
+		s_3DData.CompositeShader = Shader::Create("assets/shaders/Composite.glsl");
 	}
 
 	void Renderer3D::Shutdown()
@@ -948,5 +963,86 @@ namespace Engine {
 		*(s_3DData.SphereBufferPtr) = sphere;
 		s_3DData.SphereBufferPtr++;
 		s_3DData.SphereCount++;
+	}
+
+	void Renderer3D::PostProcess(const std::shared_ptr<Framebuffer>& HDRframeBuffer, const std::shared_ptr<Framebuffer>& targetFrameBuffer)
+	{
+		// ==========================================
+		// PASS 2: EXTRACT & BLUR (Ping-Pong)
+		// ==========================================
+		bool horizontal = true, first_iteration = true;
+		int amount = 10; // Blur it 10 times
+
+		s_3DData.BlurShader->Bind();
+		for (unsigned int i = 0; i < amount; i++)
+		{
+			s_3DData.PingPongFBO[horizontal]->Bind();
+			s_3DData.BlurShader->SetInt("u_Horizontal", horizontal);
+
+			// On the first pass, we blur the main scene. After that, we blur the blurs!
+			uint32_t textureToBlur = first_iteration ? HDRframeBuffer->GetColorAttachmentRendererID(1) : s_3DData.PingPongFBO[!horizontal]->GetColorAttachmentRendererID(0);
+
+			// Bind the texture and draw a flat 2D Screen Quad
+			{
+				// 1. Bind the framebuffer image we want to blur/composite to Slot 0
+				glBindTextureUnit(0, textureToBlur);
+
+				// 2. Bind the exact same geometry used by your Ray Tracer
+				s_3DData.QuadVertexArray->Bind();
+
+				// 3. Draw it!
+				RenderCommand::DrawIndexed(s_3DData.QuadVertexArray, 6);
+			}
+
+			s_3DData.PingPongFBO[horizontal]->Unbind();
+			horizontal = !horizontal;
+			if (first_iteration) first_iteration = false;
+		}
+
+		// ==========================================
+		// PASS 3: COMPOSITE (Add Bloom to Original)
+		// ==========================================
+		// We bind the target Framebuffer one last time to draw the glow over top of the scene
+		targetFrameBuffer->Bind();
+
+		// Clear the color and depth buffers so the 2D Quad can safely draw!
+		RenderCommand::Clear();
+
+		s_3DData.CompositeShader->Bind();
+		s_3DData.CompositeShader->SetInt("u_SceneTexture", 0);
+		s_3DData.CompositeShader->SetInt("u_BlurTexture", 1);
+		s_3DData.CompositeShader->SetFloat("u_Exposure", m_Exposure);
+
+		// Bind the final blurred texture
+		uint32_t sceneTexture = HDRframeBuffer->GetColorAttachmentRendererID(0);
+		uint32_t blurredTexture = s_3DData.PingPongFBO[!horizontal]->GetColorAttachmentRendererID(0);
+		{
+			// 1. Bind the framebuffer image we want to blur/composite to Slot 0
+			glBindTextureUnit(0, sceneTexture);
+			// Bind blurred texture to slot 1
+			glBindTextureUnit(1, blurredTexture);
+
+			// 2. Bind the exact same geometry used by your Ray Tracer
+			s_3DData.QuadVertexArray->Bind();
+
+			// 3. Draw it!
+			RenderCommand::DrawIndexed(s_3DData.QuadVertexArray, 6);
+		}
+
+		targetFrameBuffer->Unbind();
+	}
+
+	void Renderer3D::OnViewportResize(uint32_t width, uint32_t height)
+	{
+		// Keep the bloom buffers at half resolution for massive performance gains!
+		uint32_t bloomWidth = width / 2;
+		uint32_t bloomHeight = height / 2;
+
+		// Safety check to prevent OpenGL crash on 0x0 size when minimizing the window
+		if (bloomWidth > 0 && bloomHeight > 0)
+		{
+			s_3DData.PingPongFBO[0]->Resize(bloomWidth, bloomHeight);
+			s_3DData.PingPongFBO[1]->Resize(bloomWidth, bloomHeight);
+		}
 	}
 }

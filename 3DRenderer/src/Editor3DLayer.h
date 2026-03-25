@@ -33,7 +33,10 @@ namespace Engine
 		void UI_Viewport();
 
 	private:
-		std::shared_ptr<Framebuffer> m_Framebuffer;
+		std::shared_ptr<Framebuffer> m_FinalFramebuffer;
+		std::shared_ptr<Framebuffer> m_HDRFramebuffer;
+
+		bool m_PostProcessing = false;
 
 		EditorCamera m_EditorCamera;
 

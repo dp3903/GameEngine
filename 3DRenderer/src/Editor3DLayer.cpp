@@ -18,11 +18,26 @@ namespace Engine
 
 	void Editor3DLayer::OnAttach()
 	{
-		FramebufferSpecification fbSpec;
-		fbSpec.Attachments = { FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::RED_INTEGER, FramebufferTextureFormat::Depth };
-		fbSpec.Width = 1280;
-		fbSpec.Height = 720;
-		m_Framebuffer = Framebuffer::Create(fbSpec);
+		FramebufferSpecification HDRfbSpec;
+		// Slot 0: Scene Color (RGBA16F)
+		// Slot 1: Bloom Extraction (RGBA16F)
+		// Slot 2: Entity ID (RED_INTEGER)
+		// Slot 3: Depth
+		HDRfbSpec.Attachments = {
+			FramebufferTextureFormat::RGBA16F,
+			FramebufferTextureFormat::RGBA16F,
+			FramebufferTextureFormat::RED_INTEGER,
+			FramebufferTextureFormat::Depth
+		};
+		HDRfbSpec.Width = 1280;
+		HDRfbSpec.Height = 720;
+		m_HDRFramebuffer = Framebuffer::Create(HDRfbSpec);
+
+		FramebufferSpecification finalfbSpec;
+		finalfbSpec.Attachments = { FramebufferTextureFormat::RGBA8, FramebufferTextureFormat::RED_INTEGER, FramebufferTextureFormat::Depth };
+		finalfbSpec.Width = 1280;
+		finalfbSpec.Height = 720;
+		m_FinalFramebuffer = Framebuffer::Create(finalfbSpec);
 
 		m_EditorCamera = EditorCamera(30.0f, 1.778f, 0.1f, 1000.0f);
 
@@ -41,46 +56,51 @@ namespace Engine
 	{
 
 		// Resize
-		if (Engine::FramebufferSpecification spec = m_Framebuffer->GetSpecification();
+		if (Engine::FramebufferSpecification spec = m_FinalFramebuffer->GetSpecification();
 			m_ViewportSize.x > 0.0f && m_ViewportSize.y > 0.0f && // zero sized framebuffer is invalid
 			(spec.Width != m_ViewportSize.x || spec.Height != m_ViewportSize.y))
 		{
-			m_Framebuffer->Resize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+			m_FinalFramebuffer->Resize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+			m_HDRFramebuffer->Resize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+			Renderer3D::OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 
 			m_EditorCamera.SetViewportSize(m_ViewportSize.x, m_ViewportSize.y);
 		}
 
-		// Bind frame buffer before any renderer calls
-		m_Framebuffer->Bind();
-
-		// Render
-		Renderer2D::ResetStats();
-
-		RenderCommand::SetClearColor({ 0.01f, 0.01f, 0.01f, 1 });
-		RenderCommand::Clear();
-		
-		// Clear our entity ID attachment to -1
-		m_Framebuffer->ClearAttachment(1, -1);
-
+		// Update Editor Camera
 		m_EditorCamera.OnUpdate(ts);
 
-		// Draw
+		// ==========================================
+		// PASS 1: RENDER THE 3D SCENE (HDR)
+		// ==========================================
 		{
-			//Renderer2D::BeginScene(m_EditorCamera);
+			// Bind frame buffer before any renderer calls
+			m_HDRFramebuffer->Bind();
 
-			//Renderer2D::DrawQuad({ 1, 1 }, { 2, 1 }, { 0.4f, 0.7f, 0.8f, 1.0f });
+			RenderCommand::SetClearColor({ 0.01f, 0.01f, 0.01f, 1 });
+			RenderCommand::Clear();
 
-			//Renderer2D::EndScene();
+			// Clear our entity ID attachment to -1
+			m_HDRFramebuffer->ClearAttachment(1, -1);
 
-			Renderer3D::BeginScene(m_EditorCamera);
-			
-			for (auto& sphere : m_Spheres)
-				Renderer3D::DrawSphere(sphere);
 
-			Renderer3D::EndScene();
+			// Draw
+			{
+				Renderer3D::BeginScene(m_EditorCamera);
+
+				for (auto& sphere : m_Spheres)
+					Renderer3D::DrawSphere(sphere);
+
+				Renderer3D::EndScene();
+			}
+
+			m_HDRFramebuffer->Unbind();
 		}
 
-		m_Framebuffer->Unbind();
+		// Post-process
+		if(m_PostProcessing)
+			Renderer3D::PostProcess(m_HDRFramebuffer, m_FinalFramebuffer);
+		
 	}
 
 	void Editor3DLayer::OnImGuiRender()
@@ -170,6 +190,9 @@ namespace Engine
 		ImGui::Begin("Stats");
 
 		ImGui::DragFloat3("Light Position", glm::value_ptr(Renderer3D::m_LightPosition), 0.1f);
+		ImGui::Checkbox("Enable Post Processing", &m_PostProcessing);
+		if(m_PostProcessing)
+			ImGui::SliderFloat("Exposure", &Renderer3D::m_Exposure, 1.0f, 5.0f);
 		ImGui::SliderInt("Bounce Factor", (int*)&Renderer3D::m_BounceFactor, 1, 10);
 		ImGui::SliderInt("Sampling Rate", (int*)&Renderer3D::m_SamplingRate, 3, 30);
 
@@ -210,8 +233,16 @@ namespace Engine
 
 		m_ViewportSize = { viewportPanelSize.x, viewportPanelSize.y };
 
-		uint32_t textureID = m_Framebuffer->GetColorAttachmentRendererID();
-		ImGui::Image((void*)textureID, ImVec2{ m_ViewportSize.x, m_ViewportSize.y }, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+		if (m_PostProcessing)
+		{
+			uint32_t textureID = m_FinalFramebuffer->GetColorAttachmentRendererID();
+			ImGui::Image((void*)textureID, ImVec2{ m_ViewportSize.x, m_ViewportSize.y }, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+		}
+		else
+		{
+			uint32_t textureID = m_HDRFramebuffer->GetColorAttachmentRendererID();
+			ImGui::Image((void*)textureID, ImVec2{ m_ViewportSize.x, m_ViewportSize.y }, ImVec2{ 0, 1 }, ImVec2{ 1, 0 });
+		}
 
 		ImGui::End();
 		ImGui::PopStyleVar();
