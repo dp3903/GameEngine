@@ -828,18 +828,23 @@ namespace Engine {
 	struct Renderer3DData
 	{
 		static const uint32_t MaxSphereCount = 10;
+		static const uint32_t MaxCuboidCount = 10;
 
 		// We only need geometry for the Screen Quad now!
 		std::shared_ptr<VertexArray> QuadVertexArray;
 		std::shared_ptr<VertexBuffer> QuadVertexBuffer;
 		std::shared_ptr<IndexBuffer> QuadIndexBuffer;
 
-		std::shared_ptr<Shader> SphereShader;
+		std::shared_ptr<Shader> RayTracingShader;
 
 		// CPU Batching Data (This stays exactly the same!)
 		Renderer3D::Sphere* SphereBufferBase = nullptr;
 		Renderer3D::Sphere* SphereBufferPtr = nullptr;
 		uint32_t SphereCount = 0;
+
+		Renderer3D::Cuboid* CuboidBufferBase = nullptr;
+		Renderer3D::Cuboid* CuboidBufferPtr = nullptr;
+		uint32_t CuboidCount = 0;
 
 		struct CameraData
 		{
@@ -852,6 +857,7 @@ namespace Engine {
 		// We now have TWO Uniform Buffers
 		std::shared_ptr<UniformBuffer> CameraUniformBuffer;
 		std::shared_ptr<UniformBuffer> SphereUniformBuffer;
+		std::shared_ptr<UniformBuffer> CuboidUniformBuffer;
 		
 		// For post-processing
 		std::shared_ptr<Framebuffer> PingPongFBO[2];
@@ -866,6 +872,13 @@ namespace Engine {
 	{
 		Renderer3D::Sphere Spheres[Renderer3DData::MaxSphereCount];
 		uint32_t SphereCount;
+		float padding[3]; // std140 requires the end of the struct to align to 16 bytes
+	};
+
+	struct CuboidUBOData
+	{
+		Renderer3D::Cuboid Cuboids[Renderer3DData::MaxCuboidCount];
+		uint32_t CuboidCount;
 		float padding[3]; // std140 requires the end of the struct to align to 16 bytes
 	};
 
@@ -892,14 +905,17 @@ namespace Engine {
 
 		// Keep the CPU buffer for batching
 		s_3DData.SphereBufferBase = new Sphere[s_3DData.MaxSphereCount];
+		s_3DData.CuboidBufferBase = new Cuboid[s_3DData.MaxCuboidCount];
 
 		// Create Camera UBO at binding point 0
 		s_3DData.CameraUniformBuffer = UniformBuffer::Create(sizeof(Renderer3DData::CameraData), 0);
 
 		// Create Sphere UBO at binding point 1
 		s_3DData.SphereUniformBuffer = UniformBuffer::Create(sizeof(SphereUBOData), 1);
+		// Create Cuboid UBO at binding point 2
+		s_3DData.CuboidUniformBuffer = UniformBuffer::Create(sizeof(CuboidUBOData), 2);
 
-		s_3DData.SphereShader = Shader::Create("assets/shaders/Renderer3D_Sphere.glsl");
+		s_3DData.RayTracingShader = Shader::Create("assets/shaders/Renderer3D_RayTracing.glsl");
 
 		// Post-processing assets
 		FramebufferSpecification pingpongSpec;
@@ -927,28 +943,42 @@ namespace Engine {
 
 		s_3DData.SphereBufferPtr = s_3DData.SphereBufferBase;
 		s_3DData.SphereCount = 0;
+		s_3DData.CuboidBufferPtr = s_3DData.CuboidBufferBase;
+		s_3DData.CuboidCount = 0;
 	}
 
 	void Renderer3D::EndScene()
 	{
-		if (s_3DData.SphereCount)
+		if (s_3DData.SphereCount || s_3DData.CuboidCount)
 		{
-			s_3DData.SphereShader->Bind();
+			s_3DData.RayTracingShader->Bind();
 
 			// 1. Upload standard uniforms (Lighting is usually fine as standard uniforms unless you have many lights)
-			s_3DData.SphereShader->SetFloat3("u_LightPos", m_LightPosition);
-			s_3DData.SphereShader->SetInt("u_BounceCount", m_BounceFactor);
-			s_3DData.SphereShader->SetInt("u_SampleCount", m_SamplingRate);
+			s_3DData.RayTracingShader->SetFloat3("u_LightPos", m_LightPosition);
+			s_3DData.RayTracingShader->SetInt("u_BounceCount", m_BounceFactor);
+			s_3DData.RayTracingShader->SetInt("u_SampleCount", m_SamplingRate);
 
 			// 2. The Clean UBO Upload!
-			SphereUBOData uboData;
+			{
+				SphereUBOData sphereUboData;
 
-			// Copy the batched spheres into our UBO struct
-			memcpy(uboData.Spheres, s_3DData.SphereBufferBase, sizeof(Sphere) * s_3DData.SphereCount);
-			uboData.SphereCount = s_3DData.SphereCount;
+				// Copy the batched spheres into our UBO struct
+				memcpy(sphereUboData.Spheres, s_3DData.SphereBufferBase, sizeof(Sphere) * s_3DData.SphereCount);
+				sphereUboData.SphereCount = s_3DData.SphereCount;
 
-			// Send the entire chunk of memory to the GPU in one single API call
-			s_3DData.SphereUniformBuffer->SetData(&uboData, sizeof(SphereUBOData));
+				// Send the entire chunk of memory to the GPU in one single API call
+				s_3DData.SphereUniformBuffer->SetData(&sphereUboData, sizeof(SphereUBOData));
+			}
+			{
+				CuboidUBOData cuboidUboData;
+
+				// Copy the batched cuboids into our UBO struct
+				memcpy(cuboidUboData.Cuboids, s_3DData.CuboidBufferBase, sizeof(Cuboid) * s_3DData.CuboidCount);
+				cuboidUboData.CuboidCount = s_3DData.CuboidCount;
+
+				// Send the entire chunk of memory to the GPU in one single API call
+				s_3DData.CuboidUniformBuffer->SetData(&cuboidUboData, sizeof(CuboidUBOData));
+			}
 
 			// 3. Draw the Quad
 			RenderCommand::DrawIndexed(s_3DData.QuadVertexArray, 6);
@@ -963,6 +993,16 @@ namespace Engine {
 		*(s_3DData.SphereBufferPtr) = sphere;
 		s_3DData.SphereBufferPtr++;
 		s_3DData.SphereCount++;
+	}
+
+	void Renderer3D::DrawCuboid(const Cuboid& cuboid)
+	{
+		if (s_3DData.CuboidCount >= Renderer3DData::MaxCuboidCount)
+			return;
+
+		*(s_3DData.CuboidBufferPtr) = cuboid;
+		s_3DData.CuboidBufferPtr++;
+		s_3DData.CuboidCount++;
 	}
 
 	void Renderer3D::PostProcess(const std::shared_ptr<Framebuffer>& HDRframeBuffer, const std::shared_ptr<Framebuffer>& targetFrameBuffer)
@@ -1011,7 +1051,6 @@ namespace Engine {
 		s_3DData.CompositeShader->Bind();
 		s_3DData.CompositeShader->SetInt("u_SceneTexture", 0);
 		s_3DData.CompositeShader->SetInt("u_BlurTexture", 1);
-		s_3DData.CompositeShader->SetFloat("u_Exposure", m_Exposure);
 
 		// Bind the final blurred texture
 		uint32_t sceneTexture = HDRframeBuffer->GetColorAttachmentRendererID(0);

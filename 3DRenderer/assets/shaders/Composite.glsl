@@ -22,8 +22,6 @@ in vec2 v_TexCoord;
 uniform sampler2D u_SceneTexture; 
 uniform sampler2D u_BlurTexture;  
 
-uniform float u_Exposure = 1.0; // Optional: Gives you control over scene brightness
-
 void main()
 {
     vec3 sceneColor = texture(u_SceneTexture, v_TexCoord).rgb;      
@@ -31,15 +29,5 @@ void main()
     
     // 1. Additive Blending (Optical Bloom)
     vec3 hdrColor = sceneColor + bloomColor;
-    
-    // 2. Exposure Tone Mapping (Slightly better than raw Reinhard)
-    // This allows you to smoothly adjust the overall brightness of the scene
-    vec3 mappedColor = vec3(1.0) - exp(-hdrColor * u_Exposure);
-    
-    // 3. Gamma Correction (CRITICAL)
-    // Converts the linear light math from your raytracer into the sRGB color space your monitor expects
-    const float gamma = 2.2;
-    mappedColor = pow(mappedColor, vec3(1.0 / gamma));
-    
-    FragColor = vec4(mappedColor, 1.0);
+    FragColor = vec4(hdrColor, 1.0);
 }

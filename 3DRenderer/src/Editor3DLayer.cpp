@@ -44,6 +44,8 @@ namespace Engine
 		m_Spheres.push_back({ { 0,0,0 }, 1 });
 		m_Spheres.push_back({ { -2,-2,-2 }, 1 });
 
+		m_Cuboids.push_back({ {0,0,-5} });
+
 		APP_LOG_INFO("Editor3D Attached");
 	}
 
@@ -90,6 +92,8 @@ namespace Engine
 
 				for (auto& sphere : m_Spheres)
 					Renderer3D::DrawSphere(sphere);
+				for (auto& cuboid : m_Cuboids)
+					Renderer3D::DrawCuboid(cuboid);
 
 				Renderer3D::EndScene();
 			}
@@ -190,24 +194,70 @@ namespace Engine
 		ImGui::Begin("Stats");
 
 		ImGui::DragFloat3("Light Position", glm::value_ptr(Renderer3D::m_LightPosition), 0.1f);
-		ImGui::Checkbox("Enable Post Processing", &m_PostProcessing);
-		if(m_PostProcessing)
-			ImGui::SliderFloat("Exposure", &Renderer3D::m_Exposure, 1.0f, 5.0f);
+		ImGui::Checkbox("Enable Bloom", &m_PostProcessing);
 		ImGui::SliderInt("Bounce Factor", (int*)&Renderer3D::m_BounceFactor, 1, 10);
 		ImGui::SliderInt("Sampling Rate", (int*)&Renderer3D::m_SamplingRate, 3, 30);
 
 		for (uint32_t i = 0 ; i < m_Spheres.size() ; i++)
 		{
-			ImGui::Separator();
-			ImGui::Text("Sphere: %d", i);
 			ImGui::PushID(i);
-			ImGui::DragFloat3("Position", glm::value_ptr(m_Spheres[i].Position), 0.05f);
-			ImGui::DragFloat("Radius", &m_Spheres[i].Radius, 0.05f);
-			ImGui::ColorEdit3("Albedo", glm::value_ptr(m_Spheres[i].Albedo));
-			ImGui::SliderFloat("Roughness", &m_Spheres[i].Roughness, 0.0f, 1.0f);
-			ImGui::SliderFloat("Metallic", &m_Spheres[i].Metallic, 0.0f, 1.0f);
-			ImGui::SliderFloat("Opacity", &m_Spheres[i].Opacity, 0.0f, 1.0f);
-			ImGui::SliderFloat("IOR", &m_Spheres[i].IOR, 1.0f, 3.0f);
+			const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowOverlap | ImGuiTreeNodeFlags_FramePadding;
+			
+			ImVec2 contentRegionAvailable = ImGui::GetContentRegionAvail();
+
+			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{ 4, 4 });
+			float lineHeight = GImGui->FontSize + GImGui->Style.FramePadding.y * 2.0f;
+			ImGui::Separator();
+			bool open = ImGui::TreeNodeEx((void*)&m_Spheres[i], treeNodeFlags, "Sphere: %d", i);
+			ImGui::PopStyleVar(
+			);
+
+			if (open)
+			{
+				ImGui::Text("Sphere: %d", i);
+				ImGui::DragFloat3("Position", glm::value_ptr(m_Spheres[i].Position), 0.05f);
+				ImGui::DragFloat("Radius", &m_Spheres[i].Radius, 0.05f);
+				ImGui::ColorEdit3("Albedo", glm::value_ptr(m_Spheres[i].Albedo));
+				ImGui::SliderFloat("Roughness", &m_Spheres[i].Roughness, 0.0f, 1.0f);
+				ImGui::SliderFloat("Metallic", &m_Spheres[i].Metallic, 0.0f, 1.0f);
+				ImGui::SliderFloat("Opacity", &m_Spheres[i].Opacity, 0.0f, 1.0f);
+				ImGui::SliderFloat("IOR", &m_Spheres[i].IOR, 1.0f, 3.0f);
+
+				ImGui::TreePop();
+			}
+
+			ImGui::PopID();		
+		}
+
+		for (uint32_t i = 0; i < m_Cuboids.size(); i++)
+		{
+			ImGui::PushID(i);
+			const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowOverlap | ImGuiTreeNodeFlags_FramePadding;
+
+			ImVec2 contentRegionAvailable = ImGui::GetContentRegionAvail();
+
+			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{ 4, 4 });
+			float lineHeight = GImGui->FontSize + GImGui->Style.FramePadding.y * 2.0f;
+			ImGui::Separator();
+			bool open = ImGui::TreeNodeEx((void*)&m_Cuboids[i], treeNodeFlags, "Cuboid: %d", i);
+			ImGui::PopStyleVar(
+			);
+
+			if (open)
+			{
+				ImGui::Text("Cuboid: %d", i);
+				ImGui::DragFloat3("Position", glm::value_ptr(m_Cuboids[i].Position), 0.05f);
+				ImGui::DragFloat3("Rotation", glm::value_ptr(m_Cuboids[i].Rotation), 0.05f);
+				ImGui::DragFloat3("Scale", glm::value_ptr(m_Cuboids[i].Scale), 0.05f);
+				ImGui::ColorEdit3("Albedo", glm::value_ptr(m_Cuboids[i].Albedo));
+				ImGui::SliderFloat("Roughness", &m_Cuboids[i].Roughness, 0.0f, 1.0f);
+				ImGui::SliderFloat("Metallic", &m_Cuboids[i].Metallic, 0.0f, 1.0f);
+				ImGui::SliderFloat("Opacity", &m_Cuboids[i].Opacity, 0.0f, 1.0f);
+				ImGui::SliderFloat("IOR", &m_Cuboids[i].IOR, 1.0f, 3.0f);
+
+				ImGui::TreePop();
+			}
+
 			ImGui::PopID();
 		}
 

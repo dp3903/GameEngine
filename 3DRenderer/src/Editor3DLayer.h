@@ -46,5 +46,6 @@ namespace Engine
 		glm::vec2 m_DockspaceLocation = { 0.0f,0.0f };
 
 		std::vector<Renderer3D::Sphere> m_Spheres;
+		std::vector<Renderer3D::Cuboid> m_Cuboids;
 	};
 }

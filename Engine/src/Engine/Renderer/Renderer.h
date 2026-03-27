@@ -140,7 +140,21 @@ namespace Engine
 			float padding;
 		};
 
-		static const Sphere VoidSphere;
+		struct Cuboid {
+			glm::vec3 Position = {0.0f, 0.0f, 0.0f};
+			float Roughness = 1;
+
+			glm::vec3 Rotation = {0.0f, 0.0f, 0.0f};
+			float Metallic = 0;	
+
+			glm::vec3 Scale =	 {1.0f, 1.0f, 1.0f};
+			float Opacity = 1;	
+			
+			glm::vec3 Albedo = { 1.0f, 1.0f, 1.0f };
+			float IOR = 1;
+
+			//float padding;
+		};
 	public:
 		static void Init();
 		static void Shutdown();
@@ -149,6 +163,7 @@ namespace Engine
 		static void EndScene();
 
 		static void DrawSphere(const Sphere& sphere);
+		static void DrawCuboid(const Cuboid& cuboid);
 		static void PostProcess(const std::shared_ptr<Framebuffer>& HDRframeBuffer, const std::shared_ptr<Framebuffer>& targetFrameBuffer);
 
 		static void OnViewportResize(uint32_t width, uint32_t height);
@@ -156,7 +171,6 @@ namespace Engine
 		inline static glm::vec3 m_LightPosition = { 5.0f, 5.0f, -5.0f };
 		inline static uint32_t m_BounceFactor = 3;
 		inline static uint32_t m_SamplingRate = 5;
-		inline static float m_Exposure = 1.0;
 	};
 }
 
